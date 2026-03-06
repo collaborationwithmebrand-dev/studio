@@ -8,10 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FestivalTheme } from '@/app/lib/constants';
+import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, addDocumentNonBlocking } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { Palette, PlusCircle, LayoutGrid } from 'lucide-react';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
@@ -33,8 +34,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
   const [isUpiAvailable, setIsUpiAvailable] = useState(true);
   const [isPinned, setIsPinned] = useState(false);
 
+  const handleUpdateTheme = (newTheme: FestivalTheme) => {
+    const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
+    setDocumentNonBlocking(themeRef, { activeThemeName: newTheme }, { merge: true });
+    toast({ 
+      title: "Bazaar Updated!", 
+      description: `The theme is now set to ${newTheme} for all users.`,
+    });
+  };
+
   const handleAdd = async () => {
-    if (!name || !price || !imageUrl) return toast({ title: "Error", variant: "destructive" });
+    if (!name || !price || !imageUrl) return toast({ title: "Error", description: "Please fill all required fields", variant: "destructive" });
+    
     addDocumentNonBlocking(collection(firestore, 'products'), {
       name, 
       price: parseFloat(price), 
@@ -47,40 +58,70 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
       isPinned, 
       createdAt: new Date().toISOString()
     });
+    
     setName(''); 
     setPrice(''); 
     setImageUrl('');
-    toast({ title: "Success", description: "Product added to Bazaar!" });
+    toast({ title: "Product Added", description: `${name} is now live in the Bazaar!` });
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-8">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div className="container mx-auto p-4 space-y-8 pb-20">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Theme Settings */}
+        <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
+          <CardHeader>
+            <CardTitle className="font-black flex items-center gap-2">
+              <Palette className="w-6 h-6" /> GLOBAL THEME
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <p className="text-sm opacity-80">Change the look of the bazaar for every user instantly.</p>
+            <div className="grid grid-cols-2 gap-3">
+              {(Object.keys(THEME_DATA) as FestivalTheme[]).map((theme) => (
+                <Button 
+                  key={theme}
+                  onClick={() => handleUpdateTheme(theme)}
+                  variant={currentTheme === theme ? "default" : "outline"}
+                  className={`rounded-2xl h-14 font-bold border-white/20 ${currentTheme === theme ? 'bg-white text-black' : 'bg-transparent text-white hover:bg-white/10'}`}
+                >
+                  {theme}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Product Add Section */}
-        <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2">
-          <CardHeader><CardTitle className="text-primary font-black">ADD NEW ITEM</CardTitle></CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <Label>Product Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Kaju Katli" className="rounded-xl h-12" />
+        <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2 bg-white">
+          <CardHeader>
+            <CardTitle className="text-primary font-black flex items-center gap-2">
+              <PlusCircle className="w-6 h-6" /> ADD NEW ITEM
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="font-bold text-gray-700">Product Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Kaju Katli" className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
-              <div className="space-y-1">
-                <Label>Price (₹)</Label>
-                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in Rupees" className="rounded-xl h-12" />
+              <div className="space-y-2">
+                <Label className="font-bold text-gray-700">Price (₹)</Label>
+                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in Rupees" className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
-              <div className="space-y-1">
-                <Label>Store Section</Label>
-                <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12" />
+              <div className="space-y-2">
+                <Label className="font-bold text-gray-700">Store Section (Categories bazaar layout)</Label>
+                <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
-              <div className="space-y-1">
-                <Label>Image URL</Label>
-                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
+              <div className="space-y-2">
+                <Label className="font-bold text-gray-700">Image URL</Label>
+                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
-              <div className="space-y-1">
-                <Label>Unit Type</Label>
+              <div className="space-y-2">
+                <Label className="font-bold text-gray-700">Unit Type</Label>
                 <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger className="h-12 rounded-xl">
+                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -91,38 +132,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1">
-                <Label>Category</Label>
-                <Select value={category} onValueChange={setCategory}>
-                  <SelectTrigger className="h-12 rounded-xl">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Food">Food</SelectItem>
-                    <SelectItem value="Festive">Festive</SelectItem>
-                    <SelectItem value="Fashion">Fashion</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
             
-            <div className="flex flex-wrap gap-6 py-4">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-wrap gap-6 py-2">
+              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl">
                 <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(v) => setIsCodAvailable(v === true)} />
-                <Label htmlFor="cod" className="cursor-pointer">Enable COD</Label>
+                <Label htmlFor="cod" className="cursor-pointer font-medium">Enable COD</Label>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl">
                 <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(v) => setIsUpiAvailable(v === true)} />
-                <Label htmlFor="upi" className="cursor-pointer">Enable UPI Pay</Label>
+                <Label htmlFor="upi" className="cursor-pointer font-medium">Enable UPI</Label>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-2xl border border-primary/20">
                 <Checkbox id="pin" checked={isPinned} onCheckedChange={(v) => setIsPinned(v === true)} />
-                <Label htmlFor="pin" className="cursor-pointer font-bold text-primary">Pin to Top</Label>
+                <Label htmlFor="pin" className="cursor-pointer font-black text-primary">Pin to Top</Label>
               </div>
             </div>
 
-            <Button onClick={handleAdd} className="w-full h-16 rounded-2xl font-black text-xl shadow-lg">
-              ADD TO BAZAAR STORE
+            <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] font-black text-xl shadow-xl hover:scale-[1.02] transition-transform">
+              PUBLISH TO BAZAAR
             </Button>
           </CardContent>
         </Card>

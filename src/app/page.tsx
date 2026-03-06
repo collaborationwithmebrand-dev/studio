@@ -140,8 +140,7 @@ export default function Home() {
         const lng = pos.coords.longitude;
         const locLink = `https://www.google.com/maps?q=${lat},${lng}`;
         
-        const finalPrice = product.price;
-        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${finalPrice}\nUnit: ${product.unit}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber || phoneNumber}`;
+        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\nUnit: ${product.unit}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber || phoneNumber}`;
         window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
         
         setSelectedProduct(null);
@@ -187,8 +186,8 @@ export default function Home() {
 
       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
         <div className="bg-white/5 backdrop-blur-2xl py-10 border-b border-white/10">
-          <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
-            <h2 className="text-3xl font-black text-white flex items-center gap-3">ADMIN HUB</h2>
+          <div className="container mx-auto px-4 mb-8 flex justify-between items-center text-white">
+            <h2 className="text-3xl font-black flex items-center gap-3">ADMIN HUB</h2>
             <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-white/10 text-white border-white/20">
               <LogOut className="w-5 h-5 mr-2" /> Logout
             </Button>
