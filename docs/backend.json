@@ -46,6 +46,18 @@
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
+    "Order": {
+      "title": "Order",
+      "type": "object",
+      "properties": {
+        "phoneNumber": { "type": "string" },
+        "productId": { "type": "string" },
+        "productName": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "admin_role": {
       "title": "Admin Role",
       "type": "object",
@@ -84,6 +96,10 @@
     "/userProfiles/{userId}": {
       "schema": { "$ref": "#/backend/entities/UserProfile" },
       "description": "User specific data like phone number."
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "#/backend/entities/Order" },
+      "description": "Tracked customer orders."
     }
   }
 }

@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,8 @@ import {
   useAuth, 
   useUser, 
   useMemoFirebase,
-  setDocumentNonBlocking
+  setDocumentNonBlocking,
+  addDocumentNonBlocking
 } from '@/firebase';
 import { collection, doc, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -37,6 +38,7 @@ export default function Home() {
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -60,6 +62,8 @@ export default function Home() {
 
   const WHATSAPP_NUMBER = settings?.whatsappNumber || "917319965930";
   const HELP_LINE_NUMBER = settings?.helpLineNumber || "917319965930";
+  const UPI_ID = settings?.upiId || "";
+  const UPI_QR_URL = settings?.upiQrUrl || "";
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -140,21 +144,53 @@ export default function Home() {
   };
 
   const handlePaymentChoice = (method: 'COD' | 'UPI') => {
-    setIsPaymentDialogOpen(false);
-    finalizeOrder(selectedProduct, method);
+    if (method === 'UPI' && UPI_QR_URL) {
+      setIsQrDialogOpen(true);
+    } else {
+      setIsPaymentDialogOpen(false);
+      finalizeOrder(selectedProduct, method);
+    }
   };
 
-  const finalizeOrder = (product: any, method: 'COD' | 'UPI') => {
+  const finalizeOrder = async (product: any, method: 'COD' | 'UPI') => {
+    const phone = profile?.phoneNumber || phoneNumber;
+    
+    // Check for existing orders from this phone number
+    const q = query(collection(firestore, 'orders'), where('phoneNumber', '==', phone));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+      return toast({ 
+        title: "Order Restricted", 
+        description: "One number is restricted to only 1 order at a time to prevent spam.", 
+        variant: "destructive" 
+      });
+    }
+
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         const locLink = `https://www.google.com/maps?q=${lat},${lng}`;
         
-        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\nUnit: ${product.unit}\nPayment: ${method === 'UPI' ? 'Pay Now (UPI)' : 'Cash on Delivery'}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber || phoneNumber}`;
+        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\nUnit: ${product.unit}\nPayment: ${method === 'UPI' ? 'Pay Now (UPI)' : 'Cash on Delivery'}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${phone}`;
+        
+        // Save order to Firestore
+        addDocumentNonBlocking(collection(firestore, 'orders'), {
+          phoneNumber: phone,
+          productId: product.id,
+          productName: product.name,
+          amount: product.price,
+          status: 'pending',
+          userId: user?.uid,
+          createdAt: new Date().toISOString()
+        });
+
         window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
         
         setSelectedProduct(null);
+        setIsQrDialogOpen(false);
+        setIsPaymentDialogOpen(false);
       },
       () => toast({ title: "Location Denied", description: "Please enable location to order.", variant: "destructive" })
     );
@@ -293,6 +329,27 @@ export default function Home() {
                 </div>
               </Button>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* UPI QR Dialog */}
+      <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
+        <DialogContent className="rounded-[3rem] p-10">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black text-center">PAYMENT QR</DialogTitle>
+            <DialogDescription className="text-center font-bold text-blue-600">{UPI_ID}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-6 py-4">
+            {UPI_QR_URL ? (
+              <img src={UPI_QR_URL} alt="Payment QR" className="w-64 h-64 object-contain rounded-2xl shadow-2xl border-8 border-white" />
+            ) : (
+              <div className="w-64 h-64 bg-slate-100 rounded-2xl flex items-center justify-center">
+                <QrCode className="w-20 h-20 text-slate-300" />
+              </div>
+            )}
+            <p className="text-center text-sm font-medium opacity-70">Scan this QR code using any UPI app like GPay, PhonePe, or Paytm to pay ₹{selectedProduct?.price}.</p>
+            <Button onClick={() => finalizeOrder(selectedProduct, 'UPI')} className="w-full h-16 rounded-2xl text-xl font-black bg-blue-600 hover:bg-blue-700 text-white">I HAVE PAID</Button>
           </div>
         </DialogContent>
       </Dialog>

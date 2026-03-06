@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, LayoutGrid, Phone, MessageCircle } from 'lucide-react';
+import { Palette, PlusCircle, LayoutGrid, Phone, MessageCircle, Wallet, QrCode } from 'lucide-react';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
@@ -37,6 +37,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
   // Store Settings state
   const [whatsapp, setWhatsapp] = useState('');
   const [helpline, setHelpline] = useState('');
+  const [upiId, setUpiId] = useState('');
+  const [upiQrUrl, setUpiQrUrl] = useState('');
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
@@ -45,6 +47,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
     if (settings) {
       setWhatsapp(settings.whatsappNumber || '');
       setHelpline(settings.helpLineNumber || '');
+      setUpiId(settings.upiId || '');
+      setUpiQrUrl(settings.upiQrUrl || '');
     }
   }, [settings]);
 
@@ -61,9 +65,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
     setDocumentNonBlocking(settingsRef, { 
       whatsappNumber: whatsapp, 
       helpLineNumber: helpline,
+      upiId: upiId,
+      upiQrUrl: upiQrUrl,
       lastUpdated: new Date().toISOString()
     }, { merge: true });
-    toast({ title: "Settings Saved", description: "WhatsApp and Help Line numbers updated." });
+    toast({ title: "Settings Saved", description: "Bazaar configurations updated successfully." });
   };
 
   const handleAdd = async () => {
@@ -119,7 +125,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
           <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
             <CardHeader>
               <CardTitle className="font-black flex items-center gap-2">
-                <Phone className="w-6 h-6" /> CONTACT SETTINGS
+                <Wallet className="w-6 h-6" /> BAZAAR CONFIG
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -131,8 +137,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                 <Label className="font-bold opacity-80">Help Line Number</Label>
                 <Input value={helpline} onChange={(e) => setHelpline(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
               </div>
+              <div className="space-y-2">
+                <Label className="font-bold opacity-80">UPI ID</Label>
+                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. bazaar@upi" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold opacity-80">UPI QR URL</Label>
+                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="Paste image link for QR" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+              </div>
               <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-white text-black font-black hover:bg-white/90">
-                SAVE CONTACTS
+                SAVE ALL SETTINGS
               </Button>
             </CardContent>
           </Card>

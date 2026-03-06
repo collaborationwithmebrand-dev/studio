@@ -34,5 +34,10 @@ service cloud.firestore {
       allow get, write: if isOwner(userId);
       allow list: if isAdmin();
     }
+    match /orders/{orderId} {
+      allow create: if isSignedIn();
+      allow get: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow list: if isAdmin();
+    }
   }
 }
