@@ -25,7 +25,6 @@ import {
 import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -58,7 +57,6 @@ export default function Home() {
   const { toast } = useToast();
 
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -69,15 +67,11 @@ export default function Home() {
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
 
   const [verificationCode, setVerificationCode] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSecretAdminUnlocked, setIsSecretAdminUnlocked] = useState(false);
   
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
   const [userDistance, setUserDistance] = useState<number | null>(null);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -103,6 +97,7 @@ export default function Home() {
     );
   }, []);
 
+  // Ensure user is signed in anonymously to interact with Firestore
   useEffect(() => {
     if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);
@@ -120,18 +115,19 @@ export default function Home() {
   const UPI_ID = settings?.upiId || "";
   const UPI_QR_URL = settings?.upiQrUrl || "";
 
+  // Secret Admin Unlock Sequence
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
-      if (!user) setIsLoginDialogOpen(true);
-      else setIsVerificationDialogOpen(true);
+      setIsVerificationDialogOpen(true);
       setSearchQuery('');
     }
-  }, [searchQuery, user]);
+  }, [searchQuery]);
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
       if (user) {
+        // Formally grant admin role in database
         const adminRef = doc(firestore, 'admin_roles', user.uid);
         setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
         setIsSecretAdminUnlocked(true);
@@ -152,6 +148,7 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
+  // Persistent Admin Check via Firestore
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
@@ -273,7 +270,7 @@ export default function Home() {
             <Button variant="ghost" size="icon" onClick={() => window.open(`tel:${HELP_LINE_NUMBER}`)} className="rounded-full h-12 w-12 text-white bg-white/10 backdrop-blur-md">
               <PhoneCall className="w-6 h-6" />
             </Button>
-            {(isAdmin || isSecretAdminUnlocked) && (
+            {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-full h-14 w-14 text-white bg-white/10 backdrop-blur-md shadow-xl">
                 <ShieldCheck className="w-8 h-8" />
               </Button>
@@ -282,7 +279,7 @@ export default function Home() {
         </div>
       </nav>
 
-      {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
+      {isAdmin && isAdminPanelVisible && (
         <div className="bg-white/95 backdrop-blur-2xl py-10 border-b border-blue-200">
           <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
             <h2 className="text-3xl font-black flex items-center gap-3 text-blue-600 uppercase">Admin Hub</h2>
@@ -420,7 +417,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Other Dialogs (Phone, Verification, Login) */}
+      {/* Other Dialogs (Phone, Verification) */}
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader><DialogTitle className="text-3xl font-black text-blue-600 uppercase text-center">Your Number</DialogTitle></DialogHeader>
