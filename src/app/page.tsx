@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard, Pin, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,7 +24,7 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { FirebaseError } from 'firebase/app';
@@ -39,6 +39,7 @@ export default function Home() {
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -107,16 +108,26 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  const statsDocRef = useMemoFirebase(() => isAdmin ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, isAdmin]);
+  const statsDocRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: statsData } = useDoc(statsDocRef);
   const stats = {
     orders: statsData?.totalOrders || 0,
-    earnings: statsData?.totalEarnings || 0
+    earnings: statsData?.totalEarnings || 0,
+    upiId: statsData?.upiId || '',
+    upiQrUrl: statsData?.upiQrUrl || ''
   };
 
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
-    const filtered = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // First, sort products to put pinned ones at the top
+    const sorted = [...products].sort((a, b) => {
+      if (a.isPinned === b.isPinned) return 0;
+      return a.isPinned ? -1 : 1;
+    });
+
+    const filtered = sorted.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
     return filtered.reduce((acc: any, product: any) => {
       const section = product.section || "General Bazaar";
       if (!acc[section]) acc[section] = [];
@@ -145,10 +156,17 @@ export default function Home() {
   const handleBuy = (product: any) => {
     const paymentMethods = [];
     if (product.isCodAvailable) paymentMethods.push("Cash on Delivery (COD)");
-    if (product.isUpiAvailable) paymentMethods.push("Pay to UPI");
+    if (product.isUpiAvailable) {
+      paymentMethods.push("Pay to UPI");
+      if (stats.upiId) paymentMethods.push(`UPI ID: ${stats.upiId}`);
+    }
     
     const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price} / ${product.unit}\nSection: ${product.section}\n\nAvailable Payment Methods: ${paymentMethods.join(", ") || "Contact for details"}\n\nPlease confirm my order.`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+    
+    if (product.isUpiAvailable && (stats.upiQrUrl || stats.upiId)) {
+      setIsPaymentDialogOpen(true);
+    }
   };
 
   const removeProduct = (id: string) => {
@@ -265,7 +283,10 @@ export default function Home() {
                   {products.map((p: any) => (
                     <div 
                       key={p.id} 
-                      className="group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border border-white/20 shadow-xl overflow-hidden"
+                      className={cn(
+                        "group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border shadow-xl overflow-hidden",
+                        p.isPinned ? "border-yellow-400 ring-2 ring-yellow-400/20" : "border-white/20"
+                      )}
                     >
                       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
                         <Button
@@ -289,6 +310,11 @@ export default function Home() {
                           <Badge className="bg-white/90 backdrop-blur-md text-primary border-none font-black text-xs px-4 py-1.5 rounded-full shadow-lg w-fit">
                             {p.category}
                           </Badge>
+                          {p.isPinned && (
+                            <Badge className="bg-yellow-400 text-black border-none font-black text-[10px] px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
+                              <Pin className="w-3 h-3 fill-current" /> PINNED
+                            </Badge>
+                          )}
                           <div className="flex gap-1">
                             {p.isCodAvailable && (
                               <Badge className="bg-emerald-500/90 backdrop-blur-md text-white border-none p-1.5 rounded-full shadow-lg" title="COD Available">
@@ -384,6 +410,43 @@ export default function Home() {
           </Button>
           <div className="relative my-4"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground font-black">Secure Tunnel</span></div></div>
           <Button variant="outline" onClick={() => initiateAnonymousSignIn(auth)} className="w-full h-14 rounded-2xl font-black">QUICK BYPASS</Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="rounded-[3rem] p-10 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black flex items-center gap-3">
+              <QrCode className="w-7 h-7 text-primary" /> PAYMENT QR
+            </DialogTitle>
+            <DialogDescription>
+              Scan to pay for your order via UPI.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-6 py-4">
+            {stats.upiQrUrl ? (
+              <div className="p-4 bg-white rounded-2xl shadow-inner border-2 border-dashed border-gray-200">
+                <img src={stats.upiQrUrl} alt="UPI QR Code" className="w-64 h-64 object-contain" />
+              </div>
+            ) : (
+              <div className="w-64 h-64 flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+                <QrCode className="w-16 h-16 text-gray-300 animate-pulse" />
+              </div>
+            )}
+            
+            {stats.upiId && (
+              <div className="text-center space-y-2">
+                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Merchant UPI ID</p>
+                <code className="bg-primary/10 text-primary px-4 py-2 rounded-xl font-bold text-lg select-all">
+                  {stats.upiId}
+                </code>
+              </div>
+            )}
+          </div>
+          <Button onClick={() => setIsPaymentDialogOpen(false)} className="w-full h-14 rounded-2xl font-black text-lg">
+            DONE
+          </Button>
         </DialogContent>
       </Dialog>
 

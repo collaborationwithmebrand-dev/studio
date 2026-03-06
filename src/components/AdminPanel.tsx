@@ -9,14 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
-import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid, DatabaseBackup, CreditCard, Banknote } from 'lucide-react';
+import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid, DatabaseBackup, CreditCard, Banknote, Pin, QrCode } from 'lucide-react';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 
 interface AdminPanelProps {
-  stats: { orders: number; earnings: number };
+  stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
   currentTheme: FestivalTheme;
   onResetStats: () => void;
 }
@@ -31,7 +31,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
   const [imageUrl, setImageUrl] = useState('');
   const [isCodAvailable, setIsCodAvailable] = useState(true);
   const [isUpiAvailable, setIsUpiAvailable] = useState(true);
+  const [isPinned, setIsPinned] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  
+  // Payment Config State
+  const [upiId, setUpiId] = useState(stats.upiId || '');
+  const [upiQrUrl, setUpiQrUrl] = useState(stats.upiQrUrl || '');
+
   const { toast } = useToast();
 
   const handleAdd = async () => {
@@ -50,6 +56,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
       imageUrl,
       isCodAvailable,
       isUpiAvailable,
+      isPinned,
       description: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -58,15 +65,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
     setName('');
     setPrice('');
     setImageUrl('');
+    setIsPinned(false);
     toast({ title: "Success", description: `Added ${name} to ${section}!` });
+  };
+
+  const savePaymentConfig = () => {
+    const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
+    setDocumentNonBlocking(mainSettingsRef, { 
+      upiId, 
+      upiQrUrl, 
+      lastUpdated: new Date().toISOString() 
+    }, { merge: true });
+    toast({ title: "Payments Updated", description: "UPI ID and QR code saved successfully." });
   };
 
   const seedData = () => {
     const samples = [
-      { name: "Kaju Katli", price: 800, unit: "kg", section: "Sweets Corner", category: "Food", img: "https://picsum.photos/seed/kaju/400/400", cod: true, upi: true },
-      { name: "Eco Diya Set", price: 150, unit: "Pcs", section: "Festive Decor", category: "Festive", img: "https://picsum.photos/seed/diya/400/400", cod: true, upi: false },
-      { name: "Pure Cow Ghee", price: 650, unit: "Liter", section: "Dairy Fresh", category: "Food", img: "https://picsum.photos/seed/ghee/400/400", cod: false, upi: true },
-      { name: "Cotton Kurta", price: 1200, unit: "Pcs", section: "Fashion Hub", category: "Fashion", img: "https://picsum.photos/seed/kurta/400/400", cod: true, upi: true }
+      { name: "Kaju Katli", price: 800, unit: "kg", section: "Sweets Corner", category: "Food", img: "https://picsum.photos/seed/kaju/400/400", cod: true, upi: true, pinned: true },
+      { name: "Eco Diya Set", price: 150, unit: "Pcs", section: "Festive Decor", category: "Festive", img: "https://picsum.photos/seed/diya/400/400", cod: true, upi: false, pinned: false },
+      { name: "Pure Cow Ghee", price: 650, unit: "Liter", section: "Dairy Fresh", category: "Food", img: "https://picsum.photos/seed/ghee/400/400", cod: false, upi: true, pinned: false },
+      { name: "Cotton Kurta", price: 1200, unit: "Pcs", section: "Fashion Hub", category: "Fashion", img: "https://picsum.photos/seed/kurta/400/400", cod: true, upi: true, pinned: true }
     ];
 
     const productsRef = collection(firestore, 'products');
@@ -80,6 +98,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
         imageUrl: s.img,
         isCodAvailable: s.cod,
         isUpiAvailable: s.upi,
+        isPinned: s.pinned,
         description: "Fresh and premium quality products from Bounsi Bazaar.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -149,41 +168,63 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
         </Card>
       </div>
 
-      <div className="flex gap-4">
-        <Button 
-          variant="outline" 
-          onClick={seedData} 
-          className="rounded-2xl h-12 border-dashed border-2 hover:bg-primary/5 flex items-center gap-2 px-6"
-        >
-          <DatabaseBackup className="w-5 h-5 text-primary" /> Seed Sample Products
-        </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="rounded-[2.5rem] shadow-2xl border-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-indigo-700 uppercase font-black text-xl">
+              <Palette className="w-6 h-6" /> FESTIVAL MODE
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-3">
+            {(Object.keys(THEME_DATA) as FestivalTheme[]).map((t) => (
+              <Button
+                key={t}
+                variant={currentTheme === t ? 'default' : 'outline'}
+                onClick={() => setTheme(t)}
+                className="rounded-2xl font-bold px-6 h-12"
+              >
+                {t === 'Normal' ? 'Default' : t}
+              </Button>
+            ))}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[2.5rem] shadow-2xl border-none">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-indigo-700 uppercase font-black text-xl">
+              <QrCode className="w-6 h-6" /> UPI SETTINGS
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Merchant UPI ID</Label>
+                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. bazaar@upi" className="rounded-xl h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>QR Code Image URL</Label>
+                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
+              </div>
+            </div>
+            <Button onClick={savePaymentConfig} className="w-full rounded-xl font-bold bg-indigo-600 hover:bg-indigo-700">
+              SAVE PAYMENT CONFIG
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Card className="rounded-[2.5rem] shadow-2xl border-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-indigo-700">
-            <Palette className="w-6 h-6" /> FESTIVAL MODE
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-3">
-          {(Object.keys(THEME_DATA) as FestivalTheme[]).map((t) => (
-            <Button
-              key={t}
-              variant={currentTheme === t ? 'default' : 'outline'}
-              onClick={() => setTheme(t)}
-              className="rounded-2xl font-bold px-6 h-12"
-            >
-              {t === 'Normal' ? 'Default' : t}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="rounded-[2.5rem] shadow-2xl border-none">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-indigo-700">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-indigo-700 font-black uppercase text-xl">
             <Plus className="w-6 h-6" /> ADD NEW ITEM
           </CardTitle>
+          <Button 
+            variant="outline" 
+            onClick={seedData} 
+            className="rounded-2xl border-dashed border-2 hover:bg-primary/5 flex items-center gap-2 px-6"
+          >
+            <DatabaseBackup className="w-5 h-5 text-primary" /> Seed Data
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -212,7 +253,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
             <div className="space-y-2">
               <Label className="flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> Store Section</Label>
               <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12" />
-              <p className="text-[10px] text-muted-foreground">Type a new name to create a new section.</p>
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -232,22 +272,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
               <Label>Image URL</Label>
               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
             </div>
+          </div>
 
-            <div className="flex items-center gap-8 py-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(checked) => setIsCodAvailable(checked === true)} />
-                <Label htmlFor="cod" className="flex items-center gap-2 font-bold cursor-pointer">
-                  <Banknote className="w-4 h-4 text-emerald-600" /> Cash on Delivery
-                </Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(checked) => setIsUpiAvailable(checked === true)} />
-                <Label htmlFor="upi" className="flex items-center gap-2 font-bold cursor-pointer">
-                  <CreditCard className="w-4 h-4 text-indigo-600" /> Pay to UPI
-                </Label>
-              </div>
+          <div className="flex flex-wrap items-center gap-8 py-4 border-t border-b border-gray-100">
+            <div className="flex items-center space-x-2">
+              <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(checked) => setIsCodAvailable(checked === true)} />
+              <Label htmlFor="cod" className="flex items-center gap-2 font-bold cursor-pointer">
+                <Banknote className="w-4 h-4 text-emerald-600" /> Cash on Delivery
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(checked) => setIsUpiAvailable(checked === true)} />
+              <Label htmlFor="upi" className="flex items-center gap-2 font-bold cursor-pointer">
+                <CreditCard className="w-4 h-4 text-indigo-600" /> Pay to UPI
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="pinned" checked={isPinned} onCheckedChange={(checked) => setIsPinned(checked === true)} />
+              <Label htmlFor="pinned" className="flex items-center gap-2 font-bold cursor-pointer">
+                <Pin className="w-4 h-4 text-yellow-500 fill-yellow-500" /> PIN TO TOP
+              </Label>
             </div>
           </div>
+
           <div className="flex flex-col md:flex-row gap-4 pt-4">
             <Button onClick={handleAdd} className="flex-1 rounded-2xl h-14 font-black text-lg">
               ADD ITEM TO STORE
