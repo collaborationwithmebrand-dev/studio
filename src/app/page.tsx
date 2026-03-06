@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode, MapPin, Gift, Package, Layers, ChevronRight } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -25,7 +25,6 @@ import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -228,14 +227,14 @@ export default function Home() {
   }
 
   return (
-    <div className={cn("min-h-screen relative pb-24", currentThemeConfig.bg)}>
+    <div className={cn("min-h-screen relative pb-24 transition-colors duration-1000", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
       <nav className="sticky top-0 z-50 py-3 glass-nav">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-3">
             <ShoppingBag className="w-8 h-8 text-primary animate-pulse" />
-            <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
+            <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r transition-all duration-1000", currentThemeConfig.gradient)}>
               {currentThemeConfig.title}
             </h1>
           </div>
@@ -262,7 +261,7 @@ export default function Home() {
       </nav>
 
       {isAdmin && isAdminPanelVisible && (
-        <div className="bg-white py-12 border-b">
+        <div className="bg-white py-12 border-b animate-in slide-in-from-top duration-500">
           <div className="container mx-auto px-4 flex justify-between items-center mb-8">
             <h2 className="text-2xl font-black text-blue-600 uppercase flex items-center gap-2">
               <Layers className="w-6 h-6" /> Admin Hub

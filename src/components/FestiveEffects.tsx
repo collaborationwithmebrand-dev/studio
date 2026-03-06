@@ -55,6 +55,21 @@ export const FestiveEffects: React.FC<FestiveEffectsProps> = ({ theme }) => {
         };
         newElements.push(<div key={`holi-${i}`} className="color-splash" style={style} />);
       }
+    } else if (theme === 'Eid') {
+      // Add floating crescents for Eid
+      for (let i = 0; i < 30; i++) {
+        const style = {
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+          animationDelay: `${Math.random() * 10}s`,
+          animationDuration: `${Math.random() * 15 + 10}s`,
+          fontSize: `${Math.random() * 20 + 20}px`,
+          color: '#fbbf24',
+          opacity: 0.3,
+          position: 'absolute' as const,
+        };
+        newElements.push(<div key={`eid-${i}`} className="animate-pulse" style={style}>🌙</div>);
+      }
     }
 
     setElements(newElements);
@@ -62,5 +77,5 @@ export const FestiveEffects: React.FC<FestiveEffectsProps> = ({ theme }) => {
 
   if (theme === 'Normal') return null;
 
-  return <div className="festival-overlay">{elements}</div>;
+  return <div className="festival-overlay pointer-events-none">{elements}</div>;
 };

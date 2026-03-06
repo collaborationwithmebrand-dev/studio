@@ -11,7 +11,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, ShoppingCart, Trash2, PackageSearch } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminPanelProps {
@@ -38,6 +38,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   const [helpline, setHelpline] = useState('');
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
+  
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
@@ -59,6 +61,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
     });
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [orders]);
+
+  const filteredCatalogProducts = useMemo(() => {
+    if (!products) return [];
+    return products.filter(p => p.name.toLowerCase().includes(catalogSearch.toLowerCase()));
+  }, [products, catalogSearch]);
 
   useEffect(() => {
     if (settings) {
@@ -121,10 +128,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
         <div className="space-y-10">
           <Card className="rounded-[2rem] border-none shadow-xl">
-            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><Palette className="w-5 h-5" /> FESTIVAL THEME</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
+            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><Palette className="w-5 h-5" /> FESTIVAL THEME (Special Day)</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {(Object.keys(THEME_DATA) as FestivalTheme[]).map(t => (
-                <Button key={t} onClick={() => handleUpdateTheme(t)} variant={currentTheme === t ? "default" : "outline"} className={cn("rounded-xl h-12 font-black uppercase text-[10px]", currentTheme === t ? "bg-blue-600" : "text-blue-600 border-blue-100")}>{t}</Button>
+                <Button 
+                  key={t} 
+                  onClick={() => handleUpdateTheme(t)} 
+                  variant={currentTheme === t ? "default" : "outline"} 
+                  className={cn(
+                    "rounded-xl h-12 font-black uppercase text-[10px] transition-all", 
+                    currentTheme === t ? "bg-blue-600 scale-105 shadow-lg shadow-blue-200" : "text-blue-600 border-blue-100 hover:bg-blue-50"
+                  )}
+                >
+                  {t}
+                </Button>
               ))}
             </CardContent>
           </Card>
@@ -143,9 +160,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
           </Card>
 
           <Card className="rounded-[2rem] border-none shadow-xl">
-            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> MANAGE CATALOG</CardTitle></CardHeader>
+            <CardHeader>
+              <div className="flex flex-col gap-4">
+                <CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> MANAGE CATALOG</CardTitle>
+                <div className="relative">
+                  <Input 
+                    placeholder="Search in catalog..." 
+                    value={catalogSearch} 
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold pl-10"
+                  />
+                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                </div>
+              </div>
+            </CardHeader>
             <CardContent className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
-              {products?.map((p: any) => (
+              {filteredCatalogProducts.map((p: any) => (
                 <div key={p.id} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-2xl border border-blue-100 group">
                   <div className="flex items-center gap-3">
                     <img src={p.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
@@ -159,8 +189,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
                   </Button>
                 </div>
               ))}
-              {(!products || products.length === 0) && (
-                <p className="text-blue-400 font-bold text-center py-4 text-[10px] uppercase">No products in catalog</p>
+              {filteredCatalogProducts.length === 0 && (
+                <p className="text-blue-400 font-bold text-center py-4 text-[10px] uppercase">No matching products found</p>
               )}
             </CardContent>
           </Card>
@@ -177,7 +207,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-blue-600 font-black uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> Unit Type</Label>
+              <Label className="text-blue-600 font-black uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> SI Unit (Quantity Base)</Label>
               <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2">
                 {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
                   <div key={u} className={cn("p-3 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600" : "bg-white border-blue-100")}>
