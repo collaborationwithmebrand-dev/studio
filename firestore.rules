@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * BOUNSI BAZAAR SECURITY RULES
+     *
+     * Core Philosophy:
+     * This ruleset implements a strict Administrative Access Control (DBAC) model combined with 
+     * public read access for storefront data. Security is managed through structural segregation 
+     * and a dedicated admin roles collection.
+     *
+     * Data Structure:
+     * - /products: Public catalog, writable only by admins.
+     * - /admin_roles: Marker collection where document existence grants admin privileges.
+     * - /storeSettings: Sensitive operational data, restricted to admins.
+     * - /publicDisplaySettings: Denormalized public configuration (e.g., active themes).
+     *
+     * Key Security Decisions:
+     * 1. Admin Verification: Admin status is verified by checking for a document at /admin_roles/{uid}.
+     * 2. Public Readability: The product catalog and public theme settings are open to all users 
+     *    (including unauthenticated) to maximize storefront performance and SEO.
+     * 3. Structural Segregation: Sensitive store statistics are kept in a separate collection 
+     *    from public settings to prevent accidental data leaks.
+     * 4. Denormalization for Authorization: The 'activeThemeName' is copied to a public path 
+     *    so rules remain simple and do not require cross-document lookups for every visitor.
+     */
+
+    // --- Helper Functions ---
+
+    /**
+     * @description Checks if the request is from an authenticated user.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Verifies if the authenticated user has an entry in the admin_roles collection.
+     */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid));
+    }
+
+    /**
+     * @description Checks if a document exists and the requester is an admin.
+     * Used for update and delete operations.
+     */
+    function isExistingAdmin() {
+      return isAdmin() && resource != null;
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the product catalog. Publicly viewable, admin-only writes.
+     * @path /products/{productId}
+     * @allow (get) Any user viewing a product detail page.
+     * @allow (create) An authenticated admin adding a new item to the bazaar.
+     * @deny (update) An unauthenticated user or non-admin attempting to change a price.
+     * @principle Public Read with Owner-Only (Admin) Writes.
+     */
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update, delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Marker collection for admin roles.
+     * @path /admin_roles/{adminUid}
+     * @allow (get) An authenticated user checking their own admin status.
+     * @deny (list) A regular user attempting to crawl the list of all administrators.
+     * @principle DBAC (Database Access Control) via marker documents.
+     */
+    match /admin_roles/{adminUid} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow create, update, delete: if false; // Admin roles managed via Admin SDK/Console for safety
+    }
+
+    /**
+     * @description Singleton for sensitive global store statistics and configuration.
+     * @path /storeSettings/mainSettings
+     * @allow (get) An admin viewing the store's total earnings.
+     * @deny (get) A customer attempting to see private store revenue data.
+     * @principle Structural Segregation for sensitive administrative data.
+     */
+    match /storeSettings/mainSettings {
+      allow get, list, create: if isAdmin();
+      allow update, delete: if isExistingAdmin();
+    }
+
+    /**
+     * @description Singleton for public-facing UI configurations (e.g., festival themes).
+     * @path /publicDisplaySettings/theme
+     * @allow (get) Any user's browser fetching the active festival theme name.
+     * @deny (update) A user attempting to manually trigger a theme change.
+     * @principle Authorization Independence for public data.
+     */
+    match /publicDisplaySettings/theme {
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update, delete: if isExistingAdmin();
+    }
+  }
+}
