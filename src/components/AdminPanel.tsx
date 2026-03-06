@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
-import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus } from 'lucide-react';
+import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid } from 'lucide-react';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -24,13 +25,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Food');
+  const [unit, setUnit] = useState('kg');
+  const [section, setSection] = useState('General Bazaar');
   const [imageUrl, setImageUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleAdd = async () => {
-    if (!name || !price || !imageUrl) {
-      toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
+    if (!name || !price || !imageUrl || !section) {
+      toast({ title: "Error", description: "Please fill name, price, section and image URL", variant: "destructive" });
       return;
     }
 
@@ -38,6 +41,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
     addDocumentNonBlocking(productsRef, {
       name,
       price: parseFloat(price),
+      unit,
+      section,
       category,
       imageUrl,
       description: "",
@@ -48,14 +53,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
     setName('');
     setPrice('');
     setImageUrl('');
-    toast({ title: "Success", description: "Product added to store!" });
+    toast({ title: "Success", description: `Added ${name} to ${section}!` });
   };
 
   const setTheme = (theme: FestivalTheme) => {
     const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
     const publicThemeRef = doc(firestore, 'publicDisplaySettings', 'theme');
 
-    // Update both places as per denormalization requirement
     setDocumentNonBlocking(mainSettingsRef, { activeThemeName: theme, lastUpdated: new Date().toISOString() }, { merge: true });
     setDocumentNonBlocking(publicThemeRef, { activeThemeName: theme }, { merge: true });
 
@@ -69,7 +73,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
     }
     setIsGenerating(true);
     try {
-      const result = await generateProductDescription({ productName: name, keywords: [category, 'Festive', 'Quality'] });
+      const result = await generateProductDescription({ productName: name, keywords: [category, 'Quality', unit] });
       toast({ title: "AI Generated", description: "Description: " + result.description });
     } catch (err) {
       toast({ title: "Error", description: "AI failed to generate description", variant: "destructive" });
@@ -140,7 +144,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Product Name</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kaju Katli" className="rounded-xl h-12" />
@@ -148,6 +152,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
             <div className="space-y-2">
               <Label>Price (₹)</Label>
               <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className="rounded-xl h-12" />
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Scale className="w-4 h-4" /> Unit</Label>
+              <Select value={unit} onValueChange={setUnit}>
+                <SelectTrigger className="rounded-xl h-12">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gm">gm</SelectItem>
+                  <SelectItem value="kg">kg</SelectItem>
+                  <SelectItem value="Liter">Liter</SelectItem>
+                  <SelectItem value="Pcs">Pcs</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><LayoutGrid className="w-4 h-4" /> Store Section</Label>
+              <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12" />
+              <p className="text-[10px] text-muted-foreground">Type a new name to create a new section.</p>
             </div>
             <div className="space-y-2">
               <Label>Category</Label>

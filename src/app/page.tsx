@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut, UserPlus, LogIn } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut, UserPlus, LogIn, LayoutGrid } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,11 +38,25 @@ export default function Home() {
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSecretAdminUnlocked, setIsSecretAdminUnlocked] = useState(false);
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const WHATSAPP_NUMBER = "917319965930";
+
+  // Check for secret key "kela123"
+  useEffect(() => {
+    if (searchQuery.toLowerCase() === 'kela123') {
+      setIsSecretAdminUnlocked(true);
+      setSearchQuery('');
+      toast({ 
+        title: "Admin Mode Unlocked", 
+        description: "Click the Shield icon to access settings.",
+        variant: "default"
+      });
+    }
+  }, [searchQuery, toast]);
 
   // Listen for Auth Errors globally
   useEffect(() => {
@@ -53,8 +68,6 @@ export default function Home() {
         message = "This email is already registered. Try signing in instead.";
       } else if (error.code === 'auth/weak-password') {
         message = "Password should be at least 6 characters.";
-      } else if (error.code === 'auth/operation-not-allowed') {
-        message = "Email/Password login is not enabled in Firebase Console.";
       }
       
       toast({
@@ -90,21 +103,28 @@ export default function Home() {
     earnings: statsData?.totalEarnings || 0
   };
 
-  const filteredProducts = useMemo(() => {
-    if (!products) return [];
-    return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProductsBySection = useMemo(() => {
+    if (!products) return {};
+    const filtered = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    // Group by section
+    return filtered.reduce((acc: any, product: any) => {
+      const section = product.section || "General Bazaar";
+      if (!acc[section]) acc[section] = [];
+      acc[section].push(product);
+      return acc;
+    }, {});
   }, [products, searchQuery]);
 
   const handleAdminClick = () => {
     if (!user) {
       setIsLoginDialogOpen(true);
-    } else if (!isAdmin) {
+    } else if (!isAdmin && !isSecretAdminUnlocked) {
       toast({ 
-        title: "Admin Access Denied", 
-        description: "You are logged in but do not have admin rights.",
+        title: "Access Restricted", 
+        description: "Type the secret key in search to unlock.",
         variant: "destructive"
       });
-      setIsAdminPanelVisible(false);
     } else {
       setIsAdminPanelVisible(!isAdminPanelVisible);
     }
@@ -133,11 +153,12 @@ export default function Home() {
   const handleLogout = async () => {
     await signOut(auth);
     setIsAdminPanelVisible(false);
+    setIsSecretAdminUnlocked(false);
     toast({ title: "Logged Out", description: "You have been signed out." });
   };
 
   const handleBuy = (product: any) => {
-    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\n\nPlease confirm my order.`;
+    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price} / ${product.unit}\nSection: ${product.section}\n\nPlease confirm my order.`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -145,13 +166,6 @@ export default function Home() {
     const productRef = doc(firestore, 'products', id);
     deleteDocumentNonBlocking(productRef);
     toast({ title: "Removed", description: "Product deleted from catalog" });
-  };
-
-  const copyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid);
-      toast({ title: "UID Copied", description: "Add this UID to 'admin_roles' in console." });
-    }
   };
 
   const currentThemeConfig = THEME_DATA[currentTheme];
@@ -185,14 +199,16 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleAdminClick}
-              className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdmin && isAdminPanelVisible ? 'bg-white/30' : ''}`}
-            >
-              <ShieldCheck className="w-6 h-6" />
-            </Button>
+            {(isAdmin || isSecretAdminUnlocked) && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleAdminClick}
+                className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdminPanelVisible ? 'bg-white/30' : ''}`}
+              >
+                <ShieldCheck className="w-6 h-6" />
+              </Button>
+            )}
             <Badge variant="secondary" className="bg-green-500 text-white px-4 py-1.5 rounded-full animate-pulse flex items-center gap-2 border-none">
               <MessageCircle className="w-4 h-4" /> LIVE ORDERS
             </Badge>
@@ -200,28 +216,14 @@ export default function Home() {
         </div>
       </nav>
 
-      {user && !isAdmin && (
-        <div className="bg-yellow-100 p-4 border-b border-yellow-200 flex flex-col items-center justify-center gap-2">
-          <p className="text-sm font-semibold text-yellow-800 flex items-center gap-2">
-            Logged in but not an Admin. Add this UID to 'admin_roles' collection:
-          </p>
-          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-md border border-yellow-300 shadow-sm">
-            <code className="text-xs font-mono">{user.uid}</code>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyUid}>
-              <Copy className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={handleLogout}>
-              <LogOut className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {isAdmin && isAdminPanelVisible && (
+      {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
         <div className="bg-background/80 backdrop-blur-md pt-8 border-b">
-          <div className="container mx-auto px-4 mb-4 flex justify-end">
+          <div className="container mx-auto px-4 mb-4 flex justify-between items-center">
+            <h2 className="text-xl font-black text-primary flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6" /> STORE MANAGEMENT
+            </h2>
             <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 rounded-full">
-              <LogOut className="w-4 h-4" /> Logout Admin
+              <LogOut className="w-4 h-4" /> Logout
             </Button>
           </div>
           <AdminPanel 
@@ -239,56 +241,74 @@ export default function Home() {
       )}
 
       <main className="container mx-auto p-6 mt-6">
-        {filteredProducts.length === 0 ? (
+        {Object.keys(filteredProductsBySection).length === 0 ? (
           <div className="text-center py-20 opacity-50">
             <ShoppingBag className="w-16 h-16 mx-auto mb-4" />
             <p className="text-xl font-bold">No products found matching your search.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredProducts.map((p: any) => (
-              <div 
-                key={p.id} 
-                className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-border/40 p-5 relative flex flex-col justify-between product-card-hover animate-in fade-in zoom-in duration-300"
-              >
-                {isAdmin && (
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => removeProduct(p.id)}
-                    className="absolute top-3 right-3 rounded-full w-8 h-8 shadow-lg z-20"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                )}
+          <div className="space-y-12">
+            {Object.entries(filteredProductsBySection).map(([sectionName, products]: [string, any]) => (
+              <section key={sectionName} className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="bg-primary text-primary-foreground p-2 rounded-xl shadow-lg">
+                    <LayoutGrid className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-3xl font-black uppercase tracking-tight text-gray-800 border-b-4 border-primary pb-1">
+                    {sectionName}
+                  </h2>
+                </div>
                 
-                <div className="relative overflow-hidden rounded-[2rem] h-48 mb-4 shadow-inner bg-slate-100">
-                  <img 
-                    src={p.imageUrl} 
-                    alt={p.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  <Badge className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm text-primary border-none font-bold">
-                    {p.category}
-                  </Badge>
-                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                  {products.map((p: any) => (
+                    <div 
+                      key={p.id} 
+                      className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-border/40 p-5 relative flex flex-col justify-between product-card-hover animate-in fade-in zoom-in duration-300"
+                    >
+                      {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => removeProduct(p.id)}
+                          className="absolute top-3 right-3 rounded-full w-8 h-8 shadow-lg z-20"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      )}
+                      
+                      <div className="relative overflow-hidden rounded-[2rem] h-48 mb-4 shadow-inner bg-slate-100">
+                        <img 
+                          src={p.imageUrl} 
+                          alt={p.name} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                        <Badge className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm text-primary border-none font-bold">
+                          {p.category}
+                        </Badge>
+                      </div>
 
-                <div className="space-y-1">
-                  <h3 className="font-bold text-gray-800 text-lg uppercase leading-tight line-clamp-2">
-                    {p.name}
-                  </h3>
-                  <p className={`text-2xl font-black italic ${currentThemeConfig.accent}`}>
-                    ₹{p.price}
-                  </p>
-                </div>
+                      <div className="space-y-1">
+                        <h3 className="font-bold text-gray-800 text-lg uppercase leading-tight line-clamp-2">
+                          {p.name}
+                        </h3>
+                        <div className="flex items-baseline gap-1">
+                          <p className={`text-2xl font-black italic ${currentThemeConfig.accent}`}>
+                            ₹{p.price}
+                          </p>
+                          <span className="text-sm font-bold opacity-60">/ {p.unit}</span>
+                        </div>
+                      </div>
 
-                <Button 
-                  onClick={() => handleBuy(p)}
-                  className="mt-6 w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[0.98] transition-all bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
-                >
-                  ORDER NOW <MessageCircle className="w-4 h-4" />
-                </Button>
-              </div>
+                      <Button 
+                        onClick={() => handleBuy(p)}
+                        className="mt-6 w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[0.98] transition-all bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
+                      >
+                        ORDER NOW <MessageCircle className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         )}
@@ -300,8 +320,8 @@ export default function Home() {
             <DialogTitle>{isSignUp ? 'Create Admin Account' : 'Admin Login'}</DialogTitle>
             <DialogDescription>
               {isSignUp 
-                ? 'Register your email to get a UID for admin verification.' 
-                : 'Sign in to manage your store products and festival themes.'}
+                ? 'Register your email to manage the bazaar.' 
+                : 'Sign in to access store settings.'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuthSubmit} className="space-y-4 py-4">
@@ -345,9 +365,6 @@ export default function Home() {
           <Button variant="outline" onClick={handleAnonymousLogin} className="w-full rounded-xl">
             Quick Anonymous Login
           </Button>
-          <DialogFooter className="text-xs text-muted-foreground text-center">
-            Note: Ensure "Email/Password" and "Anonymous" providers are enabled in your Firebase Console.
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
