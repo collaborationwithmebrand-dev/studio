@@ -9,9 +9,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, ShoppingCart } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, ShoppingCart, Trash2, PackageSearch } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminPanelProps {
@@ -41,6 +41,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
+
+  const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const { data: products } = useCollection(productsQuery);
 
   const ordersQuery = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
   const { data: orders } = useCollection(ordersQuery);
@@ -92,6 +95,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
     toast({ title: "Product Published!" });
   };
 
+  const handleDeleteProduct = (productId: string) => {
+    const productRef = doc(firestore, 'products', productId);
+    deleteDocumentNonBlocking(productRef);
+    toast({ title: "Product Removed", description: "The item has been deleted from your catalog." });
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-10">
       <Card className="rounded-[2rem] border-none shadow-xl bg-blue-50/50">
@@ -132,9 +141,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
               <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase text-xs">SAVE BAZAAR SETTINGS</Button>
             </CardContent>
           </Card>
+
+          <Card className="rounded-[2rem] border-none shadow-xl">
+            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> MANAGE CATALOG</CardTitle></CardHeader>
+            <CardContent className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+              {products?.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-2xl border border-blue-100 group">
+                  <div className="flex items-center gap-3">
+                    <img src={p.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                    <div>
+                      <p className="text-blue-900 font-black text-[10px] uppercase truncate max-w-[150px]">{p.name}</p>
+                      <p className="text-blue-500 font-bold text-[9px]">₹{p.price} / {p.unit}</p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-400 hover:text-red-500 hover:bg-red-50 rounded-xl">
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+              {(!products || products.length === 0) && (
+                <p className="text-blue-400 font-bold text-center py-4 text-[10px] uppercase">No products in catalog</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <Card className="rounded-[2rem] border-none shadow-xl">
+        <Card className="rounded-[2rem] border-none shadow-xl h-fit">
           <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> PUBLISH PRODUCT</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
