@@ -41,6 +41,14 @@
           "type": "string",
           "description": "A detailed description of the product."
         },
+        "isCodAvailable": {
+          "type": "boolean",
+          "description": "Whether Cash on Delivery is available for this product."
+        },
+        "isUpiAvailable": {
+          "type": "boolean",
+          "description": "Whether UPI payment is available for this product."
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the product was first added.",

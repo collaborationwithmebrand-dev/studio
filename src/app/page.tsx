@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2, Sparkles } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,7 +67,7 @@ export default function Home() {
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
       if (user) {
         const adminRef = doc(firestore, 'admin_roles', user.uid);
-        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true }, { merge: true });
+        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
         
         setIsSecretAdminUnlocked(true);
         setIsVerificationDialogOpen(false);
@@ -142,7 +143,11 @@ export default function Home() {
   };
 
   const handleBuy = (product: any) => {
-    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price} / ${product.unit}\nSection: ${product.section}\n\nPlease confirm my order.`;
+    const paymentMethods = [];
+    if (product.isCodAvailable) paymentMethods.push("Cash on Delivery (COD)");
+    if (product.isUpiAvailable) paymentMethods.push("Pay to UPI");
+    
+    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price} / ${product.unit}\nSection: ${product.section}\n\nAvailable Payment Methods: ${paymentMethods.join(", ") || "Contact for details"}\n\nPlease confirm my order.`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -151,6 +156,13 @@ export default function Home() {
     deleteDocumentNonBlocking(productRef);
     toast({ title: "Removed", description: "Product deleted from catalog" });
   };
+
+  async function handleLogout() {
+    await signOut(auth);
+    setIsAdminPanelVisible(false);
+    setIsSecretAdminUnlocked(false);
+    toast({ title: "Logged Out", description: "Secure session terminated." });
+  }
 
   if (isProductsLoading || isUserLoading) {
     return (
@@ -273,9 +285,23 @@ export default function Home() {
                           className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur-md text-primary border-none font-black text-xs px-4 py-1.5 rounded-full shadow-lg">
-                          {p.category}
-                        </Badge>
+                        <div className="absolute top-4 left-4 flex flex-col gap-2">
+                          <Badge className="bg-white/90 backdrop-blur-md text-primary border-none font-black text-xs px-4 py-1.5 rounded-full shadow-lg w-fit">
+                            {p.category}
+                          </Badge>
+                          <div className="flex gap-1">
+                            {p.isCodAvailable && (
+                              <Badge className="bg-emerald-500/90 backdrop-blur-md text-white border-none p-1.5 rounded-full shadow-lg" title="COD Available">
+                                <Banknote className="w-3 h-3" />
+                              </Badge>
+                            )}
+                            {p.isUpiAvailable && (
+                              <Badge className="bg-indigo-500/90 backdrop-blur-md text-white border-none p-1.5 rounded-full shadow-lg" title="UPI Payment Supported">
+                                <CreditCard className="w-3 h-3" />
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-2 mb-6 px-2">
@@ -309,7 +335,7 @@ export default function Home() {
         )}
       </main>
 
-      {/* Admin Dialogs - Same as before but with rounded-[3rem] and better padding */}
+      {/* Admin Dialogs */}
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
@@ -369,11 +395,4 @@ export default function Home() {
       <Toaster />
     </div>
   );
-
-  async function handleLogout() {
-    await signOut(auth);
-    setIsAdminPanelVisible(false);
-    setIsSecretAdminUnlocked(false);
-    toast({ title: "Logged Out", description: "Secure session terminated." });
-  }
 }

@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
-import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid, DatabaseBackup } from 'lucide-react';
+import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid, DatabaseBackup, CreditCard, Banknote } from 'lucide-react';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -28,6 +29,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
   const [unit, setUnit] = useState('kg');
   const [section, setSection] = useState('General Bazaar');
   const [imageUrl, setImageUrl] = useState('');
+  const [isCodAvailable, setIsCodAvailable] = useState(true);
+  const [isUpiAvailable, setIsUpiAvailable] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
@@ -45,6 +48,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
       section,
       category,
       imageUrl,
+      isCodAvailable,
+      isUpiAvailable,
       description: "",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -58,17 +63,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
 
   const seedData = () => {
     const samples = [
-      { name: "Kaju Katli", price: 800, unit: "kg", section: "Sweets Corner", category: "Food", img: "https://picsum.photos/seed/kaju/400/400" },
-      { name: "Eco Diya Set", price: 150, unit: "Pcs", section: "Festive Decor", category: "Festive", img: "https://picsum.photos/seed/diya/400/400" },
-      { name: "Pure Cow Ghee", price: 650, unit: "Liter", section: "Dairy Fresh", category: "Food", img: "https://picsum.photos/seed/ghee/400/400" },
-      { name: "Cotton Kurta", price: 1200, unit: "Pcs", section: "Fashion Hub", category: "Fashion", img: "https://picsum.photos/seed/kurta/400/400" }
+      { name: "Kaju Katli", price: 800, unit: "kg", section: "Sweets Corner", category: "Food", img: "https://picsum.photos/seed/kaju/400/400", cod: true, upi: true },
+      { name: "Eco Diya Set", price: 150, unit: "Pcs", section: "Festive Decor", category: "Festive", img: "https://picsum.photos/seed/diya/400/400", cod: true, upi: false },
+      { name: "Pure Cow Ghee", price: 650, unit: "Liter", section: "Dairy Fresh", category: "Food", img: "https://picsum.photos/seed/ghee/400/400", cod: false, upi: true },
+      { name: "Cotton Kurta", price: 1200, unit: "Pcs", section: "Fashion Hub", category: "Fashion", img: "https://picsum.photos/seed/kurta/400/400", cod: true, upi: true }
     ];
 
     const productsRef = collection(firestore, 'products');
     samples.forEach(s => {
       addDocumentNonBlocking(productsRef, {
-        ...s,
+        name: s.name,
+        price: s.price,
+        unit: s.unit,
+        section: s.section,
+        category: s.category,
         imageUrl: s.img,
+        isCodAvailable: s.cod,
+        isUpiAvailable: s.upi,
         description: "Fresh and premium quality products from Bounsi Bazaar.",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -175,7 +186,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <Label>Product Name</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Kaju Katli" className="rounded-xl h-12" />
@@ -220,6 +231,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
             <div className="space-y-2">
               <Label>Image URL</Label>
               <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
+            </div>
+
+            <div className="flex items-center gap-8 py-2">
+              <div className="flex items-center space-x-2">
+                <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(checked) => setIsCodAvailable(checked === true)} />
+                <Label htmlFor="cod" className="flex items-center gap-2 font-bold cursor-pointer">
+                  <Banknote className="w-4 h-4 text-emerald-600" /> Cash on Delivery
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(checked) => setIsUpiAvailable(checked === true)} />
+                <Label htmlFor="upi" className="flex items-center gap-2 font-bold cursor-pointer">
+                  <CreditCard className="w-4 h-4 text-indigo-600" /> Pay to UPI
+                </Label>
+              </div>
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-4 pt-4">
