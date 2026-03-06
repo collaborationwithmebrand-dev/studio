@@ -53,6 +53,7 @@
         "phoneNumber": { "type": "string" },
         "productId": { "type": "string" },
         "productName": { "type": "string" },
+        "quantity": { "type": "number" },
         "amount": { "type": "number" },
         "status": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }

@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode, MapPin, Gift, Package } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode, MapPin, Gift, Package, Layers } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +28,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Bounsi, Bihar (813104) Center Coordinates
 const BOUNSI_LAT = 24.8021;
@@ -65,6 +66,7 @@ export default function Home() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
+  const [quantity, setQuantity] = useState<number>(1);
 
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -127,7 +129,6 @@ export default function Home() {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
       if (user) {
-        // Formally grant admin role in database
         const adminRef = doc(firestore, 'admin_roles', user.uid);
         setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
         setIsSecretAdminUnlocked(true);
@@ -165,10 +166,11 @@ export default function Home() {
     }, {});
   }, [products, searchQuery]);
 
-  const calculateTotalPrice = (basePrice: number) => {
-    let deliveryGST = basePrice < 100 ? 125 : 25;
+  const calculateTotalPrice = (basePrice: number, qty: number = 1) => {
+    const subtotal = basePrice * qty;
+    let deliveryGST = subtotal < 100 ? 125 : 25;
     let packagingFee = packagingType === 'Gift' ? 40 : 0;
-    return basePrice + deliveryGST + packagingFee;
+    return subtotal + deliveryGST + packagingFee;
   };
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
@@ -183,6 +185,8 @@ export default function Home() {
 
   const handleBuyRequest = (product: any) => {
     setSelectedProduct(product);
+    setQuantity(1);
+    setPackagingType('Normal');
     if (!user || !profile?.phoneNumber) {
       setIsPhoneDialogOpen(true);
       return;
@@ -200,16 +204,18 @@ export default function Home() {
 
   const finalizeOrder = async (product: any, method: 'COD' | 'UPI') => {
     const phone = profile?.phoneNumber || phoneNumber;
-    const finalPrice = calculateTotalPrice(product.price);
+    const finalPrice = calculateTotalPrice(product.price, quantity);
     const packagingInfo = packagingType === 'Gift' ? "Gift Packaging (₹40)" : "Normal Packaging (Free)";
+    const qtyText = (product.unit === 'kg' || product.unit === 'Liter') ? `${quantity} ${product.unit}` : `${quantity} Unit(s)`;
     
     navigator.geolocation.getCurrentPosition((pos) => {
       const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nBase Price: ₹${product.price}\nDelivery/GST: ₹${product.price < 100 ? 125 : 25}\nPackaging: ${packagingInfo}\n*Total: ₹${finalPrice}*\n\nPayment: ${method}\nLocation: ${locLink}\nPhone: ${phone}\nSpeed: 30 MIN DELIVERY ⚡`;
+      const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nQuantity: ${qtyText}\nBase Price: ₹${product.price} / ${product.unit}\nSubtotal: ₹${product.price * quantity}\nDelivery/GST: ₹${(product.price * quantity) < 100 ? 125 : 25}\nPackaging: ${packagingInfo}\n*Total: ₹${finalPrice}*\n\nPayment: ${method}\nLocation: ${locLink}\nPhone: ${phone}\nSpeed: 30 MIN DELIVERY ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         phoneNumber: phone,
         productName: product.name,
+        quantity: quantity,
         amount: finalPrice,
         status: 'pending',
         userId: user?.uid,
@@ -317,7 +323,7 @@ export default function Home() {
                       <h3 className="font-black text-xl uppercase tracking-tighter mb-2">{p.name}</h3>
                       <div className="flex flex-col gap-1">
                         <p className={cn("text-3xl font-black italic", currentThemeConfig.accent)}>₹{p.price} <span className="text-sm text-gray-400 uppercase">/ {p.unit}</span></p>
-                        <p className="text-xs font-bold text-slate-400">+{p.price < 100 ? "₹125 Del/GST" : "₹25 Delivery"}</p>
+                        <p className="text-xs font-bold text-slate-400">Smart Pricing Applied</p>
                       </div>
                     </div>
                     <Button onClick={() => handleBuyRequest(p)} className={cn("w-full h-16 rounded-[1.5rem] font-black text-lg uppercase shadow-2xl text-white border-none", currentThemeConfig.gradient)}>
@@ -336,10 +342,31 @@ export default function Home() {
         <DialogContent className="rounded-[3rem] p-8 max-w-md">
           <DialogHeader>
             <DialogTitle className="text-3xl font-black text-blue-600 uppercase">Complete Order</DialogTitle>
-            <DialogDescription className="font-bold text-slate-500 uppercase text-xs">Choose packaging and payment method</DialogDescription>
+            <DialogDescription className="font-bold text-slate-500 uppercase text-xs">Choose details and payment</DialogDescription>
           </DialogHeader>
           
           <div className="space-y-6 py-4">
+            {/* Quantity Selector for kg/Liter */}
+            {(selectedProduct?.unit === 'kg' || selectedProduct?.unit === 'Liter') && (
+              <div className="space-y-3">
+                <Label className="font-black text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
+                  <Layers className="w-4 h-4" /> Select {selectedProduct.unit === 'kg' ? 'Weight' : 'Volume'}
+                </Label>
+                <Select value={quantity.toString()} onValueChange={(v) => setQuantity(parseInt(v))}>
+                  <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 font-bold text-lg">
+                    <SelectValue placeholder="Choose amount" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    {[1, 2, 3, 4, 5].map((num) => (
+                      <SelectItem key={num} value={num.toString()} className="font-bold">
+                        {num} {selectedProduct.unit}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-3">
               <Label className="font-black text-slate-400 uppercase text-xs tracking-widest">Select Packaging</Label>
               <RadioGroup value={packagingType} onValueChange={(v: any) => setPackagingType(v)} className="grid grid-cols-2 gap-4">
@@ -360,12 +387,12 @@ export default function Home() {
 
             <div className="bg-slate-50 p-6 rounded-[2rem] space-y-2">
               <div className="flex justify-between text-sm font-bold text-slate-500">
-                <span>Item Price</span>
-                <span>₹{selectedProduct?.price}</span>
+                <span>Subtotal ({quantity} {selectedProduct?.unit})</span>
+                <span>₹{selectedProduct?.price * quantity}</span>
               </div>
               <div className="flex justify-between text-sm font-bold text-slate-500">
                 <span>Delivery & GST</span>
-                <span>₹{selectedProduct?.price < 100 ? 125 : 25}</span>
+                <span>₹{(selectedProduct?.price * quantity) < 100 ? 125 : 25}</span>
               </div>
               {packagingType === 'Gift' && (
                 <div className="flex justify-between text-sm font-bold text-pink-500">
@@ -375,7 +402,7 @@ export default function Home() {
               )}
               <div className="pt-2 border-t flex justify-between text-2xl font-black text-blue-600">
                 <span>TOTAL</span>
-                <span>₹{calculateTotalPrice(selectedProduct?.price || 0)}</span>
+                <span>₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)}</span>
               </div>
             </div>
 
@@ -411,7 +438,7 @@ export default function Home() {
                 <QrCode className="w-20 h-20 text-slate-300" />
               </div>
             )}
-            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-tight">Pay ₹{calculateTotalPrice(selectedProduct?.price || 0)} to finalize your order.</p>
+            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-tight">Pay ₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)} to finalize your order.</p>
             <Button onClick={() => finalizeOrder(selectedProduct, 'UPI')} className="w-full h-16 rounded-2xl text-xl font-black bg-blue-600 hover:bg-blue-700 text-white uppercase">I Have Paid</Button>
           </div>
         </DialogContent>
