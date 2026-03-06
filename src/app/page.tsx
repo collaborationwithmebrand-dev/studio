@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2 } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +18,13 @@ import {
   useAuth, 
   useUser, 
   useMemoFirebase,
-  updateDocumentNonBlocking,
   deleteDocumentNonBlocking
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { signInAnonymously } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -30,7 +33,12 @@ export default function Home() {
   const { toast } = useToast();
 
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Login form state
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const WHATSAPP_NUMBER = "917319965930";
 
@@ -45,7 +53,7 @@ export default function Home() {
 
   // Admin Role Check
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
+  const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
   // Store Settings (Stats) Listener - Only for Admins
@@ -61,38 +69,42 @@ export default function Home() {
     return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [products, searchQuery]);
 
-  const toggleAdminMode = async () => {
+  const handleAdminClick = () => {
     if (!user) {
-      try {
-        await signInAnonymously(auth);
-        toast({ title: "Anonymous Sign-in", description: "Checking admin privileges..." });
-      } catch (error) {
-        toast({ title: "Error", description: "Failed to sign in", variant: "destructive" });
-      }
-      return;
-    }
-
-    if (isAdmin) {
-      setIsAdminPanelVisible(!isAdminPanelVisible);
-    } else {
+      setIsLoginDialogOpen(true);
+    } else if (!isAdmin) {
       toast({ 
-        title: "Access Restricted", 
-        description: "Your account does not have admin privileges. Contact the developer to enable admin role for UID: " + user.uid, 
-        variant: "destructive" 
+        title: "Admin Access Denied", 
+        description: "You are logged in but do not have admin rights.",
+        variant: "destructive"
       });
+      setIsAdminPanelVisible(false);
+    } else {
+      setIsAdminPanelVisible(!isAdminPanelVisible);
     }
   };
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    initiateEmailSignIn(auth, email, password);
+    setIsLoginDialogOpen(false);
+    setEmail('');
+    setPassword('');
+  };
+
+  const handleAnonymousLogin = () => {
+    initiateAnonymousSignIn(auth);
+    setIsLoginDialogOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setIsAdminPanelVisible(false);
+    toast({ title: "Logged Out", description: "You have been signed out." });
+  };
+
   const handleBuy = (product: any) => {
-    const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
-    
-    // We update stats optimistically in the UI, but the write is backgrounded
-    updateDocumentNonBlocking(mainSettingsRef, {
-      totalOrders: stats.orders + 1,
-      totalEarnings: stats.earnings + product.price,
-      lastUpdated: new Date().toISOString()
-    });
-    
     const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\n\nPlease confirm my order.`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
@@ -101,6 +113,13 @@ export default function Home() {
     const productRef = doc(firestore, 'products', id);
     deleteDocumentNonBlocking(productRef);
     toast({ title: "Removed", description: "Product deleted from catalog" });
+  };
+
+  const copyUid = () => {
+    if (user?.uid) {
+      navigator.clipboard.writeText(user.uid);
+      toast({ title: "UID Copied", description: "Add this UID to 'admin_roles' in console." });
+    }
   };
 
   const currentThemeConfig = THEME_DATA[currentTheme];
@@ -137,7 +156,7 @@ export default function Home() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={toggleAdminMode}
+              onClick={handleAdminClick}
               className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdmin && isAdminPanelVisible ? 'bg-white/30' : ''}`}
             >
               <ShieldCheck className="w-6 h-6" />
@@ -149,14 +168,40 @@ export default function Home() {
         </div>
       </nav>
 
+      {user && !isAdmin && (
+        <div className="bg-yellow-100 p-4 border-b border-yellow-200 flex flex-col items-center justify-center gap-2">
+          <p className="text-sm font-semibold text-yellow-800 flex items-center gap-2">
+            Logged in but not an Admin. Add this UID to 'admin_roles' collection:
+          </p>
+          <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-md border border-yellow-300 shadow-sm">
+            <code className="text-xs font-mono">{user.uid}</code>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyUid}>
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-6 w-6 text-red-500" onClick={handleLogout}>
+              <LogOut className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {isAdmin && isAdminPanelVisible && (
-        <div className="bg-background/80 backdrop-blur-md pt-8">
+        <div className="bg-background/80 backdrop-blur-md pt-8 border-b">
+          <div className="container mx-auto px-4 mb-4 flex justify-end">
+            <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 rounded-full">
+              <LogOut className="w-4 h-4" /> Logout Admin
+            </Button>
+          </div>
           <AdminPanel 
             stats={stats} 
             currentTheme={currentTheme}
             onResetStats={() => {
               const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
-              updateDocumentNonBlocking(mainSettingsRef, { totalOrders: 0, totalEarnings: 0, lastUpdated: new Date().toISOString() });
+              const publicThemeRef = doc(firestore, 'publicDisplaySettings', 'theme');
+              // Batch update or separate non-blocking calls
+              deleteDocumentNonBlocking(mainSettingsRef);
+              deleteDocumentNonBlocking(publicThemeRef);
+              toast({ title: "Settings Reset", description: "Stats cleared" });
             }}
           />
         </div>
@@ -217,6 +262,50 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {/* Admin Login Dialog */}
+      <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
+        <DialogContent className="rounded-[2.5rem]">
+          <DialogHeader>
+            <DialogTitle>Admin Login</DialogTitle>
+            <DialogDescription>
+              Sign in to manage your store products and festival themes.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleLogin} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="admin@example.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full rounded-xl">Sign In with Email</Button>
+          </form>
+          <div className="relative mb-4">
+            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
+          </div>
+          <Button variant="outline" onClick={handleAnonymousLogin} className="w-full rounded-xl">
+            Quick Anonymous Login
+          </Button>
+          <DialogFooter className="text-xs text-muted-foreground text-center">
+            Anonymous login allows you to get your UID for admin verification.
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <footer className="text-center py-10 opacity-40 select-none">
         <p className="font-black text-4xl tracking-tighter">BOUNSI BAZAAR</p>
