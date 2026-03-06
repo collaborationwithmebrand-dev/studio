@@ -1,3 +1,197 @@
+"use client"
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { THEME_DATA, INITIAL_PRODUCTS, Product, FestivalTheme } from '@/app/lib/constants';
+import { AdminPanel } from '@/components/AdminPanel';
+import { FestiveEffects } from '@/components/FestiveEffects';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/hooks/use-toast';
+
 export default function Home() {
-  return <></>;
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stats, setStats] = useState({ orders: 0, earnings: 0 });
+  const [theme, setTheme] = useState<FestivalTheme>('Normal');
+  const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const { toast } = useToast();
+
+  const WHATSAPP_NUMBER = "917319965930";
+
+  useEffect(() => {
+    // Hydration and LocalStorage load
+    const savedProducts = localStorage.getItem('vibrant_products');
+    const savedStats = localStorage.getItem('vibrant_stats');
+    const savedTheme = localStorage.getItem('vibrant_theme');
+
+    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    else setProducts(INITIAL_PRODUCTS);
+
+    if (savedStats) setStats(JSON.parse(savedStats));
+    if (savedTheme) setTheme(savedTheme as FestivalTheme);
+  }, []);
+
+  useEffect(() => {
+    if (products.length > 0) localStorage.setItem('vibrant_products', JSON.stringify(products));
+    localStorage.setItem('vibrant_stats', JSON.stringify(stats));
+    localStorage.setItem('vibrant_theme', theme);
+  }, [products, stats, theme]);
+
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [products, searchQuery]);
+
+  const toggleAdmin = () => {
+    if (isAdminOpen) {
+      setIsAdminOpen(false);
+      return;
+    }
+    const pin = prompt("Enter Admin PIN:");
+    if (pin === "123") {
+      setIsAdminOpen(true);
+    } else {
+      toast({ title: "Access Denied", description: "Incorrect PIN", variant: "destructive" });
+    }
+  };
+
+  const handleBuy = (product: Product) => {
+    const newStats = {
+      orders: stats.orders + 1,
+      earnings: stats.earnings + product.price
+    };
+    setStats(newStats);
+    
+    const message = `*VibrantBazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\n\nPlease confirm my order.`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
+  const removeProduct = (id: string) => {
+    setProducts(prev => prev.filter(p => p.id !== id));
+    toast({ title: "Removed", description: "Product deleted from catalog" });
+  };
+
+  const currentThemeConfig = THEME_DATA[theme];
+
+  return (
+    <div className={`min-h-screen ${currentThemeConfig.bg} relative transition-colors duration-1000 pb-20`}>
+      <FestiveEffects theme={theme} />
+      
+      {/* Navigation */}
+      <nav className={`${currentThemeConfig.nav} p-4 text-white sticky top-0 z-50 shadow-2xl transition-all duration-700`}>
+        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <h1 className="text-2xl font-black italic tracking-tighter uppercase drop-shadow-md">
+            {currentThemeConfig.title}
+          </h1>
+          
+          <div className="relative w-full md:w-1/2 group">
+            <Input 
+              placeholder="Search products..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-12 pl-12 rounded-full text-black bg-white/95 border-none shadow-inner focus:ring-4 focus:ring-yellow-400/50 transition-all"
+            />
+            <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleAdmin}
+              className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdminOpen ? 'bg-white/30' : ''}`}
+            >
+              <ShieldCheck className="w-6 h-6" />
+            </Button>
+            <Badge variant="secondary" className="bg-green-500 text-white px-4 py-1.5 rounded-full animate-pulse flex items-center gap-2 border-none">
+              <MessageCircle className="w-4 h-4" /> LIVE ORDERS
+            </Badge>
+          </div>
+        </div>
+      </nav>
+
+      {/* Admin Panel Overlay */}
+      {isAdminOpen && (
+        <div className="bg-background/80 backdrop-blur-md pt-8">
+          <AdminPanel 
+            stats={stats} 
+            currentTheme={theme} 
+            setTheme={setTheme}
+            onAddProduct={(p) => setProducts([...products, p])}
+            onResetStats={() => {
+              setStats({ orders: 0, earnings: 0 });
+              localStorage.removeItem('vibrant_stats');
+            }}
+          />
+        </div>
+      )}
+
+      {/* Main Content */}
+      <main className="container mx-auto p-6 mt-6">
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-20 opacity-50">
+            <ShoppingBag className="w-16 h-16 mx-auto mb-4" />
+            <p className="text-xl font-bold">No products found matching your search.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {filteredProducts.map((p) => (
+              <div 
+                key={p.id} 
+                className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-border/40 p-5 relative flex flex-col justify-between product-card-hover animate-in fade-in zoom-in duration-300"
+              >
+                {isAdminOpen && (
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => removeProduct(p.id)}
+                    className="absolute top-3 right-3 rounded-full w-8 h-8 shadow-lg z-20"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+                
+                <div className="relative overflow-hidden rounded-[2rem] h-48 mb-4 shadow-inner bg-slate-100">
+                  <img 
+                    src={p.image} 
+                    alt={p.name} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <Badge className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm text-primary border-none font-bold">
+                    {p.category}
+                  </Badge>
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="font-bold text-gray-800 text-lg uppercase leading-tight line-clamp-2">
+                    {p.name}
+                  </h3>
+                  <p className={`text-2xl font-black italic ${currentThemeConfig.accent}`}>
+                    ₹{p.price}
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => handleBuy(p)}
+                  className="mt-6 w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[0.98] transition-all bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
+                >
+                  ORDER NOW <MessageCircle className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
+
+      {/* Footer Branding */}
+      <footer className="text-center py-10 opacity-40 select-none">
+        <p className="font-black text-4xl tracking-tighter">VIBRANT BAZAAR</p>
+        <p className="text-xs uppercase font-bold mt-2">Crafted for Festivals & Celebration</p>
+      </footer>
+
+      <Toaster />
+    </div>
+  );
 }
