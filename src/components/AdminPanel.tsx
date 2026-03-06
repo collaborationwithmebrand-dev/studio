@@ -136,7 +136,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
                   variant={currentTheme === t ? "default" : "outline"} 
                   className={cn(
                     "rounded-xl h-10 font-bold uppercase text-[9px]", 
-                    currentTheme === t ? "bg-blue-600" : "text-blue-600 border-blue-100 hover:bg-blue-50"
+                    currentTheme === t ? "bg-blue-600 text-white" : "text-blue-600 border-blue-100 hover:bg-blue-50"
                   )}
                 >
                   {t}
@@ -150,11 +150,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><Wallet className="w-5 h-5" /> Contact & UPI</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={e => setHelpline(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={setWhatsapp} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={setHelpline} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
               </div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={e => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={e => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={setUpiId} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={setUpiQrUrl} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
               <Button onClick={handleUpdateSettings} className="w-full h-10 rounded-xl bg-blue-600 text-white font-bold uppercase text-xs">Save Settings</Button>
             </CardContent>
           </Card>
@@ -168,7 +168,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
                   <Input 
                     placeholder="Search products..." 
                     value={catalogSearch} 
-                    onChange={e => setCatalogSearch(e.target.value)}
+                    onChange={setCatalogSearch}
                     className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9"
                   />
                   <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-400" />

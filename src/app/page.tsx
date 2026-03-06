@@ -204,7 +204,7 @@ export default function Home() {
           </div>
           
           <div className="relative flex-1 max-w-md hidden md:block">
-            <Input placeholder="Search milk, ghee, groceries..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" />
+            <Input placeholder="Search milk, ghee, groceries..." value={searchQuery} onChange={setSearchQuery} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" />
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
 
@@ -224,7 +224,7 @@ export default function Home() {
         </div>
         <div className="md:hidden px-4 pb-3">
           <div className="relative">
-            <Input placeholder="Search groceries..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none" />
+            <Input placeholder="Search groceries..." value={searchQuery} onChange={setSearchQuery} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none" />
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
         </div>
@@ -370,7 +370,7 @@ export default function Home() {
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center">
           <DialogHeader className="mb-4"><DialogTitle className="text-xl font-black uppercase">Verify Phone</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-4">
-            <Input type="tel" placeholder="Mobile Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-12 text-center text-lg font-bold rounded-xl border-slate-100" />
+            <Input type="tel" placeholder="Mobile Number" value={phoneNumber} onChange={setPhoneNumber} className="h-12 text-center text-lg font-bold rounded-xl border-slate-100" />
             <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase">Continue</Button>
           </form>
         </DialogContent>
@@ -380,7 +380,7 @@ export default function Home() {
         <DialogContent className="rounded-3xl p-8 max-w-xs text-center">
           <DialogHeader><DialogTitle className="text-lg font-black uppercase">Admin Verification</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-4 pt-2">
-            <Input maxLength={4} className="text-center text-3xl h-16 font-black rounded-xl border-slate-100" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+            <Input maxLength={4} className="text-center text-3xl h-16 font-black rounded-xl border-slate-100" value={verificationCode} onChange={setVerificationCode} />
             <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase">Verify & Unlock</Button>
           </form>
         </DialogContent>
