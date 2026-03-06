@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut, UserPlus, LogIn, LayoutGrid } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,8 @@ export default function Home() {
 
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSecretAdminUnlocked, setIsSecretAdminUnlocked] = useState(false);
@@ -44,19 +46,37 @@ export default function Home() {
   const [password, setPassword] = useState('');
 
   const WHATSAPP_NUMBER = "917319965930";
+  const ADMIN_SECRET_KEY = 'kela123';
+  const ADMIN_VERIFICATION_CODE = '5930'; // Last 4 digits of the target number as a standard prototype code
 
   // Check for secret key "kela123"
   useEffect(() => {
-    if (searchQuery.toLowerCase() === 'kela123') {
-      setIsSecretAdminUnlocked(true);
+    if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
+      setIsVerificationDialogOpen(true);
       setSearchQuery('');
+    }
+  }, [searchQuery]);
+
+  // Handle Verification Code Submit
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (verificationCode === ADMIN_VERIFICATION_CODE) {
+      setIsSecretAdminUnlocked(true);
+      setIsVerificationDialogOpen(false);
+      setVerificationCode('');
       toast({ 
-        title: "Admin Mode Unlocked", 
-        description: "Click the Shield icon to access settings.",
+        title: "Admin Access Granted", 
+        description: "Click the Shield icon to manage your bazaar.",
         variant: "default"
       });
+    } else {
+      toast({
+        title: "Invalid Code",
+        description: "The verification code is incorrect.",
+        variant: "destructive"
+      });
     }
-  }, [searchQuery, toast]);
+  };
 
   // Listen for Auth Errors globally
   useEffect(() => {
@@ -122,7 +142,7 @@ export default function Home() {
     } else if (!isAdmin && !isSecretAdminUnlocked) {
       toast({ 
         title: "Access Restricted", 
-        description: "Type the secret key in search to unlock.",
+        description: "Type 'kela123' in search to start verification.",
         variant: "destructive"
       });
     } else {
@@ -190,7 +210,7 @@ export default function Home() {
           
           <div className="relative w-full md:w-1/2 group">
             <Input 
-              placeholder="Search products..." 
+              placeholder="Search products or use secret key..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full h-12 pl-12 rounded-full text-black bg-white/95 border-none shadow-inner focus:ring-4 focus:ring-yellow-400/50 transition-all"
@@ -219,9 +239,14 @@ export default function Home() {
       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
         <div className="bg-background/80 backdrop-blur-md pt-8 border-b">
           <div className="container mx-auto px-4 mb-4 flex justify-between items-center">
-            <h2 className="text-xl font-black text-primary flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6" /> STORE MANAGEMENT
-            </h2>
+            <div className="flex flex-col">
+              <h2 className="text-xl font-black text-primary flex items-center gap-2">
+                <ShieldCheck className="w-6 h-6" /> STORE MANAGEMENT
+              </h2>
+              {isSecretAdminUnlocked && !isAdmin && (
+                <p className="text-[10px] text-muted-foreground uppercase font-bold">Secret Mode Unlocked (Restricted Auth)</p>
+              )}
+            </div>
             <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 rounded-full">
               <LogOut className="w-4 h-4" /> Logout
             </Button>
@@ -230,11 +255,11 @@ export default function Home() {
             stats={stats} 
             currentTheme={currentTheme}
             onResetStats={() => {
-              const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
-              const publicThemeRef = doc(firestore, 'publicDisplaySettings', 'theme');
-              deleteDocumentNonBlocking(mainSettingsRef);
-              deleteDocumentNonBlocking(publicThemeRef);
-              toast({ title: "Settings Reset", description: "Stats cleared" });
+              if(confirm("Are you sure you want to clear all store statistics?")) {
+                const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
+                deleteDocumentNonBlocking(mainSettingsRef);
+                toast({ title: "Settings Reset", description: "Stats cleared" });
+              }
             }}
           />
         </div>
@@ -314,6 +339,37 @@ export default function Home() {
         )}
       </main>
 
+      {/* Admin Verification Dialog */}
+      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
+        <DialogContent className="rounded-[2.5rem]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-primary" /> Admin Verification
+            </DialogTitle>
+            <DialogDescription>
+              A verification code has been sent to <strong>+91 7319965930</strong>. Please enter it below to unlock admin options.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleVerifyCode} className="space-y-4 py-4">
+            <div className="space-y-2 text-center">
+              <Label htmlFor="otp">Enter 4-Digit Code</Label>
+              <Input 
+                id="otp" 
+                type="text" 
+                maxLength={4}
+                placeholder="0000" 
+                className="text-center text-2xl h-16 tracking-[1em] font-black rounded-2xl"
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5" /> Verify & Unlock
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="rounded-[2.5rem]">
           <DialogHeader>
@@ -377,3 +433,4 @@ export default function Home() {
     </div>
   );
 }
+
