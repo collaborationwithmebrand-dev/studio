@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard, Pin, QrCode, MapPin, Clock, Phone, Ticket } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,16 +18,12 @@ import {
   useAuth, 
   useUser, 
   useMemoFirebase,
-  deleteDocumentNonBlocking,
-  setDocumentNonBlocking,
-  errorEmitter
+  setDocumentNonBlocking
 } from '@/firebase';
 import { collection, doc, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
-import { FirebaseError } from 'firebase/app';
+import { initiateEmailSignIn, initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
@@ -39,13 +35,9 @@ export default function Home() {
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
-  const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [couponCode, setCouponCode] = useState('');
-  const [activeCoupon, setActiveCoupon] = useState<any>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
 
   const [verificationCode, setVerificationCode] = useState('');
@@ -123,27 +115,13 @@ export default function Home() {
     }
 
     if (user) {
-      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber, usedCoupons: profile?.usedCoupons || [] }, { merge: true });
+      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
       setIsPhoneDialogOpen(false);
       toast({ title: "Phone Linked", description: "Your number is now secure." });
+      if (selectedProduct) {
+        finalizeOrder(selectedProduct);
+      }
     }
-  };
-
-  const handleCouponApply = async () => {
-    if (!couponCode) return;
-    const q = query(collection(firestore, 'coupons'), where('code', '==', couponCode.toUpperCase()));
-    const snap = await getDocs(q);
-    
-    if (snap.empty) return toast({ title: "Invalid Coupon" });
-    const couponData = snap.docs[0].data();
-
-    if (profile?.usedCoupons?.includes(couponCode.toUpperCase())) {
-      return toast({ title: "Used", description: "You have already used this coupon once.", variant: "destructive" });
-    }
-
-    setActiveCoupon({ id: snap.docs[0].id, ...couponData });
-    toast({ title: "Coupon Applied!", description: "50% discount added." });
-    setIsCouponDialogOpen(false);
   };
 
   const handleBuyRequest = (product: any) => {
@@ -152,32 +130,20 @@ export default function Home() {
       setIsPhoneDialogOpen(true);
       return;
     }
-    setSelectedProduct(product);
-    if (product.price >= 299) setIsCouponDialogOpen(true);
-    else finalizeOrder(product, null);
+    finalizeOrder(product);
   };
 
-  const finalizeOrder = (product: any, coupon: any) => {
+  const finalizeOrder = (product: any) => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         const locLink = `https://www.google.com/maps?q=${lat},${lng}`;
         
-        let finalPrice = product.price;
-        let couponNote = "";
-        if (coupon && product.price >= 299) {
-          finalPrice = product.price * 0.5;
-          couponNote = `\nCoupon Applied: ${coupon.code} (50% OFF)`;
-          setDocumentNonBlocking(doc(firestore, 'userProfiles', user!.uid), {
-            usedCoupons: [...(profile?.usedCoupons || []), coupon.code]
-          }, { merge: true });
-        }
-
-        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nFinal Price: ₹${finalPrice}${couponNote}\nUnit: ${product.unit}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber}`;
+        const finalPrice = product.price;
+        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${finalPrice}\nUnit: ${product.unit}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber || phoneNumber}`;
         window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
         
-        setActiveCoupon(null);
         setSelectedProduct(null);
       },
       () => toast({ title: "Location Denied", description: "Please enable location to order.", variant: "destructive" })
@@ -247,7 +213,6 @@ export default function Home() {
                       <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                       <div className="absolute top-4 left-4 flex flex-col gap-2">
                         {p.isPinned && <Badge className="bg-yellow-400 text-black px-3 py-1 rounded-full text-[10px] font-black"><Pin className="w-3 h-3 mr-1" /> PINNED</Badge>}
-                        {p.price >= 299 && <Badge className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black animate-bounce"><Ticket className="w-3 h-3 mr-1" /> 50% COUPON</Badge>}
                       </div>
                     </div>
                     <div className="px-2 mb-6">
@@ -276,23 +241,6 @@ export default function Home() {
             <Input type="tel" placeholder="Enter Mobile Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-16 text-2xl font-black rounded-2xl text-center" />
             <Button type="submit" className="w-full h-16 rounded-2xl text-xl font-black">START BAZAAR</Button>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Coupon Dialog */}
-      <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black">HAVE A COUPON?</DialogTitle>
-            <DialogDescription>Apply a special 50% discount for orders over ₹299.</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 py-4">
-            <Input placeholder="ENTER CODE" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="h-16 text-3xl font-black text-center tracking-widest rounded-2xl" />
-            <div className="flex gap-4">
-              <Button onClick={() => finalizeOrder(selectedProduct, null)} variant="outline" className="flex-1 h-16 rounded-2xl font-black">SKIP</Button>
-              <Button onClick={handleCouponApply} className="flex-1 h-16 rounded-2xl font-black bg-emerald-600">APPLY</Button>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 

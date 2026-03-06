@@ -23,21 +23,11 @@
       },
       "required": ["id", "name", "price", "unit", "section", "imageUrl", "createdAt"]
     },
-    "Coupon": {
-      "title": "Coupon",
-      "type": "object",
-      "properties": {
-        "code": { "type": "string" },
-        "isUsed": { "type": "boolean" },
-        "usedBy": { "type": "string", "description": "Phone number that used this coupon" }
-      }
-    },
     "UserProfile": {
       "title": "User Profile",
       "type": "object",
       "properties": {
-        "phoneNumber": { "type": "string" },
-        "usedCoupons": { "type": "array", "items": { "type": "string" } }
+        "phoneNumber": { "type": "string" }
       }
     },
     "StoreSetting": {
@@ -89,13 +79,9 @@
       "schema": { "$ref": "#/backend/entities/public_theme_setting" },
       "description": "Publicly visible UI configuration."
     },
-    "/coupons/{couponId}": {
-      "schema": { "$ref": "#/backend/entities/Coupon" },
-      "description": "Promo codes for discounts."
-    },
     "/userProfiles/{userId}": {
       "schema": { "$ref": "#/backend/entities/UserProfile" },
-      "description": "User specific data like phone number and used coupons."
+      "description": "User specific data like phone number."
     }
   }
 }
