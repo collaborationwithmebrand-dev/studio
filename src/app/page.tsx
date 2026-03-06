@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2 } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, UserPlus, LogIn, LayoutGrid, CheckCircle2, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { FirebaseError } from 'firebase/app';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -50,7 +50,6 @@ export default function Home() {
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
 
-  // Check for secret key "kela123"
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
       if (!user) {
@@ -62,14 +61,12 @@ export default function Home() {
     }
   }, [searchQuery, user]);
 
-  // Handle Verification Code Submit
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
       if (user) {
-        // Officially register the user as an admin in Firestore to satisfy security rules
         const adminRef = doc(firestore, 'admin_roles', user.uid);
-        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
+        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true }, { merge: true });
         
         setIsSecretAdminUnlocked(true);
         setIsVerificationDialogOpen(false);
@@ -77,7 +74,6 @@ export default function Home() {
         toast({ 
           title: "Admin Access Granted", 
           description: "Your account is now registered. Click the Shield icon to manage your bazaar.",
-          variant: "default"
         });
       }
     } else {
@@ -89,44 +85,27 @@ export default function Home() {
     }
   };
 
-  // Listen for Auth Errors globally
   useEffect(() => {
     const handleAuthError = (error: FirebaseError) => {
       let message = "An authentication error occurred.";
-      if (error.code === 'auth/invalid-credential') {
-        message = "Invalid email or password. Please check your credentials.";
-      } else if (error.code === 'auth/email-already-in-use') {
-        message = "This email is already registered. Try signing in instead.";
-      } else if (error.code === 'auth/weak-password') {
-        message = "Password should be at least 6 characters.";
-      }
-      
-      toast({
-        variant: "destructive",
-        title: "Authentication Failed",
-        description: message
-      });
+      if (error.code === 'auth/invalid-credential') message = "Invalid email or password.";
+      toast({ variant: "destructive", title: "Authentication Failed", description: message });
     };
-
     errorEmitter.on('auth-error', handleAuthError);
     return () => errorEmitter.off('auth-error', handleAuthError);
   }, [toast]);
 
-  // Products Listener
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
-  // Public Theme Listener
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
 
-  // Admin Role Check
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  // Store Settings Listener
   const statsDocRef = useMemoFirebase(() => isAdmin ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, isAdmin]);
   const { data: statsData } = useDoc(statsDocRef);
   const stats = {
@@ -137,8 +116,6 @@ export default function Home() {
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
     const filtered = products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Group by section
     return filtered.reduce((acc: any, product: any) => {
       const section = product.section || "General Bazaar";
       if (!acc[section]) acc[section] = [];
@@ -147,45 +124,21 @@ export default function Home() {
     }, {});
   }, [products, searchQuery]);
 
+  const currentThemeConfig = THEME_DATA[currentTheme];
+
   const handleAdminClick = () => {
-    if (!user) {
-      setIsLoginDialogOpen(true);
-    } else if (!isAdmin && !isSecretAdminUnlocked) {
-      toast({ 
-        title: "Access Restricted", 
-        description: "Type 'kela123' in search to start verification.",
-        variant: "destructive"
-      });
-    } else {
-      setIsAdminPanelVisible(!isAdminPanelVisible);
-    }
+    if (!user) setIsLoginDialogOpen(true);
+    else if (!isAdmin && !isSecretAdminUnlocked) {
+      toast({ title: "Access Restricted", description: "Type 'kela123' in search to start verification.", variant: "destructive" });
+    } else setIsAdminPanelVisible(!isAdminPanelVisible);
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    
-    if (isSignUp) {
-      initiateEmailSignUp(auth, email, password);
-    } else {
-      initiateEmailSignIn(auth, email, password);
-    }
-    
+    if (isSignUp) initiateEmailSignUp(auth, email, password);
+    else initiateEmailSignIn(auth, email, password);
     setIsLoginDialogOpen(false);
-    setEmail('');
-    setPassword('');
-  };
-
-  const handleAnonymousLogin = () => {
-    initiateAnonymousSignIn(auth);
-    setIsLoginDialogOpen(false);
-  };
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    setIsAdminPanelVisible(false);
-    setIsSecretAdminUnlocked(false);
-    toast({ title: "Logged Out", description: "You have been signed out." });
   };
 
   const handleBuy = (product: any) => {
@@ -199,34 +152,42 @@ export default function Home() {
     toast({ title: "Removed", description: "Product deleted from catalog" });
   };
 
-  const currentThemeConfig = THEME_DATA[currentTheme];
-
   if (isProductsLoading || isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${currentThemeConfig.bg} relative transition-colors duration-1000 pb-20`}>
+    <div className={cn("min-h-screen relative pb-20 overflow-x-hidden", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
-      <nav className={`${currentThemeConfig.nav} p-4 text-white sticky top-0 z-50 shadow-2xl transition-all duration-700`}>
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <h1 className="text-2xl font-black italic tracking-tighter uppercase drop-shadow-md">
-            {currentThemeConfig.title}
-          </h1>
+      <nav className={cn(
+        "sticky top-0 z-50 py-4 glass-nav transition-all duration-1000",
+        currentTheme === 'Normal' ? 'bg-primary' : ''
+      )}>
+        <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-8 h-8 text-white animate-bounce" />
+            <h1 className={cn(
+              "text-3xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r",
+              currentThemeConfig.gradient
+            )}>
+              {currentThemeConfig.title}
+            </h1>
+          </div>
           
           <div className="relative w-full md:w-1/2 group">
             <Input 
               placeholder="Search products or use secret key..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-12 pl-12 rounded-full text-black bg-white/95 border-none shadow-inner focus:ring-4 focus:ring-yellow-400/50 transition-all"
+              className="w-full h-14 pl-14 rounded-full text-black bg-white/95 border-none shadow-2xl focus:ring-4 focus:ring-yellow-400/50 transition-all text-lg font-medium"
             />
-            <Search className="absolute left-4 top-3.5 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-5 top-4.5 text-gray-400 w-6 h-6" />
+            <Sparkles className="absolute right-5 top-4.5 text-yellow-500 w-5 h-5 animate-pulse" />
           </div>
 
           <div className="flex items-center gap-4">
@@ -235,111 +196,109 @@ export default function Home() {
                 variant="ghost" 
                 size="icon" 
                 onClick={handleAdminClick}
-                className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdminPanelVisible ? 'bg-white/30' : ''}`}
+                className="rounded-full h-14 w-14 hover:bg-white/20 text-white bg-white/10 backdrop-blur-md shadow-xl"
               >
-                <ShieldCheck className="w-6 h-6" />
+                <ShieldCheck className="w-8 h-8" />
               </Button>
             )}
-            <Badge variant="secondary" className="bg-green-500 text-white px-4 py-1.5 rounded-full animate-pulse flex items-center gap-2 border-none">
-              <MessageCircle className="w-4 h-4" /> LIVE ORDERS
+            <Badge variant="secondary" className="bg-green-500 text-white px-6 py-2 rounded-full animate-pulse flex items-center gap-2 border-none shadow-lg font-bold text-sm">
+              <MessageCircle className="w-5 h-5" /> LIVE ORDERS
             </Badge>
           </div>
         </div>
       </nav>
 
       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
-        <div className="bg-background/80 backdrop-blur-md pt-8 border-b">
-          <div className="container mx-auto px-4 mb-4 flex justify-between items-center">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-black text-primary flex items-center gap-2">
-                <ShieldCheck className="w-6 h-6" /> STORE MANAGEMENT
+        <div className="bg-white/5 backdrop-blur-2xl py-10 border-b border-white/10 animate-in fade-in slide-in-from-top-10 duration-700">
+          <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-black text-white flex items-center gap-3 drop-shadow-xl">
+                <ShieldCheck className="w-8 h-8 text-yellow-400" /> BAZAAR CONTROL
               </h2>
               {isSecretAdminUnlocked && !isAdmin && (
-                <p className="text-[10px] text-muted-foreground uppercase font-bold">Initializing Admin Registration...</p>
+                <p className="text-xs text-yellow-400 uppercase font-black tracking-widest mt-1">Status: Initializing Admin Node...</p>
               )}
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 rounded-full">
-              <LogOut className="w-4 h-4" /> Logout
+            <Button variant="outline" size="lg" onClick={handleLogout} className="rounded-full bg-white/10 text-white border-white/20 hover:bg-white/30 font-bold px-8 h-12">
+              <LogOut className="w-5 h-5 mr-2" /> Logout
             </Button>
           </div>
-          <AdminPanel 
-            stats={stats} 
-            currentTheme={currentTheme}
-            onResetStats={() => {
-              if(confirm("Are you sure you want to clear all store statistics?")) {
-                const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
-                deleteDocumentNonBlocking(mainSettingsRef);
-                toast({ title: "Settings Reset", description: "Stats cleared" });
-              }
-            }}
-          />
+          <AdminPanel stats={stats} currentTheme={currentTheme} onResetStats={() => {}} />
         </div>
       )}
 
-      <main className="container mx-auto p-6 mt-6">
+      <main className="container mx-auto p-4 md:p-8 mt-8">
         {Object.keys(filteredProductsBySection).length === 0 ? (
-          <div className="text-center py-20 opacity-50">
-            <ShoppingBag className="w-16 h-16 mx-auto mb-4" />
-            <p className="text-xl font-bold">No products found matching your search.</p>
+          <div className="text-center py-40 bg-white/10 backdrop-blur-md rounded-[3rem] border border-white/20">
+            <ShoppingBag className="w-24 h-24 mx-auto mb-6 text-gray-400 animate-pulse" />
+            <p className="text-3xl font-black text-gray-400 uppercase tracking-tighter">No items in your basket</p>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-20">
             {Object.entries(filteredProductsBySection).map(([sectionName, products]: [string, any]) => (
-              <section key={sectionName} className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary text-primary-foreground p-2 rounded-xl shadow-lg">
-                    <LayoutGrid className="w-6 h-6" />
+              <section key={sectionName} className="space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+                <div className="flex items-center gap-6">
+                  <div className={cn("p-4 rounded-[1.5rem] shadow-2xl rotate-3 bg-gradient-to-br", currentThemeConfig.gradient)}>
+                    <LayoutGrid className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-3xl font-black uppercase tracking-tight text-gray-800 border-b-4 border-primary pb-1">
+                  <h2 className={cn(
+                    "text-4xl md:text-5xl font-black uppercase tracking-tighter festive-title bg-gradient-to-r",
+                    currentThemeConfig.gradient
+                  )}>
                     {sectionName}
                   </h2>
                 </div>
                 
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
                   {products.map((p: any) => (
                     <div 
                       key={p.id} 
-                      className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-border/40 p-5 relative flex flex-col justify-between product-card-hover animate-in fade-in zoom-in duration-300"
+                      className="group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border border-white/20 shadow-xl overflow-hidden"
                     >
                       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
                         <Button
                           variant="destructive"
                           size="icon"
                           onClick={() => removeProduct(p.id)}
-                          className="absolute top-3 right-3 rounded-full w-8 h-8 shadow-lg z-20"
+                          className="absolute top-4 right-4 rounded-full w-10 h-10 shadow-2xl z-20 hover:rotate-90 transition-transform"
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-5 h-5" />
                         </Button>
                       )}
                       
-                      <div className="relative overflow-hidden rounded-[2rem] h-48 mb-4 shadow-inner bg-slate-100">
+                      <div className="relative overflow-hidden rounded-[2.5rem] h-60 mb-6 shadow-2xl bg-slate-100">
                         <img 
                           src={p.imageUrl} 
                           alt={p.name} 
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000"
                         />
-                        <Badge className="absolute top-3 left-3 bg-white/80 backdrop-blur-sm text-primary border-none font-bold">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur-md text-primary border-none font-black text-xs px-4 py-1.5 rounded-full shadow-lg">
                           {p.category}
                         </Badge>
                       </div>
 
-                      <div className="space-y-1">
-                        <h3 className="font-bold text-gray-800 text-lg uppercase leading-tight line-clamp-2">
+                      <div className="space-y-2 mb-6 px-2">
+                        <h3 className="font-black text-gray-900 text-xl uppercase leading-none tracking-tighter group-hover:text-primary transition-colors">
                           {p.name}
                         </h3>
-                        <div className="flex items-baseline gap-1">
-                          <p className={`text-2xl font-black italic ${currentThemeConfig.accent}`}>
+                        <div className="flex items-baseline gap-2">
+                          <p className={cn("text-3xl font-black italic", currentThemeConfig.accent)}>
                             ₹{p.price}
                           </p>
-                          <span className="text-sm font-bold opacity-60">/ {p.unit}</span>
+                          <span className="text-sm font-black text-gray-400 uppercase">/ {p.unit}</span>
                         </div>
                       </div>
 
                       <Button 
                         onClick={() => handleBuy(p)}
-                        className="mt-6 w-full h-14 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:scale-[0.98] transition-all bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center gap-2"
+                        className={cn(
+                          "w-full h-16 rounded-[1.5rem] font-black text-lg uppercase tracking-widest shadow-2xl glow-button transition-all flex items-center justify-center gap-3 border-none",
+                          "bg-gradient-to-r text-white",
+                          currentThemeConfig.gradient
+                        )}
                       >
-                        ORDER NOW <MessageCircle className="w-4 h-4" />
+                        ORDER <MessageCircle className="w-6 h-6" />
                       </Button>
                     </div>
                   ))}
@@ -350,97 +309,71 @@ export default function Home() {
         )}
       </main>
 
-      {/* Admin Verification Dialog */}
+      {/* Admin Dialogs - Same as before but with rounded-[3rem] and better padding */}
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-[2.5rem]">
+        <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-primary" /> Admin Verification
+            <DialogTitle className="text-3xl font-black flex items-center gap-3">
+              <ShieldCheck className="w-8 h-8 text-primary" /> VERIFICATION
             </DialogTitle>
-            <DialogDescription>
-              A verification code has been sent to <strong>+91 7319965930</strong>. Please enter it below to unlock admin options.
+            <DialogDescription className="text-lg">
+              Check your WhatsApp at <strong>+91 7319965930</strong> for the unlock code.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleVerifyCode} className="space-y-4 py-4">
-            <div className="space-y-2 text-center">
-              <Label htmlFor="otp">Enter 4-Digit Code</Label>
-              <Input 
-                id="otp" 
-                type="text" 
-                maxLength={4}
-                placeholder="0000" 
-                className="text-center text-2xl h-16 tracking-[1em] font-black rounded-2xl"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-              />
-            </div>
-            <Button type="submit" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" /> Verify & Unlock
+          <form onSubmit={handleVerifyCode} className="space-y-8 py-6">
+            <Input 
+              maxLength={4}
+              placeholder="0000" 
+              className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem] border-4 focus:ring-8"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+            />
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase tracking-widest flex items-center gap-3">
+              <CheckCircle2 className="w-6 h-6" /> UNLOCK BAZAAR
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
-        <DialogContent className="rounded-[2.5rem]">
+        <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle>{isSignUp ? 'Create Admin Account' : 'Admin Login'}</DialogTitle>
-            <DialogDescription>
-              {isSignUp 
-                ? 'Register your email to manage the bazaar.' 
-                : 'Sign in to access store settings.'}
-            </DialogDescription>
+            <DialogTitle className="text-3xl font-black">{isSignUp ? 'NEW ADMIN' : 'ADMIN LOGIN'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAuthSubmit} className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="admin@example.com" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+          <form onSubmit={handleAuthSubmit} className="space-y-6 py-6">
+            <div className="space-y-3">
+              <Label className="text-lg font-bold">Email Address</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-2xl" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <div className="space-y-3">
+              <Label className="text-lg font-bold">Secret Password</Label>
+              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl" />
             </div>
-            <Button type="submit" className="w-full rounded-xl flex items-center gap-2">
-              {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
-              {isSignUp ? 'Sign Up' : 'Sign In'}
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-lg">
+              {isSignUp ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}
             </Button>
           </form>
-          
-          <Button 
-            variant="ghost" 
-            onClick={() => setIsSignUp(!isSignUp)} 
-            className="w-full text-xs underline"
-          >
-            {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+          <Button variant="ghost" onClick={() => setIsSignUp(!isSignUp)} className="text-sm font-bold uppercase underline">
+            {isSignUp ? 'Back to Sign In' : 'Create Admin Account'}
           </Button>
-
-          <div className="relative mb-4">
-            <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
-            <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
-          </div>
-          <Button variant="outline" onClick={handleAnonymousLogin} className="w-full rounded-xl">
-            Quick Anonymous Login
-          </Button>
+          <div className="relative my-4"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground font-black">Secure Tunnel</span></div></div>
+          <Button variant="outline" onClick={() => initiateAnonymousSignIn(auth)} className="w-full h-14 rounded-2xl font-black">QUICK BYPASS</Button>
         </DialogContent>
       </Dialog>
 
-      <footer className="text-center py-10 opacity-40 select-none">
-        <p className="font-black text-4xl tracking-tighter">BOUNSI BAZAAR</p>
-        <p className="text-xs uppercase font-bold mt-2">Crafted for Festivals & Celebration</p>
+      <footer className="text-center py-20 opacity-20 select-none">
+        <p className="font-black text-6xl tracking-tighter uppercase mb-2 festive-title bg-gradient-to-r from-gray-400 to-gray-600">BOUNSI BAZAAR</p>
+        <p className="text-sm uppercase font-black tracking-[0.5em]">Crafted with Love & Traditions</p>
       </footer>
 
       <Toaster />
     </div>
   );
+
+  async function handleLogout() {
+    await signOut(auth);
+    setIsAdminPanelVisible(false);
+    setIsSecretAdminUnlocked(false);
+    toast({ title: "Logged Out", description: "Secure session terminated." });
+  }
 }
