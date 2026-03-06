@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Layers, Ruler } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Layers, Ruler, TrendingUp, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AdminPanelProps {
@@ -43,6 +43,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
+
+  // Fetch Orders for Stats
+  const ordersQuery = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+  const { data: orders } = useCollection(ordersQuery);
+
+  const topSellers = useMemo(() => {
+    if (!orders) return [];
+    const counts: Record<string, { name: string; count: number; revenue: number }> = {};
+    orders.forEach((o: any) => {
+      const pName = o.productName || 'Unknown';
+      if (!counts[pName]) counts[pName] = { name: pName, count: 0, revenue: 0 };
+      counts[pName].count += (o.quantity || 1);
+      counts[pName].revenue += (o.amount || 0);
+    });
+    return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
+  }, [orders]);
 
   useEffect(() => {
     if (settings) {
@@ -99,6 +115,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
     <div className="container mx-auto p-4 space-y-8 pb-20">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
+        {/* Analytics Section */}
+        <div className="lg:col-span-3">
+          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/95 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="font-black flex items-center gap-2 text-blue-600 uppercase tracking-tighter">
+                <TrendingUp className="w-6 h-6 text-blue-600" /> BAZAAR TOP SELLERS (MOST BOUGHT)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {topSellers.length > 0 ? topSellers.map((product, idx) => (
+                  <div key={idx} className="bg-blue-50 p-6 rounded-[2rem] border border-blue-100 flex flex-col gap-2">
+                    <div className="flex justify-between items-start">
+                      <span className="text-blue-600 font-black text-2xl">#{idx + 1}</span>
+                      <ShoppingCart className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <p className="text-blue-900 font-black uppercase text-sm truncate">{product.name}</p>
+                    <p className="text-blue-600 font-bold text-xs uppercase tracking-widest">{product.count} ORDERS</p>
+                    <p className="text-blue-500 font-bold text-[10px] mt-2">TOTAL: ₹{product.revenue}</p>
+                  </div>
+                )) : (
+                  <div className="col-span-full py-10 text-center text-blue-300 font-bold uppercase">No sales data available yet</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Theme & Store Settings */}
         <div className="space-y-8">
           <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/95 backdrop-blur-xl">
