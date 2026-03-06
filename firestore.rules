@@ -1,79 +1,42 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * BOUNSI BAZAAR SECURITY RULES
-     *
-     * Core Philosophy:
-     * This ruleset implements a strict Administrative Access Control (DBAC) model combined with 
-     * public read access for storefront data. Security is managed through structural segregation 
-     * and a dedicated admin roles collection.
-     */
-
-    // --- Helper Functions ---
-
-    /**
-     * @description Checks if the request is from an authenticated user.
-     */
     function isSignedIn() {
       return request.auth != null;
     }
-
-    /**
-     * @description Verifies if the authenticated user has an entry in the admin_roles collection.
-     */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid));
     }
-
-    /**
-     * @description Checks if a document exists and the requester is an admin.
-     * Used for update and delete operations.
-     */
-    function isExistingAdmin() {
-      return isAdmin() && resource != null;
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
-    // --- Collection Rules ---
-
-    /**
-     * @description Rules for the product catalog. Publicly viewable, admin-only writes.
-     */
     match /products/{productId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      allow write: if isAdmin();
     }
-
-    /**
-     * @description Marker collection for admin roles.
-     * We allow users to create their own admin role document after successful verification.
-     */
     match /admin_roles/{adminUid} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
       allow create: if isSignedIn() && request.auth.uid == adminUid;
       allow update, delete: if isAdmin() && request.auth.uid == adminUid;
     }
-
-    /**
-     * @description Singleton for sensitive global store statistics and configuration.
-     * Relaxed 'get' to any signed-in user to avoid race condition crashes during admin elevation.
-     */
     match /storeSettings/mainSettings {
       allow get: if isSignedIn();
-      allow list, create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      allow write: if isAdmin();
     }
-
-    /**
-     * @description Singleton for public-facing UI configurations (e.g., festival themes).
-     */
     match /publicDisplaySettings/theme {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isExistingAdmin();
+      allow write: if isAdmin();
+    }
+    match /coupons/{couponId} {
+      allow get: if true;
+      allow list, write: if isAdmin();
+    }
+    match /userProfiles/{userId} {
+      allow get, write: if isOwner(userId);
+      allow list: if isAdmin();
     }
   }
 }

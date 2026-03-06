@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard, Pin, QrCode } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, LogOut, LayoutGrid, CheckCircle2, Sparkles, Banknote, CreditCard, Pin, QrCode, MapPin, Clock, Phone, Ticket } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,7 @@ import {
   setDocumentNonBlocking,
   errorEmitter
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,14 @@ export default function Home() {
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
+  const [isCouponDialogOpen, setIsCouponDialogOpen] = useState(false);
+  
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [couponCode, setCouponCode] = useState('');
+  const [activeCoupon, setActiveCoupon] = useState<any>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+
   const [verificationCode, setVerificationCode] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -52,13 +60,13 @@ export default function Home() {
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
 
+  const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
+  const { data: profile } = useDoc(profileRef);
+
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
-      if (!user) {
-        setIsLoginDialogOpen(true);
-      } else {
-        setIsVerificationDialogOpen(true);
-      }
+      if (!user) setIsLoginDialogOpen(true);
+      else setIsVerificationDialogOpen(true);
       setSearchQuery('');
     }
   }, [searchQuery, user]);
@@ -69,33 +77,15 @@ export default function Home() {
       if (user) {
         const adminRef = doc(firestore, 'admin_roles', user.uid);
         setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
-        
         setIsSecretAdminUnlocked(true);
         setIsVerificationDialogOpen(false);
         setVerificationCode('');
-        toast({ 
-          title: "Admin Access Granted", 
-          description: "Your account is now registered. Click the Shield icon to manage your bazaar.",
-        });
+        toast({ title: "Admin Access Granted" });
       }
     } else {
-      toast({
-        title: "Invalid Code",
-        description: "The verification code is incorrect.",
-        variant: "destructive"
-      });
+      toast({ title: "Invalid Code", variant: "destructive" });
     }
   };
-
-  useEffect(() => {
-    const handleAuthError = (error: FirebaseError) => {
-      let message = "An authentication error occurred.";
-      if (error.code === 'auth/invalid-credential') message = "Invalid email or password.";
-      toast({ variant: "destructive", title: "Authentication Failed", description: message });
-    };
-    errorEmitter.on('auth-error', handleAuthError);
-    return () => errorEmitter.off('auth-error', handleAuthError);
-  }, [toast]);
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
@@ -103,31 +93,16 @@ export default function Home() {
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
+  const currentThemeConfig = THEME_DATA[currentTheme];
 
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  const statsDocRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
-  const { data: statsData } = useDoc(statsDocRef);
-  const stats = {
-    orders: statsData?.totalOrders || 0,
-    earnings: statsData?.totalEarnings || 0,
-    upiId: statsData?.upiId || '',
-    upiQrUrl: statsData?.upiQrUrl || ''
-  };
-
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
-    
-    // First, sort products to put pinned ones at the top
-    const sorted = [...products].sort((a, b) => {
-      if (a.isPinned === b.isPinned) return 0;
-      return a.isPinned ? -1 : 1;
-    });
-
+    const sorted = [...products].sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
     const filtered = sorted.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
-    
     return filtered.reduce((acc: any, product: any) => {
       const section = product.section || "General Bazaar";
       if (!acc[section]) acc[section] = [];
@@ -136,324 +111,212 @@ export default function Home() {
     }, {});
   }, [products, searchQuery]);
 
-  const currentThemeConfig = THEME_DATA[currentTheme];
-
-  const handleAdminClick = () => {
-    if (!user) setIsLoginDialogOpen(true);
-    else if (!isAdmin && !isSecretAdminUnlocked) {
-      toast({ title: "Access Restricted", description: "Type 'kela123' in search to start verification.", variant: "destructive" });
-    } else setIsAdminPanelVisible(!isAdminPanelVisible);
-  };
-
-  const handleAuthSubmit = (e: React.FormEvent) => {
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
-    if (isSignUp) initiateEmailSignUp(auth, email, password);
-    else initiateEmailSignIn(auth, email, password);
-    setIsLoginDialogOpen(false);
-  };
-
-  const handleBuy = (product: any) => {
-    const paymentMethods = [];
-    if (product.isCodAvailable) paymentMethods.push("Cash on Delivery (COD)");
-    if (product.isUpiAvailable) {
-      paymentMethods.push("Pay to UPI");
-      if (stats.upiId) paymentMethods.push(`UPI ID: ${stats.upiId}`);
+    if (phoneNumber.length < 10) return toast({ title: "Invalid Number" });
+    
+    const q = query(collection(firestore, 'userProfiles'), where('phoneNumber', '==', phoneNumber));
+    const snap = await getDocs(q);
+    
+    if (!snap.empty && snap.docs[0].id !== user?.uid) {
+      return toast({ title: "Error", description: "This number is already linked to another account.", variant: "destructive" });
     }
-    
-    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price} / ${product.unit}\nSection: ${product.section}\n\nAvailable Payment Methods: ${paymentMethods.join(", ") || "Contact for details"}\n\nPlease confirm my order.`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
-    
-    if (product.isUpiAvailable && (stats.upiQrUrl || stats.upiId)) {
-      setIsPaymentDialogOpen(true);
+
+    if (user) {
+      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber, usedCoupons: profile?.usedCoupons || [] }, { merge: true });
+      setIsPhoneDialogOpen(false);
+      toast({ title: "Phone Linked", description: "Your number is now secure." });
     }
   };
 
-  const removeProduct = (id: string) => {
-    const productRef = doc(firestore, 'products', id);
-    deleteDocumentNonBlocking(productRef);
-    toast({ title: "Removed", description: "Product deleted from catalog" });
+  const handleCouponApply = async () => {
+    if (!couponCode) return;
+    const q = query(collection(firestore, 'coupons'), where('code', '==', couponCode.toUpperCase()));
+    const snap = await getDocs(q);
+    
+    if (snap.empty) return toast({ title: "Invalid Coupon" });
+    const couponData = snap.docs[0].data();
+
+    if (profile?.usedCoupons?.includes(couponCode.toUpperCase())) {
+      return toast({ title: "Used", description: "You have already used this coupon once.", variant: "destructive" });
+    }
+
+    setActiveCoupon({ id: snap.docs[0].id, ...couponData });
+    toast({ title: "Coupon Applied!", description: "50% discount added." });
+    setIsCouponDialogOpen(false);
   };
 
-  async function handleLogout() {
-    await signOut(auth);
-    setIsAdminPanelVisible(false);
-    setIsSecretAdminUnlocked(false);
-    toast({ title: "Logged Out", description: "Secure session terminated." });
-  }
+  const handleBuyRequest = (product: any) => {
+    if (!user || !profile?.phoneNumber) {
+      setSelectedProduct(product);
+      setIsPhoneDialogOpen(true);
+      return;
+    }
+    setSelectedProduct(product);
+    if (product.price >= 299) setIsCouponDialogOpen(true);
+    else finalizeOrder(product, null);
+  };
+
+  const finalizeOrder = (product: any, coupon: any) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const locLink = `https://www.google.com/maps?q=${lat},${lng}`;
+        
+        let finalPrice = product.price;
+        let couponNote = "";
+        if (coupon && product.price >= 299) {
+          finalPrice = product.price * 0.5;
+          couponNote = `\nCoupon Applied: ${coupon.code} (50% OFF)`;
+          setDocumentNonBlocking(doc(firestore, 'userProfiles', user!.uid), {
+            usedCoupons: [...(profile?.usedCoupons || []), coupon.code]
+          }, { merge: true });
+        }
+
+        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nFinal Price: ₹${finalPrice}${couponNote}\nUnit: ${product.unit}\n\nDelivery Speed: 45 Minutes Max ⚡\nLocation: ${locLink}\n\nPhone: ${profile?.phoneNumber}`;
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+        
+        setActiveCoupon(null);
+        setSelectedProduct(null);
+      },
+      () => toast({ title: "Location Denied", description: "Please enable location to order.", variant: "destructive" })
+    );
+  };
 
   if (isProductsLoading || isUserLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center bg-slate-50"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   }
 
   return (
     <div className={cn("min-h-screen relative pb-20 overflow-x-hidden", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
-      <nav className={cn(
-        "sticky top-0 z-50 py-4 glass-nav transition-all duration-1000",
-        currentTheme === 'Normal' ? 'bg-primary' : ''
-      )}>
+      <nav className={cn("sticky top-0 z-50 py-4 glass-nav transition-all duration-1000", currentTheme === 'Normal' ? 'bg-primary' : '')}>
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-8 h-8 text-white animate-bounce" />
-            <h1 className={cn(
-              "text-3xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r",
-              currentThemeConfig.gradient
-            )}>
+            <h1 className={cn("text-3xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
               {currentThemeConfig.title}
             </h1>
           </div>
           
           <div className="relative w-full md:w-1/2 group">
-            <Input 
-              placeholder="Search products or use secret key..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-14 pl-14 rounded-full text-black bg-white/95 border-none shadow-2xl focus:ring-4 focus:ring-yellow-400/50 transition-all text-lg font-medium"
-            />
+            <Input placeholder="Search Bazaar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-14 pl-14 rounded-full text-black bg-white/95 shadow-2xl text-lg" />
             <Search className="absolute left-5 top-4.5 text-gray-400 w-6 h-6" />
-            <Sparkles className="absolute right-5 top-4.5 text-yellow-500 w-5 h-5 animate-pulse" />
           </div>
 
           <div className="flex items-center gap-4">
+            <Badge variant="secondary" className="bg-yellow-400 text-black px-4 py-2 rounded-full flex items-center gap-2 font-black text-xs shadow-lg animate-pulse">
+              <Clock className="w-4 h-4" /> 45MIN DELIVERY
+            </Badge>
             {(isAdmin || isSecretAdminUnlocked) && (
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleAdminClick}
-                className="rounded-full h-14 w-14 hover:bg-white/20 text-white bg-white/10 backdrop-blur-md shadow-xl"
-              >
+              <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-full h-14 w-14 text-white bg-white/10 backdrop-blur-md shadow-xl">
                 <ShieldCheck className="w-8 h-8" />
               </Button>
             )}
-            <Badge variant="secondary" className="bg-green-500 text-white px-6 py-2 rounded-full animate-pulse flex items-center gap-2 border-none shadow-lg font-bold text-sm">
-              <MessageCircle className="w-5 h-5" /> LIVE ORDERS
-            </Badge>
           </div>
         </div>
       </nav>
 
       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
-        <div className="bg-white/5 backdrop-blur-2xl py-10 border-b border-white/10 animate-in fade-in slide-in-from-top-10 duration-700">
+        <div className="bg-white/5 backdrop-blur-2xl py-10 border-b border-white/10">
           <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
-            <div>
-              <h2 className="text-3xl font-black text-white flex items-center gap-3 drop-shadow-xl">
-                <ShieldCheck className="w-8 h-8 text-yellow-400" /> BAZAAR CONTROL
-              </h2>
-              {isSecretAdminUnlocked && !isAdmin && (
-                <p className="text-xs text-yellow-400 uppercase font-black tracking-widest mt-1">Status: Initializing Admin Node...</p>
-              )}
-            </div>
-            <Button variant="outline" size="lg" onClick={handleLogout} className="rounded-full bg-white/10 text-white border-white/20 hover:bg-white/30 font-bold px-8 h-12">
+            <h2 className="text-3xl font-black text-white flex items-center gap-3">ADMIN HUB</h2>
+            <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-white/10 text-white border-white/20">
               <LogOut className="w-5 h-5 mr-2" /> Logout
             </Button>
           </div>
-          <AdminPanel stats={stats} currentTheme={currentTheme} onResetStats={() => {}} />
+          <AdminPanel stats={{orders: 0, earnings: 0}} currentTheme={currentTheme} onResetStats={() => {}} />
         </div>
       )}
 
       <main className="container mx-auto p-4 md:p-8 mt-8">
-        {Object.keys(filteredProductsBySection).length === 0 ? (
-          <div className="text-center py-40 bg-white/10 backdrop-blur-md rounded-[3rem] border border-white/20">
-            <ShoppingBag className="w-24 h-24 mx-auto mb-6 text-gray-400 animate-pulse" />
-            <p className="text-3xl font-black text-gray-400 uppercase tracking-tighter">No items in your basket</p>
-          </div>
-        ) : (
-          <div className="space-y-20">
-            {Object.entries(filteredProductsBySection).map(([sectionName, products]: [string, any]) => (
-              <section key={sectionName} className="space-y-8 animate-in fade-in slide-in-from-bottom-10 duration-1000">
-                <div className="flex items-center gap-6">
-                  <div className={cn("p-4 rounded-[1.5rem] shadow-2xl rotate-3 bg-gradient-to-br", currentThemeConfig.gradient)}>
-                    <LayoutGrid className="w-8 h-8 text-white" />
-                  </div>
-                  <h2 className={cn(
-                    "text-4xl md:text-5xl font-black uppercase tracking-tighter festive-title bg-gradient-to-r",
-                    currentThemeConfig.gradient
-                  )}>
-                    {sectionName}
-                  </h2>
-                </div>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
-                  {products.map((p: any) => (
-                    <div 
-                      key={p.id} 
-                      className={cn(
-                        "group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border shadow-xl overflow-hidden",
-                        p.isPinned ? "border-yellow-400 ring-2 ring-yellow-400/20" : "border-white/20"
-                      )}
-                    >
-                      {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => removeProduct(p.id)}
-                          className="absolute top-4 right-4 rounded-full w-10 h-10 shadow-2xl z-20 hover:rotate-90 transition-transform"
-                        >
-                          <X className="w-5 h-5" />
-                        </Button>
-                      )}
-                      
-                      <div className="relative overflow-hidden rounded-[2.5rem] h-60 mb-6 shadow-2xl bg-slate-100">
-                        <img 
-                          src={p.imageUrl} 
-                          alt={p.name} 
-                          className="w-full h-full object-cover group-hover:scale-125 transition-transform duration-1000"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                          <Badge className="bg-white/90 backdrop-blur-md text-primary border-none font-black text-xs px-4 py-1.5 rounded-full shadow-lg w-fit">
-                            {p.category}
-                          </Badge>
-                          {p.isPinned && (
-                            <Badge className="bg-yellow-400 text-black border-none font-black text-[10px] px-3 py-1 rounded-full shadow-lg flex items-center gap-1">
-                              <Pin className="w-3 h-3 fill-current" /> PINNED
-                            </Badge>
-                          )}
-                          <div className="flex gap-1">
-                            {p.isCodAvailable && (
-                              <Badge className="bg-emerald-500/90 backdrop-blur-md text-white border-none p-1.5 rounded-full shadow-lg" title="COD Available">
-                                <Banknote className="w-3 h-3" />
-                              </Badge>
-                            )}
-                            {p.isUpiAvailable && (
-                              <Badge className="bg-indigo-500/90 backdrop-blur-md text-white border-none p-1.5 rounded-full shadow-lg" title="UPI Payment Supported">
-                                <CreditCard className="w-3 h-3" />
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
+        <div className="space-y-20">
+          {Object.entries(filteredProductsBySection).map(([sectionName, items]: [string, any]) => (
+            <section key={sectionName} className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className={cn("p-4 rounded-3xl shadow-xl bg-gradient-to-br", currentThemeConfig.gradient)}><LayoutGrid className="w-6 h-6 text-white" /></div>
+                <h2 className={cn("text-4xl font-black uppercase tracking-tighter festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>{sectionName}</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {items.map((p: any) => (
+                  <div key={p.id} className="group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border border-white/20 shadow-xl bg-white/90">
+                    <div className="relative overflow-hidden rounded-[2.5rem] h-60 mb-6 bg-slate-100">
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                      <div className="absolute top-4 left-4 flex flex-col gap-2">
+                        {p.isPinned && <Badge className="bg-yellow-400 text-black px-3 py-1 rounded-full text-[10px] font-black"><Pin className="w-3 h-3 mr-1" /> PINNED</Badge>}
+                        {p.price >= 299 && <Badge className="bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black animate-bounce"><Ticket className="w-3 h-3 mr-1" /> 50% COUPON</Badge>}
                       </div>
-
-                      <div className="space-y-2 mb-6 px-2">
-                        <h3 className="font-black text-gray-900 text-xl uppercase leading-none tracking-tighter group-hover:text-primary transition-colors">
-                          {p.name}
-                        </h3>
-                        <div className="flex items-baseline gap-2">
-                          <p className={cn("text-3xl font-black italic", currentThemeConfig.accent)}>
-                            ₹{p.price}
-                          </p>
-                          <span className="text-sm font-black text-gray-400 uppercase">/ {p.unit}</span>
-                        </div>
-                      </div>
-
-                      <Button 
-                        onClick={() => handleBuy(p)}
-                        className={cn(
-                          "w-full h-16 rounded-[1.5rem] font-black text-lg uppercase tracking-widest shadow-2xl glow-button transition-all flex items-center justify-center gap-3 border-none",
-                          "bg-gradient-to-r text-white",
-                          currentThemeConfig.gradient
-                        )}
-                      >
-                        ORDER <MessageCircle className="w-6 h-6" />
-                      </Button>
                     </div>
-                  ))}
-                </div>
-              </section>
-            ))}
-          </div>
-        )}
+                    <div className="px-2 mb-6">
+                      <h3 className="font-black text-xl uppercase tracking-tighter mb-2">{p.name}</h3>
+                      <p className={cn("text-3xl font-black italic", currentThemeConfig.accent)}>₹{p.price} <span className="text-sm text-gray-400 uppercase">/ {p.unit}</span></p>
+                    </div>
+                    <Button onClick={() => handleBuyRequest(p)} className={cn("w-full h-16 rounded-[1.5rem] font-black text-lg uppercase shadow-2xl text-white border-none", currentThemeConfig.gradient)}>
+                      ORDER NOW <MessageCircle className="w-6 h-6 ml-2" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       </main>
 
-      {/* Admin Dialogs */}
-      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
+      {/* Phone Link Dialog */}
+      <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black flex items-center gap-3">
-              <ShieldCheck className="w-8 h-8 text-primary" /> VERIFICATION
-            </DialogTitle>
-            <DialogDescription className="text-lg">
-              Check your WhatsApp at <strong>+91 7319965930</strong> for the unlock code.
-            </DialogDescription>
+            <DialogTitle className="text-3xl font-black flex items-center gap-3"><Phone className="w-8 h-8 text-primary" /> LOGIN WITH PHONE</DialogTitle>
+            <DialogDescription>One phone number per account. Used for 45min delivery updates.</DialogDescription>
           </DialogHeader>
+          <form onSubmit={handlePhoneSubmit} className="space-y-6 py-4">
+            <Input type="tel" placeholder="Enter Mobile Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-16 text-2xl font-black rounded-2xl text-center" />
+            <Button type="submit" className="w-full h-16 rounded-2xl text-xl font-black">START BAZAAR</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Coupon Dialog */}
+      <Dialog open={isCouponDialogOpen} onOpenChange={setIsCouponDialogOpen}>
+        <DialogContent className="rounded-[3rem] p-10">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-black">HAVE A COUPON?</DialogTitle>
+            <DialogDescription>Apply a special 50% discount for orders over ₹299.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            <Input placeholder="ENTER CODE" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} className="h-16 text-3xl font-black text-center tracking-widest rounded-2xl" />
+            <div className="flex gap-4">
+              <Button onClick={() => finalizeOrder(selectedProduct, null)} variant="outline" className="flex-1 h-16 rounded-2xl font-black">SKIP</Button>
+              <Button onClick={handleCouponApply} className="flex-1 h-16 rounded-2xl font-black bg-emerald-600">APPLY</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
+        <DialogContent className="rounded-[3rem] p-10">
+          <DialogHeader><DialogTitle className="text-3xl font-black">ADMIN ACCESS</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-8 py-6">
-            <Input 
-              maxLength={4}
-              placeholder="0000" 
-              className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem] border-4 focus:ring-8"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value)}
-            />
-            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black uppercase tracking-widest flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6" /> UNLOCK BAZAAR
-            </Button>
+            <Input maxLength={4} placeholder="0000" className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem]" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black">UNLOCK BAZAAR</Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black">{isSignUp ? 'NEW ADMIN' : 'ADMIN LOGIN'}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAuthSubmit} className="space-y-6 py-6">
-            <div className="space-y-3">
-              <Label className="text-lg font-bold">Email Address</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-2xl" />
-            </div>
-            <div className="space-y-3">
-              <Label className="text-lg font-bold">Secret Password</Label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl" />
-            </div>
-            <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-lg">
-              {isSignUp ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}
-            </Button>
+          <DialogHeader><DialogTitle className="text-3xl font-black">ADMIN LOGIN</DialogTitle></DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); isSignUp ? initiateEmailSignUp(auth, email, password) : initiateEmailSignIn(auth, email, password); setIsLoginDialogOpen(false); }} className="space-y-6 py-6">
+            <Input type="email" value={email} placeholder="Email" onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-2xl" />
+            <Input type="password" value={password} placeholder="Password" onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl" />
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black">{isSignUp ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}</Button>
           </form>
-          <Button variant="ghost" onClick={() => setIsSignUp(!isSignUp)} className="text-sm font-bold uppercase underline">
-            {isSignUp ? 'Back to Sign In' : 'Create Admin Account'}
-          </Button>
-          <div className="relative my-4"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground font-black">Secure Tunnel</span></div></div>
-          <Button variant="outline" onClick={() => initiateAnonymousSignIn(auth)} className="w-full h-14 rounded-2xl font-black">QUICK BYPASS</Button>
+          <Button variant="ghost" onClick={() => setIsSignUp(!isSignUp)} className="text-xs font-black uppercase underline">Toggle Sign Up</Button>
         </DialogContent>
       </Dialog>
-
-      {/* Payment Details Dialog */}
-      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10 max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black flex items-center gap-3">
-              <QrCode className="w-7 h-7 text-primary" /> PAYMENT QR
-            </DialogTitle>
-            <DialogDescription>
-              Scan to pay for your order via UPI.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-6 py-4">
-            {stats.upiQrUrl ? (
-              <div className="p-4 bg-white rounded-2xl shadow-inner border-2 border-dashed border-gray-200">
-                <img src={stats.upiQrUrl} alt="UPI QR Code" className="w-64 h-64 object-contain" />
-              </div>
-            ) : (
-              <div className="w-64 h-64 flex items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-                <QrCode className="w-16 h-16 text-gray-300 animate-pulse" />
-              </div>
-            )}
-            
-            {stats.upiId && (
-              <div className="text-center space-y-2">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Merchant UPI ID</p>
-                <code className="bg-primary/10 text-primary px-4 py-2 rounded-xl font-bold text-lg select-all">
-                  {stats.upiId}
-                </code>
-              </div>
-            )}
-          </div>
-          <Button onClick={() => setIsPaymentDialogOpen(false)} className="w-full h-14 rounded-2xl font-black text-lg">
-            DONE
-          </Button>
-        </DialogContent>
-      </Dialog>
-
-      <footer className="text-center py-20 opacity-20 select-none">
-        <p className="font-black text-6xl tracking-tighter uppercase mb-2 festive-title bg-gradient-to-r from-gray-400 to-gray-600">BOUNSI BAZAAR</p>
-        <p className="text-sm uppercase font-black tracking-[0.5em]">Crafted with Love & Traditions</p>
-      </footer>
 
       <Toaster />
     </div>
