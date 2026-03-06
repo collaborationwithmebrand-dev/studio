@@ -19,7 +19,8 @@ import {
   useUser, 
   useMemoFirebase,
   setDocumentNonBlocking,
-  addDocumentNonBlocking
+  addDocumentNonBlocking,
+  initiateAnonymousSignIn
 } from '@/firebase';
 import { collection, doc, query, where, getDocs } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -53,6 +54,13 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
+
+  // Auto-sign in anonymously if not logged in to enable Firestore access
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
 
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(profileRef);
@@ -117,17 +125,10 @@ export default function Home() {
     e.preventDefault();
     if (phoneNumber.length < 10) return toast({ title: "Invalid Number" });
     
-    const q = query(collection(firestore, 'userProfiles'), where('phoneNumber', '==', phoneNumber));
-    const snap = await getDocs(q);
-    
-    if (!snap.empty && snap.docs[0].id !== user?.uid) {
-      return toast({ title: "Error", description: "This number is already linked to another account.", variant: "destructive" });
-    }
-
     if (user) {
       setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
       setIsPhoneDialogOpen(false);
-      toast({ title: "Phone Linked", description: "Your number is now secure." });
+      toast({ title: "Number Saved", description: "You can now proceed with your order." });
       if (selectedProduct) {
         setIsPaymentDialogOpen(true);
       }
@@ -155,18 +156,6 @@ export default function Home() {
   const finalizeOrder = async (product: any, method: 'COD' | 'UPI') => {
     const phone = profile?.phoneNumber || phoneNumber;
     
-    // Check for existing orders from this phone number
-    const q = query(collection(firestore, 'orders'), where('phoneNumber', '==', phone));
-    const snap = await getDocs(q);
-    
-    if (!snap.empty) {
-      return toast({ 
-        title: "Order Restricted", 
-        description: "One number is restricted to only 1 order at a time to prevent spam.", 
-        variant: "destructive" 
-      });
-    }
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const lat = pos.coords.latitude;
@@ -191,8 +180,29 @@ export default function Home() {
         setSelectedProduct(null);
         setIsQrDialogOpen(false);
         setIsPaymentDialogOpen(false);
+        toast({ title: "Order Sent!", description: "Check your WhatsApp to confirm." });
       },
-      () => toast({ title: "Location Denied", description: "Please enable location to order.", variant: "destructive" })
+      () => {
+        // Fallback without location if denied
+        const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\nUnit: ${product.unit}\nPayment: ${method === 'UPI' ? 'Pay Now (UPI)' : 'Cash on Delivery'}\n\nDelivery Speed: 45 Minutes Max ⚡\nPhone: ${phone}\n\n(Customer denied location sharing)`;
+        
+        addDocumentNonBlocking(collection(firestore, 'orders'), {
+          phoneNumber: phone,
+          productId: product.id,
+          productName: product.name,
+          amount: product.price,
+          status: 'pending',
+          userId: user?.uid,
+          createdAt: new Date().toISOString()
+        });
+
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
+        
+        setSelectedProduct(null);
+        setIsQrDialogOpen(false);
+        setIsPaymentDialogOpen(false);
+        toast({ title: "Order Sent!", description: "Check your WhatsApp to confirm." });
+      }
     );
   };
 
@@ -287,8 +297,8 @@ export default function Home() {
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black flex items-center gap-3"><Phone className="w-8 h-8 text-primary" /> LOGIN WITH PHONE</DialogTitle>
-            <DialogDescription>One phone number per account. Used for 45min delivery updates.</DialogDescription>
+            <DialogTitle className="text-3xl font-black flex items-center gap-3"><Phone className="w-8 h-8 text-primary" /> ENTER PHONE NUMBER</DialogTitle>
+            <DialogDescription>Used for 45min delivery updates via WhatsApp.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-6 py-4">
             <Input type="tel" placeholder="Enter Mobile Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-16 text-2xl font-black rounded-2xl text-center" />
