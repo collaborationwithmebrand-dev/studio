@@ -245,10 +245,10 @@ export default function Home() {
       </nav>
 
       {(isAdmin || isSecretAdminUnlocked) && isAdminPanelVisible && (
-        <div className="bg-white/5 backdrop-blur-2xl py-10 border-b border-white/10">
-          <div className="container mx-auto px-4 mb-8 flex justify-between items-center text-white">
-            <h2 className="text-3xl font-black flex items-center gap-3">ADMIN HUB</h2>
-            <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-white/10 text-white border-white/20">
+        <div className="bg-white/95 backdrop-blur-2xl py-10 border-b border-blue-200">
+          <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
+            <h2 className="text-3xl font-black flex items-center gap-3 text-blue-600">ADMIN HUB</h2>
+            <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
               <LogOut className="w-5 h-5 mr-2" /> Logout
             </Button>
           </div>
@@ -311,7 +311,7 @@ export default function Home() {
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black">CHOOSE PAYMENT</DialogTitle>
+            <DialogTitle className="text-3xl font-black text-blue-600">CHOOSE PAYMENT</DialogTitle>
             <DialogDescription>Select how you want to pay for {selectedProduct?.name}.</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 py-6">
@@ -331,7 +331,7 @@ export default function Home() {
               <Button 
                 onClick={() => handlePaymentChoice('COD')}
                 variant="outline"
-                className="h-20 rounded-2xl border-2 flex items-center justify-between px-8 text-xl font-black"
+                className="h-20 rounded-2xl border-2 border-blue-200 flex items-center justify-between px-8 text-xl font-black text-blue-600 hover:bg-blue-50"
               >
                 <div className="flex items-center gap-4">
                   <Banknote className="w-8 h-8 text-green-600" />
@@ -347,7 +347,7 @@ export default function Home() {
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black text-center">PAYMENT QR</DialogTitle>
+            <DialogTitle className="text-3xl font-black text-center text-blue-600">PAYMENT QR</DialogTitle>
             <DialogDescription className="text-center font-bold text-blue-600">{UPI_ID}</DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center gap-6 py-4">
@@ -366,23 +366,23 @@ export default function Home() {
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader><DialogTitle className="text-3xl font-black">ADMIN ACCESS</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-3xl font-black text-blue-600">ADMIN ACCESS</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-8 py-6">
-            <Input maxLength={4} placeholder="0000" className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem]" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
-            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black">UNLOCK BAZAAR</Button>
+            <Input maxLength={4} placeholder="0000" className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem] border-blue-200 text-blue-600" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black bg-blue-600 text-white">UNLOCK BAZAAR</Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader><DialogTitle className="text-3xl font-black">ADMIN LOGIN</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-3xl font-black text-blue-600">ADMIN LOGIN</DialogTitle></DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); isSignUp ? initiateEmailSignUp(auth, email, password) : initiateEmailSignIn(auth, email, password); setIsLoginDialogOpen(false); }} className="space-y-6 py-6">
-            <Input type="email" value={email} placeholder="Email" onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-2xl" />
-            <Input type="password" value={password} placeholder="Password" onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl" />
-            <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black">{isSignUp ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}</Button>
+            <Input type="email" value={email} placeholder="Email" onChange={(e) => setEmail(e.target.value)} className="h-14 rounded-2xl border-blue-200" />
+            <Input type="password" value={password} placeholder="Password" onChange={(e) => setPassword(e.target.value)} className="h-14 rounded-2xl border-blue-200" />
+            <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black bg-blue-600 text-white">{isSignUp ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}</Button>
           </form>
-          <Button variant="ghost" onClick={() => setIsSignUp(!isSignUp)} className="text-xs font-black uppercase underline">Toggle Sign Up</Button>
+          <Button variant="ghost" onClick={() => setIsSignUp(!isSignUp)} className="text-xs font-black uppercase underline text-blue-600">Toggle Sign Up</Button>
         </DialogContent>
       </Dialog>
 

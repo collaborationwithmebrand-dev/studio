@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, LayoutGrid, Phone, MessageCircle, Wallet, QrCode } from 'lucide-react';
+import { Palette, PlusCircle, Phone, MessageCircle, Wallet, QrCode } from 'lucide-react';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
@@ -100,9 +100,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
         
         {/* Theme & Store Settings */}
         <div className="space-y-8">
-          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
+          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/90 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="font-black flex items-center gap-2">
+              <CardTitle className="font-black flex items-center gap-2 text-blue-600">
                 <Palette className="w-6 h-6" /> GLOBAL THEME
               </CardTitle>
             </CardHeader>
@@ -113,7 +113,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                     key={theme}
                     onClick={() => handleUpdateTheme(theme)}
                     variant={currentTheme === theme ? "default" : "outline"}
-                    className={`rounded-2xl h-14 font-bold border-white/20 ${currentTheme === theme ? 'bg-white text-black' : 'bg-transparent text-white hover:bg-white/10'}`}
+                    className={`rounded-2xl h-14 font-bold ${currentTheme === theme ? 'bg-blue-600 text-white' : 'bg-transparent text-blue-600 border-blue-200 hover:bg-blue-50'}`}
                   >
                     {theme}
                   </Button>
@@ -122,30 +122,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
+          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/90 backdrop-blur-xl">
             <CardHeader>
-              <CardTitle className="font-black flex items-center gap-2">
+              <CardTitle className="font-black flex items-center gap-2 text-blue-600">
                 <Wallet className="w-6 h-6" /> BAZAAR CONFIG
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label className="font-bold opacity-80">WhatsApp Number</Label>
-                <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+                <Label className="font-bold text-blue-600">WhatsApp Number</Label>
+                <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold opacity-80">Help Line Number</Label>
-                <Input value={helpline} onChange={(e) => setHelpline(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+                <Label className="font-bold text-blue-600">Help Line Number</Label>
+                <Input value={helpline} onChange={(e) => setHelpline(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold opacity-80">UPI ID</Label>
-                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. bazaar@upi" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+                <Label className="font-bold text-blue-600">UPI ID</Label>
+                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="e.g. bazaar@upi" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold opacity-80">UPI QR URL</Label>
-                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="Paste image link for QR" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+                <Label className="font-bold text-blue-600">UPI QR URL</Label>
+                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="Paste image link for QR" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
-              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-white text-black font-black hover:bg-white/90">
+              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-700">
                 SAVE ALL SETTINGS
               </Button>
             </CardContent>
@@ -153,62 +153,62 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
         </div>
 
         {/* Product Add Section */}
-        <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2 bg-white">
+        <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2 bg-white/90">
           <CardHeader>
-            <CardTitle className="text-primary font-black flex items-center gap-2">
+            <CardTitle className="text-blue-600 font-black flex items-center gap-2">
               <PlusCircle className="w-6 h-6" /> ADD NEW ITEM
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Product Name</Label>
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Kaju Katli" className="rounded-xl h-12 bg-slate-50 border-none" />
+                <Label className="font-bold text-blue-600">Product Name</Label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium Kaju Katli" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Price (₹)</Label>
-                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in Rupees" className="rounded-xl h-12 bg-slate-50 border-none" />
+                <Label className="font-bold text-blue-600">Price (₹)</Label>
+                <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in Rupees" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Store Section</Label>
-                <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12 bg-slate-50 border-none" />
+                <Label className="font-bold text-blue-600">Store Section</Label>
+                <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Image URL</Label>
-                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12 bg-slate-50 border-none" />
+                <Label className="font-bold text-blue-600">Image URL</Label>
+                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Unit Type</Label>
+                <Label className="font-bold text-blue-600">Unit Type</Label>
                 <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none">
+                  <SelectTrigger className="h-12 rounded-xl bg-blue-50 border-none text-blue-900">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="gm">gm</SelectItem>
-                    <SelectItem value="kg">kg</SelectItem>
-                    <SelectItem value="Liter">Liter</SelectItem>
-                    <SelectItem value="Pcs">Pcs</SelectItem>
+                    <SelectItem value="gm" className="text-blue-600">gm</SelectItem>
+                    <SelectItem value="kg" className="text-blue-600">kg</SelectItem>
+                    <SelectItem value="Liter" className="text-blue-600">Liter</SelectItem>
+                    <SelectItem value="Pcs" className="text-blue-600">Pcs</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             
             <div className="flex flex-wrap gap-6 py-2">
-              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl">
+              <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-2xl">
                 <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(v) => setIsCodAvailable(v === true)} />
-                <Label htmlFor="cod" className="cursor-pointer font-medium">Enable COD</Label>
+                <Label htmlFor="cod" className="cursor-pointer font-bold text-blue-600">Enable COD</Label>
               </div>
-              <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-2xl">
+              <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-2xl">
                 <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(v) => setIsUpiAvailable(v === true)} />
-                <Label htmlFor="upi" className="cursor-pointer font-medium">Enable UPI</Label>
+                <Label htmlFor="upi" className="cursor-pointer font-bold text-blue-600">Enable UPI</Label>
               </div>
-              <div className="flex items-center gap-3 bg-primary/5 p-3 rounded-2xl border border-primary/20">
+              <div className="flex items-center gap-3 bg-blue-100 p-3 rounded-2xl border border-blue-300">
                 <Checkbox id="pin" checked={isPinned} onCheckedChange={(v) => setIsPinned(v === true)} />
-                <Label htmlFor="pin" className="cursor-pointer font-black text-primary">Pin to Top</Label>
+                <Label htmlFor="pin" className="cursor-pointer font-black text-blue-700">Pin to Top</Label>
               </div>
             </div>
 
-            <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] font-black text-xl shadow-xl hover:scale-[1.02] transition-transform">
+            <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black text-xl shadow-xl hover:bg-blue-700 hover:scale-[1.02] transition-transform">
               PUBLISH TO BAZAAR
             </Button>
           </CardContent>
