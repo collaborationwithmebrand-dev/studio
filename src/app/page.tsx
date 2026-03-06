@@ -24,7 +24,7 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -70,7 +70,6 @@ export default function Home() {
 
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSecretAdminUnlocked, setIsSecretAdminUnlocked] = useState(false);
   
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
   const [userDistance, setUserDistance] = useState<number | null>(null);
@@ -131,7 +130,6 @@ export default function Home() {
       if (user) {
         const adminRef = doc(firestore, 'admin_roles', user.uid);
         setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
-        setIsSecretAdminUnlocked(true);
         setIsVerificationDialogOpen(false);
         setVerificationCode('');
         toast({ title: "Admin Access Granted" });
