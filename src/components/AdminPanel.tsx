@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
-import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid } from 'lucide-react';
+import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus, Scale, LayoutGrid, DatabaseBackup } from 'lucide-react';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
@@ -54,6 +54,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
     setPrice('');
     setImageUrl('');
     toast({ title: "Success", description: `Added ${name} to ${section}!` });
+  };
+
+  const seedData = () => {
+    const samples = [
+      { name: "Kaju Katli", price: 800, unit: "kg", section: "Sweets Corner", category: "Food", img: "https://picsum.photos/seed/kaju/400/400" },
+      { name: "Eco Diya Set", price: 150, unit: "Pcs", section: "Festive Decor", category: "Festive", img: "https://picsum.photos/seed/diya/400/400" },
+      { name: "Pure Cow Ghee", price: 650, unit: "Liter", section: "Dairy Fresh", category: "Food", img: "https://picsum.photos/seed/ghee/400/400" },
+      { name: "Cotton Kurta", price: 1200, unit: "Pcs", section: "Fashion Hub", category: "Fashion", img: "https://picsum.photos/seed/kurta/400/400" }
+    ];
+
+    const productsRef = collection(firestore, 'products');
+    samples.forEach(s => {
+      addDocumentNonBlocking(productsRef, {
+        ...s,
+        imageUrl: s.img,
+        description: "Fresh and premium quality products from Bounsi Bazaar.",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+    });
+    toast({ title: "Database Seeded", description: "Sample products added to your bazaar!" });
   };
 
   const setTheme = (theme: FestivalTheme) => {
@@ -115,6 +136,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onR
             <p className="text-2xl font-black">{currentTheme.toUpperCase()}</p>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="flex gap-4">
+        <Button 
+          variant="outline" 
+          onClick={seedData} 
+          className="rounded-2xl h-12 border-dashed border-2 hover:bg-primary/5 flex items-center gap-2 px-6"
+        >
+          <DatabaseBackup className="w-5 h-5 text-primary" /> Seed Sample Products
+        </Button>
       </div>
 
       <Card className="rounded-[2.5rem] shadow-2xl border-none">

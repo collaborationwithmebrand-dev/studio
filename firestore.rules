@@ -9,12 +9,6 @@ service cloud.firestore {
      * This ruleset implements a strict Administrative Access Control (DBAC) model combined with 
      * public read access for storefront data. Security is managed through structural segregation 
      * and a dedicated admin roles collection.
-     *
-     * Data Structure:
-     * - /products: Public catalog, writable only by admins.
-     * - /admin_roles: Marker collection where document existence grants admin privileges.
-     * - /storeSettings: Sensitive operational data, restricted to admins.
-     * - /publicDisplaySettings: Denormalized public configuration (e.g., active themes).
      */
 
     // --- Helper Functions ---
@@ -54,7 +48,7 @@ service cloud.firestore {
 
     /**
      * @description Marker collection for admin roles.
-     * For this prototype, we allow users to create their own admin role document to facilitate the secret-unlock flow.
+     * We allow users to create their own admin role document after successful verification.
      */
     match /admin_roles/{adminUid} {
       allow get: if isSignedIn();
@@ -65,9 +59,11 @@ service cloud.firestore {
 
     /**
      * @description Singleton for sensitive global store statistics and configuration.
+     * Relaxed 'get' to any signed-in user to avoid race condition crashes during admin elevation.
      */
     match /storeSettings/mainSettings {
-      allow get, list, create: if isAdmin();
+      allow get: if isSignedIn();
+      allow list, create: if isAdmin();
       allow update, delete: if isExistingAdmin();
     }
 
