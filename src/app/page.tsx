@@ -1,85 +1,122 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { THEME_DATA, INITIAL_PRODUCTS, Product, FestivalTheme } from '@/app/lib/constants';
+import { THEME_DATA, FestivalTheme } from '@/app/lib/constants';
 import { AdminPanel } from '@/components/AdminPanel';
 import { FestiveEffects } from '@/components/FestiveEffects';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  useCollection, 
+  useDoc, 
+  useFirestore, 
+  useAuth, 
+  useUser, 
+  useMemoFirebase,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
+} from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import { signInAnonymously } from 'firebase/auth';
 
 export default function Home() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [stats, setStats] = useState({ orders: 0, earnings: 0 });
-  const [theme, setTheme] = useState<FestivalTheme>('Normal');
-  const [isAdminOpen, setIsAdminOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const firestore = useFirestore();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+
+  const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const WHATSAPP_NUMBER = "917319965930";
 
-  useEffect(() => {
-    // Hydration and LocalStorage load
-    const savedProducts = localStorage.getItem('vibrant_products');
-    const savedStats = localStorage.getItem('vibrant_stats');
-    const savedTheme = localStorage.getItem('vibrant_theme');
+  // Products Listener
+  const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
-    else setProducts(INITIAL_PRODUCTS);
+  // Public Theme Listener
+  const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
+  const { data: themeData } = useDoc(themeDocRef);
+  const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
 
-    if (savedStats) setStats(JSON.parse(savedStats));
-    if (savedTheme) setTheme(savedTheme as FestivalTheme);
-  }, []);
+  // Admin Role Check
+  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
+  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
+  const isAdmin = !!adminRole;
 
-  useEffect(() => {
-    if (products.length > 0) localStorage.setItem('vibrant_products', JSON.stringify(products));
-    localStorage.setItem('vibrant_stats', JSON.stringify(stats));
-    localStorage.setItem('vibrant_theme', theme);
-  }, [products, stats, theme]);
+  // Store Settings (Stats) Listener - Only for Admins
+  const statsDocRef = useMemoFirebase(() => isAdmin ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, isAdmin]);
+  const { data: statsData } = useDoc(statsDocRef);
+  const stats = {
+    orders: statsData?.totalOrders || 0,
+    earnings: statsData?.totalEarnings || 0
+  };
 
   const filteredProducts = useMemo(() => {
+    if (!products) return [];
     return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [products, searchQuery]);
 
-  const toggleAdmin = () => {
-    if (isAdminOpen) {
-      setIsAdminOpen(false);
+  const toggleAdminMode = async () => {
+    if (!user) {
+      try {
+        await signInAnonymously(auth);
+        toast({ title: "Anonymous Sign-in", description: "Checking admin privileges..." });
+      } catch (error) {
+        toast({ title: "Error", description: "Failed to sign in", variant: "destructive" });
+      }
       return;
     }
-    const pin = prompt("Enter Admin PIN:");
-    if (pin === "123") {
-      setIsAdminOpen(true);
+
+    if (isAdmin) {
+      setIsAdminPanelVisible(!isAdminPanelVisible);
     } else {
-      toast({ title: "Access Denied", description: "Incorrect PIN", variant: "destructive" });
+      toast({ 
+        title: "Access Restricted", 
+        description: "Your account does not have admin privileges. Contact the developer to enable admin role for UID: " + user.uid, 
+        variant: "destructive" 
+      });
     }
   };
 
-  const handleBuy = (product: Product) => {
-    const newStats = {
-      orders: stats.orders + 1,
-      earnings: stats.earnings + product.price
-    };
-    setStats(newStats);
+  const handleBuy = (product: any) => {
+    const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
     
-    const message = `*VibrantBazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\n\nPlease confirm my order.`;
+    // We update stats optimistically in the UI, but the write is backgrounded
+    updateDocumentNonBlocking(mainSettingsRef, {
+      totalOrders: stats.orders + 1,
+      totalEarnings: stats.earnings + product.price,
+      lastUpdated: new Date().toISOString()
+    });
+    
+    const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nPrice: ₹${product.price}\n\nPlease confirm my order.`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
   };
 
   const removeProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+    const productRef = doc(firestore, 'products', id);
+    deleteDocumentNonBlocking(productRef);
     toast({ title: "Removed", description: "Product deleted from catalog" });
   };
 
-  const currentThemeConfig = THEME_DATA[theme];
+  const currentThemeConfig = THEME_DATA[currentTheme];
+
+  if (isProductsLoading || isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${currentThemeConfig.bg} relative transition-colors duration-1000 pb-20`}>
-      <FestiveEffects theme={theme} />
+      <FestiveEffects theme={currentTheme} />
       
-      {/* Navigation */}
       <nav className={`${currentThemeConfig.nav} p-4 text-white sticky top-0 z-50 shadow-2xl transition-all duration-700`}>
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-black italic tracking-tighter uppercase drop-shadow-md">
@@ -100,8 +137,8 @@ export default function Home() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={toggleAdmin}
-              className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdminOpen ? 'bg-white/30' : ''}`}
+              onClick={toggleAdminMode}
+              className={`rounded-full h-12 w-12 hover:bg-white/20 text-white ${isAdmin && isAdminPanelVisible ? 'bg-white/30' : ''}`}
             >
               <ShieldCheck className="w-6 h-6" />
             </Button>
@@ -112,23 +149,19 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Admin Panel Overlay */}
-      {isAdminOpen && (
+      {isAdmin && isAdminPanelVisible && (
         <div className="bg-background/80 backdrop-blur-md pt-8">
           <AdminPanel 
             stats={stats} 
-            currentTheme={theme} 
-            setTheme={setTheme}
-            onAddProduct={(p) => setProducts([...products, p])}
+            currentTheme={currentTheme}
             onResetStats={() => {
-              setStats({ orders: 0, earnings: 0 });
-              localStorage.removeItem('vibrant_stats');
+              const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
+              updateDocumentNonBlocking(mainSettingsRef, { totalOrders: 0, totalEarnings: 0, lastUpdated: new Date().toISOString() });
             }}
           />
         </div>
       )}
 
-      {/* Main Content */}
       <main className="container mx-auto p-6 mt-6">
         {filteredProducts.length === 0 ? (
           <div className="text-center py-20 opacity-50">
@@ -137,12 +170,12 @@ export default function Home() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredProducts.map((p) => (
+            {filteredProducts.map((p: any) => (
               <div 
                 key={p.id} 
                 className="group bg-white rounded-[2.5rem] shadow-sm hover:shadow-2xl border border-border/40 p-5 relative flex flex-col justify-between product-card-hover animate-in fade-in zoom-in duration-300"
               >
-                {isAdminOpen && (
+                {isAdmin && (
                   <Button
                     variant="destructive"
                     size="icon"
@@ -155,7 +188,7 @@ export default function Home() {
                 
                 <div className="relative overflow-hidden rounded-[2rem] h-48 mb-4 shadow-inner bg-slate-100">
                   <img 
-                    src={p.image} 
+                    src={p.imageUrl} 
                     alt={p.name} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
@@ -185,9 +218,8 @@ export default function Home() {
         )}
       </main>
 
-      {/* Footer Branding */}
       <footer className="text-center py-10 opacity-40 select-none">
-        <p className="font-black text-4xl tracking-tighter">VIBRANT BAZAAR</p>
+        <p className="font-black text-4xl tracking-tighter">BOUNSI BAZAAR</p>
         <p className="text-xs uppercase font-bold mt-2">Crafted for Festivals & Celebration</p>
       </footer>
 

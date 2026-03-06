@@ -10,42 +10,56 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { Sparkles, Plus, Trash2, ChartBar, Palette, PackagePlus } from 'lucide-react';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { useToast } from '@/hooks/use-toast';
+import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number };
   currentTheme: FestivalTheme;
-  setTheme: (theme: FestivalTheme) => void;
-  onAddProduct: (product: any) => void;
   onResetStats: () => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, setTheme, onAddProduct, onResetStats }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, onResetStats }) => {
+  const firestore = useFirestore();
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Food');
-  const [image, setImage] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
   const handleAdd = async () => {
-    if (!name || !price || !image) {
+    if (!name || !price || !imageUrl) {
       toast({ title: "Error", description: "Please fill all fields", variant: "destructive" });
       return;
     }
 
-    onAddProduct({
-      id: Math.random().toString(36).substr(2, 9),
+    const productsRef = collection(firestore, 'products');
+    addDocumentNonBlocking(productsRef, {
       name,
       price: parseFloat(price),
       category,
-      image,
-      description: "" // Will be updated by AI if user wants
+      imageUrl,
+      description: "",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     });
 
     setName('');
     setPrice('');
-    setImage('');
+    setImageUrl('');
     toast({ title: "Success", description: "Product added to store!" });
+  };
+
+  const setTheme = (theme: FestivalTheme) => {
+    const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
+    const publicThemeRef = doc(firestore, 'publicDisplaySettings', 'theme');
+
+    // Update both places as per denormalization requirement
+    setDocumentNonBlocking(mainSettingsRef, { activeThemeName: theme, lastUpdated: new Date().toISOString() }, { merge: true });
+    setDocumentNonBlocking(publicThemeRef, { activeThemeName: theme }, { merge: true });
+
+    toast({ title: "Theme Updated", description: `Active theme changed to ${theme}` });
   };
 
   const generateAI = async () => {
@@ -151,7 +165,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme, set
             </div>
             <div className="space-y-2">
               <Label>Image URL</Label>
-              <Input value={image} onChange={(e) => setImage(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
+              <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl h-12" />
             </div>
           </div>
           <div className="flex flex-col md:flex-row gap-4 pt-4">

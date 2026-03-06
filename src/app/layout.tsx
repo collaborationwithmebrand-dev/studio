@@ -1,9 +1,10 @@
 import type {Metadata} from 'next';
 import './globals.css';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'VibrantBazaar - Festive Edition',
-  description: 'Your premium festive store powered by VibrantBazaar',
+  title: 'Bounsi Bazaar - Festive Edition',
+  description: 'Your premium festive store powered by Bounsi Bazaar',
 };
 
 export default function RootLayout({
@@ -19,7 +20,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased selection:bg-primary selection:text-primary-foreground">
-        {children}
+        <FirebaseClientProvider>
+          {children}
+        </FirebaseClientProvider>
       </body>
     </html>
   );
