@@ -199,10 +199,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
           <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> New Product</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={e => setSection(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={setName} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={setPrice} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={setSection} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={setImageUrl} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
             </div>
 
             <div className="space-y-2">
@@ -218,7 +218,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             </div>
 
             <div className="flex items-center gap-2 bg-blue-50/30 px-3 py-2 rounded-xl border border-blue-100 w-fit">
-              <Checkbox id="c-pin" checked={isPinned} onCheckedChange={v => setIsPinned(v === true)} className="border-blue-300" />
+              <Checkbox id="c-pin" checked={isPinned} onCheckedChange={setIsPinned} className="border-blue-300" />
               <Label htmlFor="c-pin" className="text-blue-600 font-bold uppercase text-[9px]">Feature at Top</Label>
             </div>
 
