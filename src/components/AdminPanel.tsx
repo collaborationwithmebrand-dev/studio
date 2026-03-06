@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -10,9 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, LayoutGrid } from 'lucide-react';
+import { Palette, PlusCircle, LayoutGrid, Phone, MessageCircle } from 'lucide-react';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
@@ -34,6 +34,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
   const [isUpiAvailable, setIsUpiAvailable] = useState(true);
   const [isPinned, setIsPinned] = useState(false);
 
+  // Store Settings state
+  const [whatsapp, setWhatsapp] = useState('');
+  const [helpline, setHelpline] = useState('');
+
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
+  const { data: settings } = useDoc(settingsRef);
+
+  useEffect(() => {
+    if (settings) {
+      setWhatsapp(settings.whatsappNumber || '');
+      setHelpline(settings.helpLineNumber || '');
+    }
+  }, [settings]);
+
   const handleUpdateTheme = (newTheme: FestivalTheme) => {
     const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
     setDocumentNonBlocking(themeRef, { activeThemeName: newTheme }, { merge: true });
@@ -41,6 +55,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
       title: "Bazaar Updated!", 
       description: `The theme is now set to ${newTheme} for all users.`,
     });
+  };
+
+  const handleUpdateSettings = () => {
+    setDocumentNonBlocking(settingsRef, { 
+      whatsappNumber: whatsapp, 
+      helpLineNumber: helpline,
+      lastUpdated: new Date().toISOString()
+    }, { merge: true });
+    toast({ title: "Settings Saved", description: "WhatsApp and Help Line numbers updated." });
   };
 
   const handleAdd = async () => {
@@ -69,29 +92,51 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
     <div className="container mx-auto p-4 space-y-8 pb-20">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* Theme Settings */}
-        <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
-          <CardHeader>
-            <CardTitle className="font-black flex items-center gap-2">
-              <Palette className="w-6 h-6" /> GLOBAL THEME
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <p className="text-sm opacity-80">Change the look of the bazaar for every user instantly.</p>
-            <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(THEME_DATA) as FestivalTheme[]).map((theme) => (
-                <Button 
-                  key={theme}
-                  onClick={() => handleUpdateTheme(theme)}
-                  variant={currentTheme === theme ? "default" : "outline"}
-                  className={`rounded-2xl h-14 font-bold border-white/20 ${currentTheme === theme ? 'bg-white text-black' : 'bg-transparent text-white hover:bg-white/10'}`}
-                >
-                  {theme}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Theme & Store Settings */}
+        <div className="space-y-8">
+          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
+            <CardHeader>
+              <CardTitle className="font-black flex items-center gap-2">
+                <Palette className="w-6 h-6" /> GLOBAL THEME
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-2 gap-3">
+                {(Object.keys(THEME_DATA) as FestivalTheme[]).map((theme) => (
+                  <Button 
+                    key={theme}
+                    onClick={() => handleUpdateTheme(theme)}
+                    variant={currentTheme === theme ? "default" : "outline"}
+                    className={`rounded-2xl h-14 font-bold border-white/20 ${currentTheme === theme ? 'bg-white text-black' : 'bg-transparent text-white hover:bg-white/10'}`}
+                  >
+                    {theme}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/10 backdrop-blur-xl text-white">
+            <CardHeader>
+              <CardTitle className="font-black flex items-center gap-2">
+                <Phone className="w-6 h-6" /> CONTACT SETTINGS
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="font-bold opacity-80">WhatsApp Number</Label>
+                <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-bold opacity-80">Help Line Number</Label>
+                <Input value={helpline} onChange={(e) => setHelpline(e.target.value)} placeholder="e.g. 917319965930" className="rounded-xl h-12 bg-white/10 border-none text-white placeholder:text-white/40" />
+              </div>
+              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-white text-black font-black hover:bg-white/90">
+                SAVE CONTACTS
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Product Add Section */}
         <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2 bg-white">
@@ -111,7 +156,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                 <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price in Rupees" className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-gray-700">Store Section (Categories bazaar layout)</Label>
+                <Label className="font-bold text-gray-700">Store Section</Label>
                 <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Sweets Corner" className="rounded-xl h-12 bg-slate-50 border-none" />
               </div>
               <div className="space-y-2">

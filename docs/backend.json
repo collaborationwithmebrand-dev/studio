@@ -41,6 +41,8 @@
         "activeThemeName": { "type": "string" },
         "upiId": { "type": "string" },
         "upiQrUrl": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "helpLineNumber": { "type": "string" },
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
