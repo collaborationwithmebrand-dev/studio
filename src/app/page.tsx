@@ -249,7 +249,7 @@ export default function Home() {
           <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
             <h2 className="text-3xl font-black flex items-center gap-3 text-blue-600">ADMIN HUB</h2>
             <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100">
-              <LogOut className="w-5 h-5 mr-2" /> Logout
+              <LogOut className="w-5 h-5 mr-2 text-blue-600" /> <span className="text-blue-600">Logout</span>
             </Button>
           </div>
           <AdminPanel stats={{orders: 0, earnings: 0}} currentTheme={currentTheme} onResetStats={() => {}} />

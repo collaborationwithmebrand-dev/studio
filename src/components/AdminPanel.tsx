@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { Palette, PlusCircle, Phone, MessageCircle, Wallet, QrCode } from 'lucide-react';
+import { Palette, PlusCircle, Wallet } from 'lucide-react';
 
 interface AdminPanelProps {
   stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
@@ -103,7 +103,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
           <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/90 backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="font-black flex items-center gap-2 text-blue-600">
-                <Palette className="w-6 h-6" /> GLOBAL THEME
+                <Palette className="w-6 h-6 text-blue-600" /> GLOBAL THEME
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -113,7 +113,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                     key={theme}
                     onClick={() => handleUpdateTheme(theme)}
                     variant={currentTheme === theme ? "default" : "outline"}
-                    className={`rounded-2xl h-14 font-bold ${currentTheme === theme ? 'bg-blue-600 text-white' : 'bg-transparent text-blue-600 border-blue-200 hover:bg-blue-50'}`}
+                    className={`rounded-2xl h-14 font-bold border-blue-200 transition-all ${currentTheme === theme ? 'bg-blue-100 text-blue-700' : 'bg-transparent text-blue-600 hover:bg-blue-50'}`}
                   >
                     {theme}
                   </Button>
@@ -125,7 +125,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
           <Card className="rounded-[2.5rem] shadow-2xl border-none bg-white/90 backdrop-blur-xl">
             <CardHeader>
               <CardTitle className="font-black flex items-center gap-2 text-blue-600">
-                <Wallet className="w-6 h-6" /> BAZAAR CONFIG
+                <Wallet className="w-6 h-6 text-blue-600" /> BAZAAR CONFIG
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -145,7 +145,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                 <Label className="font-bold text-blue-600">UPI QR URL</Label>
                 <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="Paste image link for QR" className="rounded-xl h-12 bg-blue-50 border-none text-blue-900 placeholder:text-blue-300" />
               </div>
-              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-700">
+              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-blue-600 text-white font-black hover:bg-blue-700 shadow-lg">
                 SAVE ALL SETTINGS
               </Button>
             </CardContent>
@@ -156,7 +156,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
         <Card className="rounded-[2.5rem] shadow-2xl border-none lg:col-span-2 bg-white/90">
           <CardHeader>
             <CardTitle className="text-blue-600 font-black flex items-center gap-2">
-              <PlusCircle className="w-6 h-6" /> ADD NEW ITEM
+              <PlusCircle className="w-6 h-6 text-blue-600" /> ADD NEW ITEM
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -181,7 +181,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
                 <Label className="font-bold text-blue-600">Unit Type</Label>
                 <Select value={unit} onValueChange={setUnit}>
                   <SelectTrigger className="h-12 rounded-xl bg-blue-50 border-none text-blue-900">
-                    <SelectValue />
+                    <SelectValue className="text-blue-900" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="gm" className="text-blue-600">gm</SelectItem>
@@ -195,15 +195,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stats, currentTheme }) =
             
             <div className="flex flex-wrap gap-6 py-2">
               <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-2xl">
-                <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(v) => setIsCodAvailable(v === true)} />
+                <Checkbox id="cod" checked={isCodAvailable} onCheckedChange={(v) => setIsCodAvailable(v === true)} className="border-blue-400" />
                 <Label htmlFor="cod" className="cursor-pointer font-bold text-blue-600">Enable COD</Label>
               </div>
               <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-2xl">
-                <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(v) => setIsUpiAvailable(v === true)} />
+                <Checkbox id="upi" checked={isUpiAvailable} onCheckedChange={(v) => setIsUpiAvailable(v === true)} className="border-blue-400" />
                 <Label htmlFor="upi" className="cursor-pointer font-bold text-blue-600">Enable UPI</Label>
               </div>
               <div className="flex items-center gap-3 bg-blue-100 p-3 rounded-2xl border border-blue-300">
-                <Checkbox id="pin" checked={isPinned} onCheckedChange={(v) => setIsPinned(v === true)} />
+                <Checkbox id="pin" checked={isPinned} onCheckedChange={(v) => setIsPinned(v === true)} className="border-blue-500" />
                 <Label htmlFor="pin" className="cursor-pointer font-black text-blue-700">Pin to Top</Label>
               </div>
             </div>
