@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode, MapPin, Gift, Package, Layers } from 'lucide-react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, Phone, Pin, Smartphone, Wallet, Banknote, PhoneCall, QrCode, MapPin, Gift, Package, Layers, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,19 +35,15 @@ const BOUNSI_LNG = 87.0267;
 const MAX_DISTANCE_KM = 9;
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);
-  const dLon = deg2rad(lon2 - lon1);
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; // Distance in km
-}
-
-function deg2rad(deg: number) {
-  return deg * (Math.PI / 180);
+  return R * c;
 }
 
 export default function Home() {
@@ -67,56 +62,45 @@ export default function Home() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [quantity, setQuantity] = useState<number>(1);
-
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
   const [userDistance, setUserDistance] = useState<number | null>(null);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
 
-  // Location Check Logic
   useEffect(() => {
     if (!navigator.geolocation) {
       setLocationStatus('denied');
       return;
     }
-
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = calculateDistance(BOUNSI_LAT, BOUNSI_LNG, pos.coords.latitude, pos.coords.longitude);
         setUserDistance(dist);
-        if (dist <= MAX_DISTANCE_KM) {
-          setLocationStatus('allowed');
-        } else {
-          setLocationStatus('out_of_range');
-        }
+        if (dist <= MAX_DISTANCE_KM) setLocationStatus('allowed');
+        else setLocationStatus('out_of_range');
       },
       () => setLocationStatus('denied')
     );
   }, []);
 
-  // Ensure user is signed in anonymously to interact with Firestore
   useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
+    if (!isUserLoading && !user) initiateAnonymousSignIn(auth);
   }, [user, isUserLoading, auth]);
 
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(profileRef);
 
-  const storeSettingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
-  const { data: settings } = useDoc(storeSettingsRef);
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
+  const { data: settings } = useDoc(settingsRef);
 
   const WHATSAPP_NUMBER = settings?.whatsappNumber || "917319965930";
   const HELP_LINE_NUMBER = settings?.helpLineNumber || "917319965930";
   const UPI_ID = settings?.upiId || "";
   const UPI_QR_URL = settings?.upiQrUrl || "";
 
-  // Secret Admin Unlock Sequence
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
       setIsVerificationDialogOpen(true);
@@ -128,8 +112,7 @@ export default function Home() {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
       if (user) {
-        const adminRef = doc(firestore, 'admin_roles', user.uid);
-        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
+        setDocumentNonBlocking(doc(firestore, 'admin_roles', user.uid), { assignedAt: new Date().toISOString() }, { merge: true });
         setIsVerificationDialogOpen(false);
         setVerificationCode('');
         toast({ title: "Admin Access Granted" });
@@ -147,15 +130,15 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
-  // Persistent Admin Check via Firestore
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
-    const sorted = [...products].sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
-    const filtered = sorted.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    const filtered = products
+      .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
     return filtered.reduce((acc: any, product: any) => {
       const section = product.section || "General Bazaar";
       if (!acc[section]) acc[section] = [];
@@ -166,8 +149,8 @@ export default function Home() {
 
   const calculateTotalPrice = (basePrice: number, qty: number = 1) => {
     const subtotal = basePrice * qty;
-    let deliveryGST = subtotal < 100 ? 125 : 25;
-    let packagingFee = packagingType === 'Gift' ? 40 : 0;
+    const deliveryGST = subtotal < 100 ? 125 : 25;
+    const packagingFee = packagingType === 'Gift' ? 40 : 0;
     return subtotal + deliveryGST + packagingFee;
   };
 
@@ -193,27 +176,23 @@ export default function Home() {
   };
 
   const handlePaymentChoice = (method: 'COD' | 'UPI') => {
-    if (method === 'UPI' && UPI_QR_URL) {
-      setIsQrDialogOpen(true);
-    } else {
-      finalizeOrder(selectedProduct, method);
-    }
+    if (method === 'UPI' && UPI_QR_URL) setIsQrDialogOpen(true);
+    else finalizeOrder(selectedProduct, method);
   };
 
   const finalizeOrder = async (product: any, method: 'COD' | 'UPI') => {
     const phone = profile?.phoneNumber || phoneNumber;
     const finalPrice = calculateTotalPrice(product.price, quantity);
-    const packagingInfo = packagingType === 'Gift' ? "Gift Packaging (₹40)" : "Normal Packaging (Free)";
-    const qtyText = (product.unit === 'kg' || product.unit === 'Liter') ? `${quantity} ${product.unit}` : `${quantity} Unit(s)`;
+    const packagingInfo = packagingType === 'Gift' ? "Gift Box (+₹40)" : "Standard (Free)";
     
     navigator.geolocation.getCurrentPosition((pos) => {
       const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*Bounsi Bazaar Order Alert!*\n\nItem: ${product.name}\nQuantity: ${qtyText}\nBase Price: ₹${product.price} / ${product.unit}\nSubtotal: ₹${product.price * quantity}\nDelivery/GST: ₹${(product.price * quantity) < 100 ? 125 : 25}\nPackaging: ${packagingInfo}\n*Total: ₹${finalPrice}*\n\nPayment: ${method}\nLocation: ${locLink}\nPhone: ${phone}\nSpeed: 30 MIN DELIVERY ⚡`;
+      const message = `*BOUNSI BAZAAR ORDER*\n\n*Item:* ${product.name}\n*Qty:* ${quantity} ${product.unit}\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingInfo}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Delivering in 30 mins!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         phoneNumber: phone,
         productName: product.name,
-        quantity: quantity,
+        quantity,
         amount: finalPrice,
         status: 'pending',
         userId: user?.uid,
@@ -221,62 +200,61 @@ export default function Home() {
       });
 
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank');
-      setSelectedProduct(null);
       setIsQrDialogOpen(false);
       setIsPaymentDialogOpen(false);
     });
   };
 
   if (locationStatus === 'checking' || isProductsLoading || isUserLoading) {
-    return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
+    return <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
       <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      <p className="font-bold text-slate-400 uppercase tracking-widest">Checking Location Access...</p>
+      <p className="font-bold text-slate-400 uppercase tracking-tighter">Locating Bounsi Bazaar...</p>
     </div>;
   }
 
   if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-10 text-center space-y-6">
-        <div className="p-8 rounded-full bg-red-50 text-red-500"><MapPin className="w-20 h-20" /></div>
+        <MapPin className="w-20 h-20 text-red-500" />
         <h1 className="text-4xl font-black text-slate-900 uppercase">Service Unavailable</h1>
         <p className="text-xl text-slate-500 max-w-md font-medium">
           {locationStatus === 'denied' 
-            ? "Please allow location access to browse Bounsi Bazaar. We only deliver within 9km of 813104."
-            : `You are ${userDistance?.toFixed(1)}km away. We currently only deliver within 9km of Bounsi (813104).`}
+            ? "Enable location to shop. We deliver within 9km of Bounsi (813104)."
+            : `You are ${userDistance?.toFixed(1)}km away. Our limit is 9km from Bounsi.`}
         </p>
-        <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-16 text-xl font-bold">RETRY LOCATION</Button>
+        <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-12 h-16 text-xl font-bold">RETRY</Button>
       </div>
     );
   }
 
   return (
-    <div className={cn("min-h-screen relative pb-20 overflow-x-hidden", currentThemeConfig.bg)}>
+    <div className={cn("min-h-screen relative pb-24", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
-      <nav className={cn("sticky top-0 z-50 py-4 glass-nav transition-all duration-1000", currentTheme === 'Normal' ? 'bg-primary' : '')}>
+      <nav className="sticky top-0 z-50 py-3 glass-nav">
         <div className="container mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-8 h-8 text-white animate-bounce" />
-            <h1 className={cn("text-3xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
+          <div className="flex items-center gap-3">
+            <ShoppingBag className="w-8 h-8 text-primary animate-pulse" />
+            <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
               {currentThemeConfig.title}
             </h1>
           </div>
           
-          <div className="relative w-full md:w-1/2 group">
-            <Input placeholder="Search Bazaar..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-14 pl-14 rounded-full text-black bg-white/95 shadow-2xl text-lg" />
-            <Search className="absolute left-5 top-4.5 text-gray-400 w-6 h-6" />
+          <div className="relative w-full md:w-1/3">
+            <Input placeholder="Search milk, ghee, groceries..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-12 pl-12 rounded-2xl bg-slate-50 border-none shadow-inner" />
+            <Search className="absolute left-4 top-3.5 text-slate-400 w-5 h-5" />
           </div>
 
-          <div className="flex items-center gap-4">
-            <Badge variant="secondary" className="bg-yellow-400 text-black px-4 py-2 rounded-full flex items-center gap-2 font-black text-xs shadow-lg animate-pulse">
-              <Clock className="w-4 h-4" /> 30MIN DELIVERY
+          <div className="flex items-center gap-3">
+            <Badge className="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl border-none font-black text-[10px] flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" /> 30 MIN DELIVERY
             </Badge>
-            <Button variant="ghost" size="icon" onClick={() => window.open(`tel:${HELP_LINE_NUMBER}`)} className="rounded-full h-12 w-12 text-white bg-white/10 backdrop-blur-md">
-              <PhoneCall className="w-6 h-6" />
+            <Button variant="outline" size="icon" onClick={() => window.open(`tel:${HELP_LINE_NUMBER}`)} className="rounded-2xl h-11 w-11 border-slate-200">
+              <PhoneCall className="w-5 h-5 text-slate-600" />
             </Button>
             {isAdmin && (
-              <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-full h-14 w-14 text-white bg-white/10 backdrop-blur-md shadow-xl">
-                <ShieldCheck className="w-8 h-8" />
+              <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-2xl h-11 w-11 bg-blue-50">
+                <ShieldCheck className="w-6 h-6 text-blue-600" />
               </Button>
             )}
           </div>
@@ -284,49 +262,56 @@ export default function Home() {
       </nav>
 
       {isAdmin && isAdminPanelVisible && (
-        <div className="bg-white/95 backdrop-blur-2xl py-10 border-b border-blue-200">
-          <div className="container mx-auto px-4 mb-8 flex justify-between items-center">
-            <h2 className="text-3xl font-black flex items-center gap-3 text-blue-600 uppercase">Admin Hub</h2>
-            <Button variant="outline" size="lg" onClick={async () => { await signOut(auth); setIsAdminPanelVisible(false); }} className="rounded-full bg-blue-50 text-blue-600 border-blue-200">
-              <LogOut className="w-5 h-5 mr-2" /> <span>Logout</span>
+        <div className="bg-white py-12 border-b">
+          <div className="container mx-auto px-4 flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-black text-blue-600 uppercase flex items-center gap-2">
+              <Layers className="w-6 h-6" /> Admin Hub
+            </h2>
+            <Button variant="outline" size="sm" onClick={() => signOut(auth)} className="rounded-xl text-blue-600 border-blue-200">
+              <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
           <AdminPanel stats={{orders: 0, earnings: 0}} currentTheme={currentTheme} onResetStats={() => {}} />
         </div>
       )}
 
-      <main className="container mx-auto p-4 md:p-8 mt-8">
-        <div className="space-y-20">
-          {Object.entries(filteredProductsBySection).map(([sectionName, items]: [string, any]) => (
-            <section key={sectionName} className="space-y-8">
-              <div className="flex items-center gap-4">
-                <div className={cn("p-4 rounded-3xl shadow-xl bg-gradient-to-br", currentThemeConfig.gradient)}><LayoutGrid className="w-6 h-6 text-white" /></div>
-                <h2 className={cn("text-4xl font-black uppercase tracking-tighter festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>{sectionName}</h2>
+      <main className="container mx-auto px-4 py-8">
+        <div className="space-y-16">
+          {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
+            <section key={section} className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
+                  <LayoutGrid className="w-6 h-6 text-primary" /> {section}
+                </h2>
+                <Badge variant="outline" className="rounded-full px-4 border-slate-200 text-slate-400 font-bold uppercase text-[9px]">
+                  {items.length} Items
+                </Badge>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {items.map((p: any) => (
-                  <div key={p.id} className="group product-card-premium rounded-[3rem] p-6 relative flex flex-col justify-between border border-white/20 shadow-xl bg-white/90">
-                    <div className="relative overflow-hidden rounded-[2.5rem] h-60 mb-6 bg-slate-100">
-                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                      <div className="absolute top-4 left-4 flex flex-col gap-2">
-                        {p.isPinned && <Badge className="bg-yellow-400 text-black px-3 py-1 rounded-full text-[10px] font-black"><Pin className="w-3 h-3 mr-1" /> PINNED</Badge>}
-                        <div className="flex gap-1">
-                          {p.isCodAvailable && <Badge variant="secondary" className="bg-green-100 text-green-700 text-[8px] font-bold">COD</Badge>}
-                          {p.isUpiAvailable && <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[8px] font-bold">UPI</Badge>}
+                  <div key={p.id} className="group product-card-premium rounded-[2rem] p-4 flex flex-col h-full shadow-sm hover:shadow-xl">
+                    <div className="relative aspect-square mb-4 rounded-[1.5rem] overflow-hidden bg-slate-50">
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      {p.isPinned && (
+                        <div className="absolute top-3 left-3 bg-yellow-400 text-black px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-md">
+                          <Pin className="w-3 h-3" /> FEATURED
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <div className="px-2 mb-6">
-                      <h3 className="font-black text-xl uppercase tracking-tighter mb-2">{p.name}</h3>
-                      <div className="flex flex-col gap-1">
-                        <p className={cn("text-3xl font-black italic", currentThemeConfig.accent)}>₹{p.price} <span className="text-sm text-gray-400 uppercase">/ {p.unit}</span></p>
-                        <p className="text-xs font-bold text-slate-400">Smart Pricing Applied</p>
-                      </div>
+                    <div className="flex-1 space-y-1 px-1">
+                      <h3 className="font-bold text-sm text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `Per ${p.unit}` : p.unit}</p>
                     </div>
-                    <Button onClick={() => handleBuyRequest(p)} className={cn("w-full h-16 rounded-[1.5rem] font-black text-lg uppercase shadow-2xl text-white border-none", currentThemeConfig.gradient)}>
-                      ORDER NOW <MessageCircle className="w-6 h-6 ml-2" />
-                    </Button>
+                    <div className="mt-4 flex items-center justify-between px-1">
+                      <div className="flex flex-col">
+                        <span className="text-lg font-black text-slate-900">₹{p.price}</span>
+                        {p.price < 100 && <span className="text-[8px] font-bold text-red-500 uppercase">+GST/Deliv</span>}
+                      </div>
+                      <Button onClick={() => handleBuyRequest(p)} size="sm" className="rounded-xl px-4 font-black text-[10px] bg-slate-900 text-white hover:bg-primary transition-colors uppercase">
+                        ADD
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -335,130 +320,122 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Payment Selection Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-8 max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black text-blue-600 uppercase">Complete Order</DialogTitle>
-            <DialogDescription className="font-bold text-slate-500 uppercase text-xs">Choose details and payment</DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6 py-4">
-            {/* Quantity Selector for kg/Liter */}
-            {(selectedProduct?.unit === 'kg' || selectedProduct?.unit === 'Liter') && (
+        <DialogContent className="rounded-[2.5rem] p-0 overflow-hidden max-w-md border-none">
+          <div className="p-8 space-y-8">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black uppercase tracking-tight">Bill Summary</DialogTitle>
+              <DialogDescription className="font-bold text-slate-400 text-[10px] uppercase">Review and pay to order</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              {(selectedProduct?.unit === 'kg' || selectedProduct?.unit === 'Liter') && (
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5"><Layers className="w-3.5 h-3.5" /> Select Quantity</Label>
+                  <Select value={quantity.toString()} onValueChange={(v) => setQuantity(parseInt(v))}>
+                    <SelectTrigger className="h-12 rounded-xl bg-slate-50 border-none font-bold">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {[1,2,3,4,5].map(n => <SelectItem key={n} value={n.toString()} className="font-bold">{n} {selectedProduct.unit}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-3">
-                <Label className="font-black text-slate-400 uppercase text-xs tracking-widest flex items-center gap-2">
-                  <Layers className="w-4 h-4" /> Select {selectedProduct.unit === 'kg' ? 'Weight' : 'Volume'}
-                </Label>
-                <Select value={quantity.toString()} onValueChange={(v) => setQuantity(parseInt(v))}>
-                  <SelectTrigger className="h-14 rounded-2xl border-2 border-slate-100 font-bold text-lg">
-                    <SelectValue placeholder="Choose amount" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    {[1, 2, 3, 4, 5].map((num) => (
-                      <SelectItem key={num} value={num.toString()} className="font-bold">
-                        {num} {selectedProduct.unit}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1.5"><Gift className="w-3.5 h-3.5" /> Packaging Preference</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={() => setPackagingType('Normal')} className={cn("p-4 rounded-2xl border-2 text-left transition-all", packagingType === 'Normal' ? "border-primary bg-primary/5" : "border-slate-100")}>
+                    <Package className={cn("w-5 h-5 mb-2", packagingType === 'Normal' ? "text-primary" : "text-slate-300")} />
+                    <p className="text-xs font-black uppercase">Standard</p>
+                    <p className="text-[9px] font-bold text-slate-400">FREE</p>
+                  </button>
+                  <button onClick={() => setPackagingType('Gift')} className={cn("p-4 rounded-2xl border-2 text-left transition-all", packagingType === 'Gift' ? "border-pink-500 bg-pink-50" : "border-slate-100")}>
+                    <Gift className={cn("w-5 h-5 mb-2", packagingType === 'Gift' ? "text-pink-500" : "text-slate-300")} />
+                    <p className="text-xs font-black uppercase">Gift Box</p>
+                    <p className="text-[9px] font-bold text-pink-500">+₹40</p>
+                  </button>
+                </div>
               </div>
-            )}
 
-            <div className="space-y-3">
-              <Label className="font-black text-slate-400 uppercase text-xs tracking-widest">Select Packaging</Label>
-              <RadioGroup value={packagingType} onValueChange={(v: any) => setPackagingType(v)} className="grid grid-cols-2 gap-4">
-                <div className={cn("flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer", packagingType === 'Normal' ? "border-blue-600 bg-blue-50" : "border-slate-100")}>
-                  <RadioGroupItem value="Normal" id="normal" className="hidden" />
-                  <Label htmlFor="normal" className="cursor-pointer flex items-center gap-2 font-bold text-slate-700">
-                    <Package className="w-5 h-5" /> Normal (Free)
-                  </Label>
+              <div className="bg-slate-50 rounded-2xl p-6 space-y-3">
+                <div className="flex justify-between text-[11px] font-bold text-slate-500 uppercase">
+                  <span>Item Total ({quantity})</span>
+                  <span>₹{selectedProduct?.price * quantity}</span>
                 </div>
-                <div className={cn("flex items-center gap-3 p-4 rounded-2xl border-2 transition-all cursor-pointer", packagingType === 'Gift' ? "border-blue-600 bg-blue-50" : "border-slate-100")}>
-                  <RadioGroupItem value="Gift" id="gift" className="hidden" />
-                  <Label htmlFor="gift" className="cursor-pointer flex items-center gap-2 font-bold text-slate-700">
-                    <Gift className="w-5 h-5 text-pink-500" /> Gift (+₹40)
-                  </Label>
+                <div className="flex justify-between text-[11px] font-bold text-slate-500 uppercase">
+                  <span>Delivery & GST Fee</span>
+                  <span>₹{(selectedProduct?.price * quantity) < 100 ? 125 : 25}</span>
                 </div>
-              </RadioGroup>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-[2rem] space-y-2">
-              <div className="flex justify-between text-sm font-bold text-slate-500">
-                <span>Subtotal ({quantity} {selectedProduct?.unit})</span>
-                <span>₹{selectedProduct?.price * quantity}</span>
-              </div>
-              <div className="flex justify-between text-sm font-bold text-slate-500">
-                <span>Delivery & GST</span>
-                <span>₹{(selectedProduct?.price * quantity) < 100 ? 125 : 25}</span>
-              </div>
-              {packagingType === 'Gift' && (
-                <div className="flex justify-between text-sm font-bold text-pink-500">
-                  <span>Gift Packaging</span>
-                  <span>₹40</span>
+                {packagingType === 'Gift' && (
+                  <div className="flex justify-between text-[11px] font-bold text-pink-500 uppercase">
+                    <span>Packaging Charge</span>
+                    <span>₹40</span>
+                  </div>
+                )}
+                <div className="pt-3 border-t-2 border-dashed border-slate-200 flex justify-between items-center">
+                  <span className="text-lg font-black uppercase">Total Pay</span>
+                  <span className="text-xl font-black text-primary">₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)}</span>
                 </div>
-              )}
-              <div className="pt-2 border-t flex justify-between text-2xl font-black text-blue-600">
-                <span>TOTAL</span>
-                <span>₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)}</span>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 gap-3">
-              {selectedProduct?.isUpiAvailable && (
-                <Button onClick={() => handlePaymentChoice('UPI')} className="h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-lg uppercase flex justify-between px-8">
-                  <div className="flex items-center gap-3"><Smartphone className="w-6 h-6" /> Pay Now (UPI)</div>
-                  <Wallet className="w-6 h-6 opacity-40" />
-                </Button>
-              )}
-              {selectedProduct?.isCodAvailable && (
-                <Button onClick={() => handlePaymentChoice('COD')} variant="outline" className="h-16 rounded-2xl border-2 border-blue-200 text-blue-600 font-black text-lg uppercase flex justify-between px-8">
-                  <div className="flex items-center gap-3"><Banknote className="w-6 h-6" /> Cash on Delivery</div>
-                </Button>
-              )}
-            </div>
+          </div>
+          
+          <div className="p-4 bg-white border-t flex flex-col gap-2">
+            <Button onClick={() => handlePaymentChoice('UPI')} className="h-14 rounded-xl bg-primary text-white font-black text-sm uppercase flex justify-between px-6 shadow-lg shadow-primary/20">
+              <span className="flex items-center gap-2"><Smartphone className="w-5 h-5" /> Pay Now (UPI)</span>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+            <Button onClick={() => handlePaymentChoice('COD')} variant="outline" className="h-14 rounded-xl border-slate-200 text-slate-600 font-black text-sm uppercase flex justify-between px-6">
+              <span className="flex items-center gap-2"><Banknote className="w-5 h-5" /> Cash on Delivery</span>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* UPI QR Dialog */}
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black text-center text-blue-600 uppercase">Scan to Pay</DialogTitle>
-            <DialogDescription className="text-center font-bold text-blue-600">{UPI_ID}</DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col items-center gap-6 py-4">
-            {UPI_QR_URL ? (
-              <img src={UPI_QR_URL} alt="Payment QR" className="w-64 h-64 object-contain rounded-2xl shadow-2xl border-8 border-white" />
-            ) : (
-              <div className="w-64 h-64 bg-slate-100 rounded-2xl flex items-center justify-center">
-                <QrCode className="w-20 h-20 text-slate-300" />
-              </div>
-            )}
-            <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-tight">Pay ₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)} to finalize your order.</p>
-            <Button onClick={() => finalizeOrder(selectedProduct, 'UPI')} className="w-full h-16 rounded-2xl text-xl font-black bg-blue-600 hover:bg-blue-700 text-white uppercase">I Have Paid</Button>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm">
+          <div className="flex flex-col items-center gap-6 text-center">
+            <h3 className="text-xl font-black uppercase">Scan to Pay</h3>
+            <div className="relative p-4 bg-white rounded-3xl shadow-2xl border-8 border-slate-50">
+              {UPI_QR_URL ? (
+                <img src={UPI_QR_URL} alt="QR" className="w-56 h-56 object-contain" />
+              ) : (
+                <div className="w-56 h-56 bg-slate-100 flex items-center justify-center"><QrCode className="w-16 h-16 text-slate-300" /></div>
+              )}
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-black text-primary">{UPI_ID}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase">Pay ₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)} to confirm</p>
+            </div>
+            <Button onClick={() => finalizeOrder(selectedProduct, 'UPI')} className="w-full h-14 rounded-xl bg-slate-900 text-white font-black uppercase">I Have Paid</Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Other Dialogs (Phone, Verification) */}
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader><DialogTitle className="text-3xl font-black text-blue-600 uppercase text-center">Your Number</DialogTitle></DialogHeader>
-          <form onSubmit={handlePhoneSubmit} className="space-y-6 py-4">
-            <Input type="tel" placeholder="Mobile Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-16 text-3xl font-black rounded-2xl text-center border-blue-100" />
-            <Button type="submit" className="w-full h-16 rounded-2xl text-xl font-black uppercase bg-blue-600 text-white">Continue Shopping</Button>
-          </form>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center">
+          <div className="space-y-6">
+            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto">
+              <Smartphone className="w-8 h-8 text-blue-600" />
+            </div>
+            <DialogHeader><DialogTitle className="text-2xl font-black text-center uppercase">Login to Bazaar</DialogTitle></DialogHeader>
+            <form onSubmit={handlePhoneSubmit} className="space-y-4">
+              <Input type="tel" placeholder="10-digit Phone Number" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} className="h-14 text-center text-xl font-black rounded-xl border-slate-100" />
+              <Button type="submit" className="w-full h-14 rounded-xl bg-primary text-white font-black uppercase">Confirm Phone</Button>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10">
-          <DialogHeader><DialogTitle className="text-3xl font-black text-blue-600 uppercase text-center">Admin Unlock</DialogTitle></DialogHeader>
-          <form onSubmit={handleVerifyCode} className="space-y-8 py-6">
-            <Input maxLength={4} placeholder="0000" className="text-center text-5xl h-24 tracking-[0.5em] font-black rounded-[2rem] border-blue-200 text-blue-600" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
-            <Button type="submit" className="w-full h-16 rounded-[1.5rem] text-xl font-black bg-blue-600 text-white uppercase">Open Bazaar Controls</Button>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-xs text-center">
+          <DialogHeader><DialogTitle className="text-xl font-black uppercase">Admin Unlock</DialogTitle></DialogHeader>
+          <form onSubmit={handleVerifyCode} className="space-y-6 pt-4">
+            <Input maxLength={4} className="text-center text-4xl h-20 font-black rounded-2xl border-blue-100" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
+            <Button type="submit" className="w-full h-14 rounded-xl bg-blue-600 text-white font-black uppercase">Open Controls</Button>
           </form>
         </DialogContent>
       </Dialog>
