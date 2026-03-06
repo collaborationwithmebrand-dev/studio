@@ -15,15 +15,6 @@ service cloud.firestore {
      * - /admin_roles: Marker collection where document existence grants admin privileges.
      * - /storeSettings: Sensitive operational data, restricted to admins.
      * - /publicDisplaySettings: Denormalized public configuration (e.g., active themes).
-     *
-     * Key Security Decisions:
-     * 1. Admin Verification: Admin status is verified by checking for a document at /admin_roles/{uid}.
-     * 2. Public Readability: The product catalog and public theme settings are open to all users 
-     *    (including unauthenticated) to maximize storefront performance and SEO.
-     * 3. Structural Segregation: Sensitive store statistics are kept in a separate collection 
-     *    from public settings to prevent accidental data leaks.
-     * 4. Denormalization for Authorization: The 'activeThemeName' is copied to a public path 
-     *    so rules remain simple and do not require cross-document lookups for every visitor.
      */
 
     // --- Helper Functions ---
@@ -54,11 +45,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for the product catalog. Publicly viewable, admin-only writes.
-     * @path /products/{productId}
-     * @allow (get) Any user viewing a product detail page.
-     * @allow (create) An authenticated admin adding a new item to the bazaar.
-     * @deny (update) An unauthenticated user or non-admin attempting to change a price.
-     * @principle Public Read with Owner-Only (Admin) Writes.
      */
     match /products/{productId} {
       allow get, list: if true;
@@ -68,23 +54,17 @@ service cloud.firestore {
 
     /**
      * @description Marker collection for admin roles.
-     * @path /admin_roles/{adminUid}
-     * @allow (get) An authenticated user checking their own admin status.
-     * @deny (list) A regular user attempting to crawl the list of all administrators.
-     * @principle DBAC (Database Access Control) via marker documents.
+     * For this prototype, we allow users to create their own admin role document to facilitate the secret-unlock flow.
      */
     match /admin_roles/{adminUid} {
       allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create, update, delete: if false; // Admin roles managed via Admin SDK/Console for safety
+      allow create: if isSignedIn() && request.auth.uid == adminUid;
+      allow update, delete: if isAdmin() && request.auth.uid == adminUid;
     }
 
     /**
      * @description Singleton for sensitive global store statistics and configuration.
-     * @path /storeSettings/mainSettings
-     * @allow (get) An admin viewing the store's total earnings.
-     * @deny (get) A customer attempting to see private store revenue data.
-     * @principle Structural Segregation for sensitive administrative data.
      */
     match /storeSettings/mainSettings {
       allow get, list, create: if isAdmin();
@@ -93,10 +73,6 @@ service cloud.firestore {
 
     /**
      * @description Singleton for public-facing UI configurations (e.g., festival themes).
-     * @path /publicDisplaySettings/theme
-     * @allow (get) Any user's browser fetching the active festival theme name.
-     * @deny (update) A user attempting to manually trigger a theme change.
-     * @principle Authorization Independence for public data.
      */
     match /publicDisplaySettings/theme {
       allow get, list: if true;

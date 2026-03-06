@@ -19,6 +19,7 @@ import {
   useUser, 
   useMemoFirebase,
   deleteDocumentNonBlocking,
+  setDocumentNonBlocking,
   errorEmitter
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -47,28 +48,38 @@ export default function Home() {
 
   const WHATSAPP_NUMBER = "917319965930";
   const ADMIN_SECRET_KEY = 'kela123';
-  const ADMIN_VERIFICATION_CODE = '5930'; // Last 4 digits of the target number as a standard prototype code
+  const ADMIN_VERIFICATION_CODE = '5930'; 
 
   // Check for secret key "kela123"
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
-      setIsVerificationDialogOpen(true);
+      if (!user) {
+        setIsLoginDialogOpen(true);
+      } else {
+        setIsVerificationDialogOpen(true);
+      }
       setSearchQuery('');
     }
-  }, [searchQuery]);
+  }, [searchQuery, user]);
 
   // Handle Verification Code Submit
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
-      setIsSecretAdminUnlocked(true);
-      setIsVerificationDialogOpen(false);
-      setVerificationCode('');
-      toast({ 
-        title: "Admin Access Granted", 
-        description: "Click the Shield icon to manage your bazaar.",
-        variant: "default"
-      });
+      if (user) {
+        // Officially register the user as an admin in Firestore to satisfy security rules
+        const adminRef = doc(firestore, 'admin_roles', user.uid);
+        setDocumentNonBlocking(adminRef, { assignedAt: new Date().toISOString() }, { merge: true });
+        
+        setIsSecretAdminUnlocked(true);
+        setIsVerificationDialogOpen(false);
+        setVerificationCode('');
+        toast({ 
+          title: "Admin Access Granted", 
+          description: "Your account is now registered. Click the Shield icon to manage your bazaar.",
+          variant: "default"
+        });
+      }
     } else {
       toast({
         title: "Invalid Code",
@@ -244,7 +255,7 @@ export default function Home() {
                 <ShieldCheck className="w-6 h-6" /> STORE MANAGEMENT
               </h2>
               {isSecretAdminUnlocked && !isAdmin && (
-                <p className="text-[10px] text-muted-foreground uppercase font-bold">Secret Mode Unlocked (Restricted Auth)</p>
+                <p className="text-[10px] text-muted-foreground uppercase font-bold">Initializing Admin Registration...</p>
               )}
             </div>
             <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center gap-2 rounded-full">
@@ -433,4 +444,3 @@ export default function Home() {
     </div>
   );
 }
-
