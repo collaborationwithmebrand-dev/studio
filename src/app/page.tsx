@@ -1,8 +1,7 @@
-
 "use client"
 
-import React, { useState, useMemo } from 'react';
-import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, ShieldCheck, MessageCircle, ShoppingBag, X, Loader2, Copy, LogOut, UserPlus, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +17,15 @@ import {
   useAuth, 
   useUser, 
   useMemoFirebase,
-  deleteDocumentNonBlocking
+  deleteDocumentNonBlocking,
+  errorEmitter
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { initiateEmailSignIn, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn, initiateEmailSignUp, initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { FirebaseError } from 'firebase/app';
 
 export default function Home() {
   const firestore = useFirestore();
@@ -34,13 +35,38 @@ export default function Home() {
 
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  // Login form state
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const WHATSAPP_NUMBER = "917319965930";
+
+  // Listen for Auth Errors globally
+  useEffect(() => {
+    const handleAuthError = (error: FirebaseError) => {
+      let message = "An authentication error occurred.";
+      if (error.code === 'auth/invalid-credential') {
+        message = "Invalid email or password. Please check your credentials.";
+      } else if (error.code === 'auth/email-already-in-use') {
+        message = "This email is already registered. Try signing in instead.";
+      } else if (error.code === 'auth/weak-password') {
+        message = "Password should be at least 6 characters.";
+      } else if (error.code === 'auth/operation-not-allowed') {
+        message = "Email/Password login is not enabled in Firebase Console.";
+      }
+      
+      toast({
+        variant: "destructive",
+        title: "Authentication Failed",
+        description: message
+      });
+    };
+
+    errorEmitter.on('auth-error', handleAuthError);
+    return () => errorEmitter.off('auth-error', handleAuthError);
+  }, [toast]);
 
   // Products Listener
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -56,7 +82,7 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  // Store Settings (Stats) Listener - Only for Admins
+  // Store Settings Listener
   const statsDocRef = useMemoFirebase(() => isAdmin ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, isAdmin]);
   const { data: statsData } = useDoc(statsDocRef);
   const stats = {
@@ -84,10 +110,16 @@ export default function Home() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    initiateEmailSignIn(auth, email, password);
+    
+    if (isSignUp) {
+      initiateEmailSignUp(auth, email, password);
+    } else {
+      initiateEmailSignIn(auth, email, password);
+    }
+    
     setIsLoginDialogOpen(false);
     setEmail('');
     setPassword('');
@@ -198,7 +230,6 @@ export default function Home() {
             onResetStats={() => {
               const mainSettingsRef = doc(firestore, 'storeSettings', 'mainSettings');
               const publicThemeRef = doc(firestore, 'publicDisplaySettings', 'theme');
-              // Batch update or separate non-blocking calls
               deleteDocumentNonBlocking(mainSettingsRef);
               deleteDocumentNonBlocking(publicThemeRef);
               toast({ title: "Settings Reset", description: "Stats cleared" });
@@ -263,16 +294,17 @@ export default function Home() {
         )}
       </main>
 
-      {/* Admin Login Dialog */}
       <Dialog open={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen}>
         <DialogContent className="rounded-[2.5rem]">
           <DialogHeader>
-            <DialogTitle>Admin Login</DialogTitle>
+            <DialogTitle>{isSignUp ? 'Create Admin Account' : 'Admin Login'}</DialogTitle>
             <DialogDescription>
-              Sign in to manage your store products and festival themes.
+              {isSignUp 
+                ? 'Register your email to get a UID for admin verification.' 
+                : 'Sign in to manage your store products and festival themes.'}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleLogin} className="space-y-4 py-4">
+          <form onSubmit={handleAuthSubmit} className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input 
@@ -292,8 +324,20 @@ export default function Home() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full rounded-xl">Sign In with Email</Button>
+            <Button type="submit" className="w-full rounded-xl flex items-center gap-2">
+              {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+              {isSignUp ? 'Sign Up' : 'Sign In'}
+            </Button>
           </form>
+          
+          <Button 
+            variant="ghost" 
+            onClick={() => setIsSignUp(!isSignUp)} 
+            className="w-full text-xs underline"
+          >
+            {isSignUp ? 'Already have an account? Sign In' : 'Need an account? Sign Up'}
+          </Button>
+
           <div className="relative mb-4">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-background px-2 text-muted-foreground">Or</span></div>
@@ -302,7 +346,7 @@ export default function Home() {
             Quick Anonymous Login
           </Button>
           <DialogFooter className="text-xs text-muted-foreground text-center">
-            Anonymous login allows you to get your UID for admin verification.
+            Note: Ensure "Email/Password" and "Anonymous" providers are enabled in your Firebase Console.
           </DialogFooter>
         </DialogContent>
       </Dialog>
