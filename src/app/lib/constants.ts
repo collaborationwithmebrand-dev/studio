@@ -11,32 +11,32 @@ export interface ThemeConfig {
 
 export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Normal: {
-    bg: 'bg-slate-50',
-    nav: 'bg-primary/90',
+    bg: 'bg-white',
+    nav: 'bg-white',
     title: 'BOUNSI BAZAAR',
-    accent: 'text-primary',
+    accent: 'text-green-600',
     effects: 'Normal',
-    gradient: 'from-blue-600 to-indigo-700'
+    gradient: 'from-green-600 to-green-700'
   },
   Diwali: {
     bg: 'bg-[#1a0f00]',
-    nav: 'bg-[#4a0e0e]/90',
+    nav: 'bg-[#2a1700]',
     title: '🪔 SHUBH DIWALI 🪔',
     accent: 'text-yellow-500',
     effects: 'Diwali',
     gradient: 'from-orange-600 via-red-600 to-yellow-500'
   },
   Holi: {
-    bg: 'bg-orange-50',
-    nav: 'bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500',
-    title: '🎨 HOLI UTSAV 🎨',
+    bg: 'bg-pink-50',
+    nav: 'bg-white',
+    title: '🎨 HAPPY HOLI 🎨',
     accent: 'text-pink-600',
     effects: 'Holi',
     gradient: 'from-yellow-400 via-red-500 to-pink-500'
   },
   Eid: {
     bg: 'bg-[#002b1c]',
-    nav: 'bg-[#004d33]/90',
+    nav: 'bg-[#003d27]',
     title: '🌙 EID MUBARAK 🌙',
     accent: 'text-emerald-400',
     effects: 'Eid',
@@ -44,7 +44,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   },
   Rakhi: {
     bg: 'bg-rose-50',
-    nav: 'bg-rose-600/90',
+    nav: 'bg-white',
     title: '🎀 RAKSHA BANDHAN 🎀',
     accent: 'text-rose-600',
     effects: 'Rakhi',
@@ -52,7 +52,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   },
   Christmas: {
     bg: 'bg-sky-50',
-    nav: 'bg-red-700/90',
+    nav: 'bg-white',
     title: '🎄 MERRY CHRISTMAS 🎄',
     accent: 'text-red-600',
     effects: 'Christmas',

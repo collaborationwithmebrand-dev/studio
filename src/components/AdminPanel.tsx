@@ -15,7 +15,7 @@ import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, 
 import { cn } from '@/lib/utils';
 
 interface AdminPanelProps {
-  stats: { orders: number; earnings: number; upiId?: string; upiQrUrl?: string };
+  stats: { orders: number; earnings: number };
   currentTheme: FestivalTheme;
   onResetStats: () => void;
 }
@@ -26,12 +26,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('Food');
+  const [category, setCategory] = useState('Grocery');
   const [unit, setUnit] = useState('kg');
-  const [section, setSection] = useState('Dairy Special');
+  const [section, setSection] = useState('Daily Essentials');
   const [imageUrl, setImageUrl] = useState('');
-  const [isCodAvailable, setIsCodAvailable] = useState(true);
-  const [isUpiAvailable, setIsUpiAvailable] = useState(true);
   const [isPinned, setIsPinned] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
@@ -52,12 +50,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
 
   const topSellers = useMemo(() => {
     if (!orders) return [];
-    const counts: Record<string, { name: string; count: number; revenue: number }> = {};
+    const counts: Record<string, { name: string; count: number }> = {};
     orders.forEach((o: any) => {
       const pName = o.productName || 'Unknown';
-      if (!counts[pName]) counts[pName] = { name: pName, count: 0, revenue: 0 };
+      if (!counts[pName]) counts[pName] = { name: pName, count: 0 };
       counts[pName].count += (o.quantity || 1);
-      counts[pName].revenue += (o.amount || 0);
     });
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [orders]);
@@ -79,7 +76,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   const handleUpdateTheme = (newTheme: FestivalTheme) => {
     const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
     setDocumentNonBlocking(themeRef, { activeThemeName: newTheme }, { merge: true });
-    toast({ title: "Bazaar Updated", description: `Theme set to ${newTheme}` });
+    toast({ title: "Theme Updated", description: `Active theme: ${newTheme}` });
   };
 
   const handleUpdateSettings = () => {
@@ -94,50 +91,52 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   };
 
   const handleAdd = async () => {
-    if (!name || !price || !imageUrl) return toast({ title: "Error", description: "Fill all fields", variant: "destructive" });
+    if (!name || !price || !imageUrl) return toast({ title: "Error", description: "Fill all required fields", variant: "destructive" });
     addDocumentNonBlocking(collection(firestore, 'products'), {
-      name, price: parseFloat(price), unit, section, category, imageUrl, isCodAvailable, isUpiAvailable, isPinned, createdAt: new Date().toISOString()
+      name, price: parseFloat(price), unit, section, category, imageUrl, isPinned, createdAt: new Date().toISOString()
     });
     setName(''); setPrice(''); setImageUrl('');
-    toast({ title: "Product Published!" });
+    toast({ title: "Product Added Successfully!" });
   };
 
   const handleDeleteProduct = (productId: string) => {
     const productRef = doc(firestore, 'products', productId);
     deleteDocumentNonBlocking(productRef);
-    toast({ title: "Product Removed", description: "The item has been deleted from your catalog." });
+    toast({ title: "Product Removed" });
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-10">
-      <Card className="rounded-[2rem] border-none shadow-xl bg-blue-50/50">
-        <CardHeader><CardTitle className="text-blue-600 font-black flex items-center gap-2 uppercase text-sm"><TrendingUp className="w-5 h-5" /> TOP SELLING ITEMS</CardTitle></CardHeader>
+    <div className="container mx-auto p-4 space-y-8">
+      {/* Top Sellers Section */}
+      <Card className="rounded-3xl border-none shadow-sm bg-blue-50/30">
+        <CardHeader><CardTitle className="text-blue-600 font-bold flex items-center gap-2 uppercase text-sm"><TrendingUp className="w-5 h-5" /> Most Popular Items</CardTitle></CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {topSellers.map((p, i) => (
-              <div key={i} className="bg-white p-4 rounded-2xl border border-blue-100 shadow-sm flex flex-col gap-1">
-                <span className="text-blue-600 font-black text-xs">#{i+1}</span>
-                <p className="text-blue-900 font-bold text-[10px] uppercase truncate">{p.name}</p>
-                <p className="text-blue-500 font-black text-xs">{p.count} ORDERS</p>
+              <div key={i} className="bg-white p-3 rounded-2xl border border-blue-100 flex flex-col items-center text-center">
+                <span className="text-blue-600 font-black text-xs mb-1">#{i+1}</span>
+                <p className="text-blue-900 font-bold text-[10px] uppercase truncate w-full">{p.name}</p>
+                <p className="text-blue-400 font-black text-[10px]">{p.count} SOLD</p>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-        <div className="space-y-10">
-          <Card className="rounded-[2rem] border-none shadow-xl">
-            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><Palette className="w-5 h-5" /> FESTIVAL THEME (Special Day)</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-8">
+          {/* Theme Settings */}
+          <Card className="rounded-3xl border-none shadow-sm">
+            <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><Palette className="w-5 h-5" /> Special Day Themes</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-3 gap-2">
               {(Object.keys(THEME_DATA) as FestivalTheme[]).map(t => (
                 <Button 
                   key={t} 
                   onClick={() => handleUpdateTheme(t)} 
                   variant={currentTheme === t ? "default" : "outline"} 
                   className={cn(
-                    "rounded-xl h-12 font-black uppercase text-[10px] transition-all", 
-                    currentTheme === t ? "bg-blue-600 scale-105 shadow-lg shadow-blue-200" : "text-blue-600 border-blue-100 hover:bg-blue-50"
+                    "rounded-xl h-10 font-bold uppercase text-[9px]", 
+                    currentTheme === t ? "bg-blue-600" : "text-blue-600 border-blue-100 hover:bg-blue-50"
                   )}
                 >
                   {t}
@@ -146,85 +145,84 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2rem] border-none shadow-xl">
-            <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><Wallet className="w-5 h-5" /> CONTACT & UPI SETTINGS</CardTitle></CardHeader>
+          {/* Contact & Payment Settings */}
+          <Card className="rounded-3xl border-none shadow-sm">
+            <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><Wallet className="w-5 h-5" /> Contact & UPI</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-                <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={e => setHelpline(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={e => setWhatsapp(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={e => setHelpline(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
               </div>
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={e => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={e => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-              <Button onClick={handleUpdateSettings} className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase text-xs">SAVE BAZAAR SETTINGS</Button>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={e => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={e => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <Button onClick={handleUpdateSettings} className="w-full h-10 rounded-xl bg-blue-600 text-white font-bold uppercase text-xs">Save Settings</Button>
             </CardContent>
           </Card>
 
-          <Card className="rounded-[2rem] border-none shadow-xl">
+          {/* Manage Products */}
+          <Card className="rounded-3xl border-none shadow-sm">
             <CardHeader>
-              <div className="flex flex-col gap-4">
-                <CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> MANAGE CATALOG</CardTitle>
+              <div className="flex flex-col gap-2">
+                <CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> Manage Inventory</CardTitle>
                 <div className="relative">
                   <Input 
-                    placeholder="Search in catalog..." 
+                    placeholder="Search products..." 
                     value={catalogSearch} 
                     onChange={e => setCatalogSearch(e.target.value)}
-                    className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold pl-10"
+                    className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9"
                   />
-                  <Search className="absolute left-3 top-2.5 w-5 h-5 text-blue-400" />
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-400" />
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+            <CardContent className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
               {filteredCatalogProducts.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between p-3 bg-blue-50/50 rounded-2xl border border-blue-100 group">
+                <div key={p.id} className="flex items-center justify-between p-2 bg-blue-50/30 rounded-xl border border-blue-50">
                   <div className="flex items-center gap-3">
-                    <img src={p.imageUrl} className="w-10 h-10 rounded-lg object-cover" alt="" />
+                    <img src={p.imageUrl} className="w-8 h-8 rounded-lg object-cover" alt="" />
                     <div>
-                      <p className="text-blue-900 font-black text-[10px] uppercase truncate max-w-[150px]">{p.name}</p>
-                      <p className="text-blue-500 font-bold text-[9px]">₹{p.price} / {p.unit}</p>
+                      <p className="text-blue-900 font-bold text-[10px] uppercase truncate max-w-[120px]">{p.name}</p>
+                      <p className="text-blue-400 font-bold text-[9px]">₹{p.price} / {p.unit}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-400 hover:text-red-500 hover:bg-red-50 rounded-xl">
+                  <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-300 hover:text-red-500 rounded-xl h-8 w-8">
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
-              {filteredCatalogProducts.length === 0 && (
-                <p className="text-blue-400 font-bold text-center py-4 text-[10px] uppercase">No matching products found</p>
-              )}
             </CardContent>
           </Card>
         </div>
 
-        <Card className="rounded-[2rem] border-none shadow-xl h-fit">
-          <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> PUBLISH PRODUCT</CardTitle></CardHeader>
-          <CardContent className="space-y-6">
+        {/* Add Product Form */}
+        <Card className="rounded-3xl border-none shadow-sm h-fit">
+          <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> New Product</CardTitle></CardHeader>
+          <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">Product Name</Label><Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">Section</Label><Input value={section} onChange={e => setSection(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[9px]">Image URL</Label><Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={e => setPrice(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={e => setSection(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={e => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-blue-600 font-black uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> SI Unit (Quantity Base)</Label>
+            <div className="space-y-2">
+              <Label className="text-blue-600 font-bold uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> Measurement Unit (SI)</Label>
               <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2">
                 {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
-                  <div key={u} className={cn("p-3 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600" : "bg-white border-blue-100")}>
+                  <div key={u} className={cn("p-2 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600" : "bg-white border-blue-100")}>
                     <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
-                    <Label htmlFor={`u-${u}`} className={cn("font-black text-[10px] cursor-pointer uppercase", unit === u ? "text-white" : "text-blue-600")}>{u}</Label>
+                    <Label htmlFor={`u-${u}`} className={cn("font-bold text-[10px] cursor-pointer uppercase", unit === u ? "text-white" : "text-blue-600")}>{u}</Label>
                   </div>
                 ))}
               </RadioGroup>
             </div>
 
-            <div className="flex flex-wrap gap-4 py-2">
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl"><Checkbox id="c-cod" checked={isCodAvailable} onCheckedChange={v => setIsCodAvailable(v === true)} /><Label htmlFor="c-cod" className="text-blue-600 font-black uppercase text-[9px]">COD</Label></div>
-              <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-xl"><Checkbox id="c-upi" checked={isUpiAvailable} onCheckedChange={v => setIsUpiAvailable(v === true)} /><Label htmlFor="c-upi" className="text-blue-600 font-black uppercase text-[9px]">UPI</Label></div>
-              <div className="flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-xl shadow-lg shadow-blue-200"><Checkbox id="c-pin" checked={isPinned} onCheckedChange={v => setIsPinned(v === true)} className="border-white" /><Label htmlFor="c-pin" className="text-white font-black uppercase text-[9px]">PIN TO TOP</Label></div>
+            <div className="flex items-center gap-2 bg-blue-50/30 px-3 py-2 rounded-xl border border-blue-100 w-fit">
+              <Checkbox id="c-pin" checked={isPinned} onCheckedChange={v => setIsPinned(v === true)} className="border-blue-300" />
+              <Label htmlFor="c-pin" className="text-blue-600 font-bold uppercase text-[9px]">Feature at Top</Label>
             </div>
 
-            <Button onClick={handleAdd} className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase text-sm shadow-xl hover:scale-[1.02] transition-transform">PUBLISH TO BAZAAR</Button>
+            <Button onClick={handleAdd} className="w-full h-12 rounded-xl bg-blue-600 text-white font-bold uppercase text-sm shadow-md">Publish to Bazaar</Button>
           </CardContent>
         </Card>
       </div>

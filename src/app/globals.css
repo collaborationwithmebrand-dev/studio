@@ -4,26 +4,26 @@
 
 @layer base {
   :root {
-    --background: 220 77% 95%;
+    --background: 0 0% 100%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 221 95% 51%;
+    --primary: 142 71% 45%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 249 79% 61%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 249 79% 61%;
+    --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221 95% 51%;
-    --radius: 2rem;
+    --ring: 142 71% 45%;
+    --radius: 1.5rem;
   }
 }
 
@@ -33,11 +33,9 @@
   }
   body {
     @apply bg-background text-foreground font-body;
-    transition: background-color 1s cubic-bezier(0.4, 0, 0.2, 1), color 1s ease;
+    transition: background-color 0.5s ease;
   }
 }
-
-/* Premium Blinkit-style Styling */
 
 .glass-nav {
   background: rgba(255, 255, 255, 0.85);
@@ -45,30 +43,25 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.product-card-premium {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+.product-card-blinkit {
+  transition: all 0.2s ease;
   background: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.product-card-premium:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.product-card-blinkit:hover {
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  transform: translateY(-2px);
 }
 
 .festive-title {
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
-  animation: text-shimmer 3s infinite linear;
   background-size: 200% auto;
 }
 
-@keyframes text-shimmer {
-  to { background-position: 200% center; }
-}
-
-/* Festival Overlays */
+/* Festival Effects */
 .festival-overlay {
   position: fixed;
   top: 0;
@@ -81,8 +74,8 @@
 }
 
 @keyframes diwali-glow {
-  0%, 100% { opacity: 0.4; transform: scale(1); filter: blur(5px); }
-  50% { opacity: 1; transform: scale(1.5); filter: blur(8px); }
+  0%, 100% { opacity: 0.3; transform: scale(1); filter: blur(5px); }
+  50% { opacity: 0.8; transform: scale(1.4); filter: blur(8px); }
 }
 
 .diwali-light {
@@ -91,7 +84,7 @@
   height: 15px;
   position: absolute;
   border-radius: 50%;
-  animation: diwali-glow 2s infinite ease-in-out;
+  animation: diwali-glow 3s infinite ease-in-out;
 }
 
 @keyframes snow-fall {
@@ -106,17 +99,11 @@
   animation: snow-fall linear infinite;
 }
 
-@keyframes splash-pop {
-  0% { transform: scale(0); opacity: 0; }
-  50% { opacity: 0.5; }
-  100% { transform: scale(1.5); opacity: 0; }
-}
-
 .color-splash {
   position: absolute;
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  filter: blur(20px);
-  animation: splash-pop 3s infinite;
+  filter: blur(25px);
+  opacity: 0.2;
 }
