@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, useDoc, useMemoFirebase, useCollection, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) => {
   const firestore = useFirestore();
+  const { user } = useUser();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
@@ -40,13 +41,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) =
   
   const [catalogSearch, setCatalogSearch] = useState('');
 
-  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
+  const settingsRef = useMemoFirebase(() => user ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, user]);
   const { data: settings } = useDoc(settingsRef);
+
+  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
+  const { data: adminRole } = useDoc(adminRoleRef);
+  const isAdmin = !!adminRole;
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  const ordersQuery = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+  // Only query orders if verified as admin
+  const ordersQuery = useMemoFirebase(() => {
+    if (!isAdmin) return null;
+    return collection(firestore, 'orders');
+  }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
 
   const topSellers = useMemo(() => {
@@ -85,6 +94,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) =
   };
 
   const handleUpdateSettings = () => {
+    if (!settingsRef) return;
     setDocumentNonBlocking(settingsRef, { 
       whatsappNumber: whatsapp, 
       helpLineNumber: helpline,
@@ -257,4 +267,3 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) =
     </div>
   );
 };
-

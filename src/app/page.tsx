@@ -93,7 +93,7 @@ export default function Home() {
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(profileRef);
 
-  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
+  const settingsRef = useMemoFirebase(() => user ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, user]);
   const { data: settings } = useDoc(settingsRef);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
@@ -141,7 +141,11 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
-  const ordersQuery = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+  // Sensitive orders data should only be fetched if user is verified as admin
+  const ordersQuery = useMemoFirebase(() => {
+    if (!isAdmin) return null;
+    return collection(firestore, 'orders');
+  }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
 
   const stats = useMemo(() => {
