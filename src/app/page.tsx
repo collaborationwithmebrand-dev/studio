@@ -158,7 +158,7 @@ export default function Home() {
           price: product.price,
           unit: product.unit,
           imageUrl: product.imageUrl,
-          quantity: existing ? existing.quantity + 1 : 1
+          quantity: existing ? Math.min(existing.quantity + 1, 5) : 1
         }
       };
     });

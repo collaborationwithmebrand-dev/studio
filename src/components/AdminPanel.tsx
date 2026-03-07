@@ -52,9 +52,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
     if (!orders) return [];
     const counts: Record<string, { name: string; count: number }> = {};
     orders.forEach((o: any) => {
-      const pName = o.productName || 'Unknown';
-      if (!counts[pName]) counts[pName] = { name: pName, count: 0 };
-      counts[pName].count += (o.quantity || 1);
+      if (o.items && Array.isArray(o.items)) {
+        o.items.forEach((item: any) => {
+          const pName = item.name || 'Unknown';
+          if (!counts[pName]) counts[pName] = { name: pName, count: 0 };
+          counts[pName].count += (item.quantity || 1);
+        });
+      }
     });
     return Object.values(counts).sort((a, b) => b.count - a.count).slice(0, 5);
   }, [orders]);
