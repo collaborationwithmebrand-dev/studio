@@ -124,6 +124,20 @@ export default function Home() {
     }
   };
 
+  const handlePhoneSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber || phoneNumber.length < 10) {
+      toast({ title: "Invalid Phone Number", variant: "destructive" });
+      return;
+    }
+    if (user) {
+      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
+      setIsPhoneDialogOpen(false);
+      setIsPaymentDialogOpen(true);
+      toast({ title: "Phone Verified" });
+    }
+  };
+
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
@@ -511,4 +525,3 @@ export default function Home() {
     </div>
   );
 }
-
