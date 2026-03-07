@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,10 +23,9 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -40,12 +39,22 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
   return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
 }
 
+interface CartItem {
+  id: string;
+  name: string;
+  price: number;
+  unit: string;
+  imageUrl: string;
+  quantity: number;
+}
+
 export default function Home() {
   const firestore = useFirestore();
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
+  const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
@@ -53,9 +62,7 @@ export default function Home() {
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
-  const [quantity, setQuantity] = useState<number>(1);
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
@@ -140,11 +147,50 @@ export default function Home() {
     }, {});
   }, [products, searchQuery]);
 
-  const calculateTotalPrice = (basePrice: number, qty: number = 1) => {
-    const subtotal = basePrice * qty;
-    const deliveryGST = subtotal < 100 ? 125 : 25;
+  const addToCart = (product: any) => {
+    setCart(prev => {
+      const existing = prev[product.id];
+      return {
+        ...prev,
+        [product.id]: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          unit: product.unit,
+          imageUrl: product.imageUrl,
+          quantity: existing ? existing.quantity + 1 : 1
+        }
+      };
+    });
+  };
+
+  const removeFromCart = (productId: string) => {
+    setCart(prev => {
+      const existing = prev[productId];
+      if (!existing) return prev;
+      if (existing.quantity <= 1) {
+        const { [productId]: _, ...rest } = prev;
+        return rest;
+      }
+      return {
+        ...prev,
+        [productId]: { ...existing, quantity: existing.quantity - 1 }
+      };
+    });
+  };
+
+  const cartTotal = useMemo(() => {
+    return Object.values(cart).reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  }, [cart]);
+
+  const cartCount = useMemo(() => {
+    return Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
+  }, [cart]);
+
+  const calculateFinalTotal = () => {
+    const deliveryGST = cartTotal < 100 ? 125 : 25;
     const packagingFee = packagingType === 'Gift' ? 40 : 0;
-    return subtotal + deliveryGST + packagingFee;
+    return cartTotal + deliveryGST + packagingFee;
   };
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
@@ -153,23 +199,23 @@ export default function Home() {
     if (user) {
       setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
       setIsPhoneDialogOpen(false);
-      if (selectedProduct) setIsPaymentDialogOpen(true);
+      setIsPaymentDialogOpen(true);
     }
   };
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     const phone = profile?.phoneNumber || phoneNumber;
-    const finalPrice = calculateTotalPrice(selectedProduct.price, quantity);
+    const finalPrice = calculateFinalTotal();
+    const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit}) - ₹${item.price * item.quantity}`).join('\n');
     
     navigator.geolocation.getCurrentPosition((pos) => {
       const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*BOUNSI BAZAAR ORDER*\n\n*Item:* ${selectedProduct.name}\n*Qty:* ${quantity} ${selectedProduct.unit}\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Delivering in 30 mins!_ ⚡`;
+      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Delivering in 30 mins!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         phoneNumber: phone,
-        productName: selectedProduct.name,
-        quantity,
-        amount: finalPrice,
+        items: Object.values(cart),
+        totalAmount: finalPrice,
         status: 'pending',
         userId: user?.uid,
         createdAt: new Date().toISOString()
@@ -178,6 +224,7 @@ export default function Home() {
       window.open(`https://wa.me/${settings?.whatsappNumber || "917319965930"}?text=${encodeURIComponent(message)}`, '_blank');
       setIsQrDialogOpen(false);
       setIsPaymentDialogOpen(false);
+      setCart({});
     });
   };
 
@@ -200,7 +247,7 @@ export default function Home() {
   }
 
   return (
-    <div className={cn("min-h-screen relative pb-20", currentThemeConfig.bg)}>
+    <div className={cn("min-h-screen relative pb-32", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
       <nav className="sticky top-0 z-50 glass-nav">
@@ -272,34 +319,43 @@ export default function Home() {
                 </h2>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {items.map((p: any) => (
-                    <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full">
-                      <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-slate-50">
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                        {p.isPinned && (
-                          <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1">
-                            <Pin className="w-2.5 h-2.5" /> PINNED
-                          </div>
-                        )}
+                  {items.map((p: any) => {
+                    const cartItem = cart[p.id];
+                    return (
+                      <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full">
+                        <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-slate-50">
+                          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          {p.isPinned && (
+                            <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1">
+                              <Pin className="w-2.5 h-2.5" /> PINNED
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}</p>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-sm font-black text-slate-900">₹{p.price}</span>
+                          {cartItem ? (
+                            <div className="flex items-center gap-2 bg-green-500 rounded-lg p-0.5 shadow-md shadow-green-100">
+                              <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner">
+                                <Minus className="w-3 h-3" />
+                              </Button>
+                              <span className="text-white font-black text-xs w-4 text-center">{cartItem.quantity}</span>
+                              <Button onClick={() => addToCart(p)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner">
+                                <Plus className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button onClick={() => addToCart(p)} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase">
+                              ADD
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 space-y-1">
-                        <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}</p>
-                      </div>
-                      <div className="mt-3 flex items-center justify-between">
-                        <span className="text-sm font-black text-slate-900">₹{p.price}</span>
-                        <Button onClick={() => {
-                          setSelectedProduct(p);
-                          setQuantity(1);
-                          setPackagingType('Normal');
-                          if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
-                          else setIsPaymentDialogOpen(true);
-                        }} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase">
-                          ADD
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             ))
@@ -312,29 +368,53 @@ export default function Home() {
         </div>
       </main>
 
+      {/* Sticky View Cart Bar (Blinkit Style) */}
+      {cartCount > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-[60] animate-in slide-in-from-bottom-8 duration-500">
+          <div className="bg-green-600 text-white rounded-2xl p-4 flex items-center justify-between shadow-2xl border border-green-400">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-700 p-2 rounded-xl">
+                <ShoppingCart className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase leading-tight">{cartCount} ITEM{cartCount > 1 ? 'S' : ''}</p>
+                <p className="text-lg font-black leading-tight">₹{cartTotal}</p>
+              </div>
+            </div>
+            <Button onClick={() => {
+              if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
+              else setIsPaymentDialogOpen(true);
+            }} className="bg-white text-green-700 hover:bg-slate-50 h-12 px-6 rounded-xl font-black uppercase text-xs flex items-center gap-2">
+              VIEW CART <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-3xl p-6 max-w-sm border-none shadow-2xl">
           <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-black uppercase tracking-tight">Checkout</DialogTitle>
+            <DialogTitle className="text-xl font-black uppercase tracking-tight">Checkout Summary</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
-            {(selectedProduct?.unit === 'kg' || selectedProduct?.unit === 'Liter') && (
-              <div className="space-y-1.5">
-                <Label className="text-[9px] font-black uppercase text-slate-400">Select Amount</Label>
-                <Select value={quantity.toString()} onValueChange={(v) => setQuantity(parseInt(v))}>
-                  <SelectTrigger className="h-10 rounded-xl bg-slate-50 border-none font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    {[1,2,3,4,5].map(n => <SelectItem key={n} value={n.toString()} className="font-bold">{n} {selectedProduct.unit}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="max-h-[200px] overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+              {Object.values(cart).map((item) => (
+                <div key={item.id} className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <img src={item.imageUrl} className="w-10 h-10 rounded-lg object-cover" />
+                    <div>
+                      <p className="text-[10px] font-black uppercase line-clamp-1">{item.name}</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase">{item.quantity} x {item.unit}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-black">₹{item.price * item.quantity}</span>
+                </div>
+              ))}
+            </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[9px] font-black uppercase text-slate-400">Packaging</Label>
+              <Label className="text-[9px] font-black uppercase text-slate-400">Choose Packaging</Label>
               <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => setPackagingType('Normal')} className={cn("p-3 rounded-xl border text-left transition-all", packagingType === 'Normal' ? "border-green-500 bg-green-50/50" : "border-slate-100")}>
                   <Package className={cn("w-4 h-4 mb-1", packagingType === 'Normal' ? "text-green-500" : "text-slate-300")} />
@@ -350,11 +430,11 @@ export default function Home() {
             <div className="bg-slate-50 rounded-2xl p-4 space-y-2 border border-slate-100">
               <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
                 <span>Items Subtotal</span>
-                <span>₹{selectedProduct?.price * quantity}</span>
+                <span>₹{cartTotal}</span>
               </div>
               <div className="flex justify-between text-[10px] font-bold text-slate-500 uppercase">
                 <span>Delivery & GST Fee</span>
-                <span>₹{(selectedProduct?.price * quantity) < 100 ? 125 : 25}</span>
+                <span>₹{cartTotal < 100 ? 125 : 25}</span>
               </div>
               {packagingType === 'Gift' && (
                 <div className="flex justify-between text-[10px] font-bold text-pink-500 uppercase">
@@ -364,7 +444,7 @@ export default function Home() {
               )}
               <div className="pt-2 border-t border-dashed border-slate-300 flex justify-between items-center">
                 <span className="text-sm font-black uppercase">To Pay</span>
-                <span className="text-lg font-black text-green-600">₹{calculateTotalPrice(selectedProduct?.price || 0, quantity)}</span>
+                <span className="text-lg font-black text-green-600">₹{calculateFinalTotal()}</span>
               </div>
             </div>
 
