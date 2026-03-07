@@ -141,21 +141,6 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
-  // Sensitive orders data should only be fetched if user is verified as admin
-  const ordersQuery = useMemoFirebase(() => {
-    if (!isAdmin) return null;
-    return collection(firestore, 'orders');
-  }, [firestore, isAdmin]);
-  const { data: orders } = useCollection(ordersQuery);
-
-  const stats = useMemo(() => {
-    if (!orders) return { orders: 0, earnings: 0 };
-    return {
-      orders: orders.length,
-      earnings: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
-    };
-  }, [orders]);
-
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
     const filtered = products
@@ -325,7 +310,7 @@ export default function Home() {
               <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
-          <AdminPanel stats={stats} currentTheme={currentTheme} onResetStats={() => {}} />
+          <AdminPanel currentTheme={currentTheme} />
         </div>
       )}
 

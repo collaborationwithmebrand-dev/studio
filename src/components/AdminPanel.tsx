@@ -16,12 +16,10 @@ import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, 
 import { cn } from '@/lib/utils';
 
 interface AdminPanelProps {
-  stats: { orders: number; earnings: number };
   currentTheme: FestivalTheme;
-  onResetStats: () => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -46,17 +44,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, stats }) =
 
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
-  const isAdmin = !!adminRole;
+  const isAdmin = !!adminRole && user?.uid === adminRole.id;
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  // Only query orders if verified as admin
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin) return null;
     return collection(firestore, 'orders');
   }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
+
+  const stats = useMemo(() => {
+    if (!orders) return { orders: 0, earnings: 0 };
+    return {
+      orders: orders.length,
+      earnings: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
+    };
+  }, [orders]);
 
   const topSellers = useMemo(() => {
     if (!orders) return [];
