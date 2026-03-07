@@ -150,11 +150,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><Wallet className="w-5 h-5" /> Contact & UPI</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={setWhatsapp} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={setHelpline} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">WhatsApp Order No</Label><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+                <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Help Line No</Label><Input value={helpline} onChange={(e) => setHelpline(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
               </div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={setUpiId} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={setUpiQrUrl} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
               <Button onClick={handleUpdateSettings} className="w-full h-10 rounded-xl bg-blue-600 text-white font-bold uppercase text-xs">Save Settings</Button>
             </CardContent>
           </Card>
@@ -168,28 +168,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
                   <Input 
                     placeholder="Search products..." 
                     value={catalogSearch} 
-                    onChange={setCatalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
                     className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9"
                   />
                   <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-400" />
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
-              {filteredCatalogProducts.map((p: any) => (
-                <div key={p.id} className="flex items-center justify-between p-2 bg-blue-50/30 rounded-xl border border-blue-50">
-                  <div className="flex items-center gap-3">
-                    <img src={p.imageUrl} className="w-8 h-8 rounded-lg object-cover" alt="" />
-                    <div>
-                      <p className="text-blue-900 font-bold text-[10px] uppercase truncate max-w-[120px]">{p.name}</p>
-                      <p className="text-blue-400 font-bold text-[9px]">₹{p.price} / {p.unit}</p>
+            <CardContent className="space-y-2 max-h-[300px] overflow-y-auto pr-2 text-blue-600">
+              {filteredCatalogProducts.length > 0 ? (
+                filteredCatalogProducts.map((p: any) => (
+                  <div key={p.id} className="flex items-center justify-between p-2 bg-blue-50/30 rounded-xl border border-blue-50">
+                    <div className="flex items-center gap-3">
+                      <img src={p.imageUrl} className="w-8 h-8 rounded-lg object-cover" alt="" />
+                      <div>
+                        <p className="text-blue-900 font-bold text-[10px] uppercase truncate max-w-[120px]">{p.name}</p>
+                        <p className="text-blue-400 font-bold text-[9px]">₹{p.price} / {p.unit}</p>
+                      </div>
                     </div>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-300 hover:text-red-500 rounded-xl h-8 w-8">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-300 hover:text-red-500 rounded-xl h-8 w-8">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-[10px] text-center font-bold text-blue-400 uppercase py-4">No items to show</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -199,10 +203,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
           <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> New Product</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={setName} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={setPrice} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={setSection} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
-              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={setImageUrl} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={(e) => setSection(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
+              <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold" /></div>
             </div>
 
             <div className="space-y-2">
@@ -218,7 +222,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
             </div>
 
             <div className="flex items-center gap-2 bg-blue-50/30 px-3 py-2 rounded-xl border border-blue-100 w-fit">
-              <Checkbox id="c-pin" checked={isPinned} onCheckedChange={setIsPinned} className="border-blue-300" />
+              <Checkbox id="c-pin" checked={isPinned} onCheckedChange={(checked) => setIsPinned(checked)} className="border-blue-300" />
               <Label htmlFor="c-pin" className="text-blue-600 font-bold uppercase text-[9px]">Feature at Top</Label>
             </div>
 

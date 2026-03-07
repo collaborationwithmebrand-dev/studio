@@ -122,8 +122,16 @@ export default function Home() {
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
     const filtered = products
-      .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      .filter(p => {
+        const term = searchQuery.toLowerCase();
+        return (
+          p.name.toLowerCase().includes(term) || 
+          (p.section && p.section.toLowerCase().includes(term)) ||
+          (p.category && p.category.toLowerCase().includes(term))
+        );
+      })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
+    
     return filtered.reduce((acc: any, p: any) => {
       const s = p.section || "General Bazaar";
       if (!acc[s]) acc[s] = [];
@@ -204,7 +212,12 @@ export default function Home() {
           </div>
           
           <div className="relative flex-1 max-w-md hidden md:block">
-            <Input placeholder="Search milk, ghee, groceries..." value={searchQuery} onChange={setSearchQuery} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" />
+            <Input 
+              placeholder="Search milk, ghee, groceries..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" 
+            />
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
 
@@ -224,7 +237,12 @@ export default function Home() {
         </div>
         <div className="md:hidden px-4 pb-3">
           <div className="relative">
-            <Input placeholder="Search groceries..." value={searchQuery} onChange={setSearchQuery} className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none" />
+            <Input 
+              placeholder="Search groceries..." 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none" 
+            />
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
         </div>
@@ -246,44 +264,51 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-6">
         <div className="space-y-12">
-          {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
-            <section key={section} className="space-y-4">
-              <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                <LayoutGrid className="w-5 h-5 text-green-500" /> {section}
-              </h2>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {items.map((p: any) => (
-                  <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full">
-                    <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-slate-50">
-                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
-                      {p.isPinned && (
-                        <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1">
-                          <Pin className="w-2.5 h-2.5" /> PINNED
-                        </div>
-                      )}
+          {Object.entries(filteredProductsBySection).length > 0 ? (
+            Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
+              <section key={section} className="space-y-4">
+                <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                  <LayoutGrid className="w-5 h-5 text-green-500" /> {section}
+                </h2>
+                
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                  {items.map((p: any) => (
+                    <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full">
+                      <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-slate-50">
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                        {p.isPinned && (
+                          <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1">
+                            <Pin className="w-2.5 h-2.5" /> PINNED
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}</p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between">
+                        <span className="text-sm font-black text-slate-900">₹{p.price}</span>
+                        <Button onClick={() => {
+                          setSelectedProduct(p);
+                          setQuantity(1);
+                          setPackagingType('Normal');
+                          if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
+                          else setIsPaymentDialogOpen(true);
+                        }} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase">
+                          ADD
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex-1 space-y-1">
-                      <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}</p>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <span className="text-sm font-black text-slate-900">₹{p.price}</span>
-                      <Button onClick={() => {
-                        setSelectedProduct(p);
-                        setQuantity(1);
-                        setPackagingType('Normal');
-                        if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
-                        else setIsPaymentDialogOpen(true);
-                      }} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase">
-                        ADD
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ))}
+                  ))}
+                </div>
+              </section>
+            ))
+          ) : (
+            <div className="py-20 text-center">
+              <ShoppingBag className="w-16 h-16 text-slate-200 mx-auto mb-4" />
+              <p className="text-slate-400 font-bold uppercase text-xs">No matching products found</p>
+            </div>
+          )}
         </div>
       </main>
 
@@ -370,7 +395,13 @@ export default function Home() {
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center">
           <DialogHeader className="mb-4"><DialogTitle className="text-xl font-black uppercase">Verify Phone</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-4">
-            <Input type="tel" placeholder="Mobile Number" value={phoneNumber} onChange={setPhoneNumber} className="h-12 text-center text-lg font-bold rounded-xl border-slate-100" />
+            <Input 
+              type="tel" 
+              placeholder="Mobile Number" 
+              value={phoneNumber} 
+              onChange={(e) => setPhoneNumber(e.target.value)} 
+              className="h-12 text-center text-lg font-bold rounded-xl border-slate-100" 
+            />
             <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase">Continue</Button>
           </form>
         </DialogContent>
@@ -380,7 +411,12 @@ export default function Home() {
         <DialogContent className="rounded-3xl p-8 max-w-xs text-center">
           <DialogHeader><DialogTitle className="text-lg font-black uppercase">Admin Verification</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-4 pt-2">
-            <Input maxLength={4} className="text-center text-3xl h-16 font-black rounded-xl border-slate-100" value={verificationCode} onChange={setVerificationCode} />
+            <Input 
+              maxLength={4} 
+              className="text-center text-3xl h-16 font-black rounded-xl border-slate-100" 
+              value={verificationCode} 
+              onChange={(e) => setVerificationCode(e.target.value)} 
+            />
             <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase">Verify & Unlock</Button>
           </form>
         </DialogContent>
