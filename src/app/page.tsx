@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -126,6 +127,17 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products, isLoading: isProductsLoading } = useCollection(productsQuery);
 
+  const ordersQuery = useMemoFirebase(() => collection(firestore, 'orders'), [firestore]);
+  const { data: orders } = useCollection(ordersQuery);
+
+  const stats = useMemo(() => {
+    if (!orders) return { orders: 0, earnings: 0 };
+    return {
+      orders: orders.length,
+      earnings: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
+    };
+  }, [orders]);
+
   const filteredProductsBySection = useMemo(() => {
     if (!products) return {};
     const filtered = products
@@ -158,7 +170,7 @@ export default function Home() {
           price: product.price,
           unit: product.unit,
           imageUrl: product.imageUrl,
-          quantity: existing ? Math.min(existing.quantity + 1, 5) : 1
+          quantity: existing ? Math.min(existing.quantity + 1, 10) : 1
         }
       };
     });
@@ -191,16 +203,6 @@ export default function Home() {
     const deliveryGST = cartTotal < 100 ? 125 : 25;
     const packagingFee = packagingType === 'Gift' ? 40 : 0;
     return cartTotal + deliveryGST + packagingFee;
-  };
-
-  const handlePhoneSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phoneNumber.length < 10) return toast({ title: "Invalid Number" });
-    if (user) {
-      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
-      setIsPhoneDialogOpen(false);
-      setIsPaymentDialogOpen(true);
-    }
   };
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
@@ -247,7 +249,7 @@ export default function Home() {
   }
 
   return (
-    <div className={cn("min-h-screen relative pb-32", currentThemeConfig.bg)}>
+    <div className={cn("min-h-screen relative pb-32 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
       <nav className="sticky top-0 z-50 glass-nav">
@@ -305,7 +307,7 @@ export default function Home() {
               <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
-          <AdminPanel stats={{orders: 0, earnings: 0}} currentTheme={currentTheme} onResetStats={() => {}} />
+          <AdminPanel stats={stats} currentTheme={currentTheme} onResetStats={() => {}} />
         </div>
       )}
 
@@ -322,33 +324,35 @@ export default function Home() {
                   {items.map((p: any) => {
                     const cartItem = cart[p.id];
                     return (
-                      <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full">
+                      <div key={p.id} className="group product-card-blinkit rounded-2xl p-3 flex flex-col h-full shadow-sm">
                         <div className="relative aspect-square mb-3 rounded-xl overflow-hidden bg-slate-50">
                           <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
                           {p.isPinned && (
-                            <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1">
+                            <div className="absolute top-2 left-2 bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[8px] font-black flex items-center gap-1 shadow-sm">
                               <Pin className="w-2.5 h-2.5" /> PINNED
                             </div>
                           )}
                         </div>
                         <div className="flex-1 space-y-1">
-                          <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase">{p.name}</h3>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase">{p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}</p>
+                          <h3 className="font-bold text-xs text-slate-800 line-clamp-2 uppercase leading-tight">{p.name}</h3>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase">
+                            {p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}
+                          </p>
                         </div>
                         <div className="mt-3 flex items-center justify-between">
                           <span className="text-sm font-black text-slate-900">₹{p.price}</span>
                           {cartItem ? (
                             <div className="flex items-center gap-2 bg-green-500 rounded-lg p-0.5 shadow-md shadow-green-100">
-                              <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner">
+                              <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner border-none">
                                 <Minus className="w-3 h-3" />
                               </Button>
                               <span className="text-white font-black text-xs w-4 text-center">{cartItem.quantity}</span>
-                              <Button onClick={() => addToCart(p)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner">
+                              <Button onClick={() => addToCart(p)} size="icon" className="h-7 w-7 bg-green-600 hover:bg-green-700 text-white rounded-md shadow-inner border-none">
                                 <Plus className="w-3 h-3" />
                               </Button>
                             </div>
                           ) : (
-                            <Button onClick={() => addToCart(p)} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase">
+                            <Button onClick={() => addToCart(p)} size="sm" className="rounded-lg h-8 px-4 font-black text-[10px] bg-green-500 text-white hover:bg-green-600 uppercase shadow-sm border-none">
                               ADD
                             </Button>
                           )}
@@ -384,13 +388,14 @@ export default function Home() {
             <Button onClick={() => {
               if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
               else setIsPaymentDialogOpen(true);
-            }} className="bg-white text-green-700 hover:bg-slate-50 h-12 px-6 rounded-xl font-black uppercase text-xs flex items-center gap-2">
+            }} className="bg-white text-green-700 hover:bg-slate-50 h-12 px-6 rounded-xl font-black uppercase text-xs flex items-center gap-2 border-none">
               VIEW CART <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
       )}
 
+      {/* Payment Summary Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-3xl p-6 max-w-sm border-none shadow-2xl">
           <DialogHeader className="mb-4">
@@ -449,7 +454,7 @@ export default function Home() {
             </div>
 
             <div className="pt-2 flex flex-col gap-2">
-              <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-12 rounded-xl bg-green-500 text-white font-black text-xs uppercase shadow-lg shadow-green-100">
+              <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-12 rounded-xl bg-green-500 text-white font-black text-xs uppercase shadow-lg shadow-green-100 border-none">
                 <Smartphone className="w-4 h-4 mr-2" /> Pay via UPI
               </Button>
               <Button onClick={() => finalizeOrder('COD')} variant="outline" className="h-12 rounded-xl border-slate-200 text-slate-600 font-black text-xs uppercase">
@@ -461,18 +466,18 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 max-w-xs text-center">
+        <DialogContent className="rounded-3xl p-8 max-w-xs text-center border-none shadow-2xl">
           <h3 className="text-lg font-black uppercase mb-4">Scan QR to Pay</h3>
           <div className="p-4 bg-white rounded-2xl border-4 border-slate-50 shadow-inner mb-4">
-            {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-48 h-48 mx-auto" /> : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center"><QrCode className="w-10 h-10 text-slate-300" /></div>}
+            {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-48 h-48 mx-auto object-contain" /> : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center"><QrCode className="w-10 h-10 text-slate-300" /></div>}
           </div>
           <p className="text-[10px] font-bold text-slate-400 uppercase mb-6">UPI ID: {settings?.upiId || "No UPI ID set"}</p>
-          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-12 rounded-xl bg-black text-white font-black uppercase text-xs">I Have Completed Payment</Button>
+          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-12 rounded-xl bg-black text-white font-black uppercase text-xs border-none">I Have Completed Payment</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 max-w-sm text-center">
+        <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-4"><DialogTitle className="text-xl font-black uppercase">Verify Phone</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-4">
             <Input 
@@ -480,24 +485,24 @@ export default function Home() {
               placeholder="Mobile Number" 
               value={phoneNumber} 
               onChange={(e) => setPhoneNumber(e.target.value)} 
-              className="h-12 text-center text-lg font-bold rounded-xl border-slate-100" 
+              className="h-12 text-center text-lg font-bold rounded-xl border-slate-100 bg-slate-50" 
             />
-            <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase">Continue</Button>
+            <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none">Continue</Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 max-w-xs text-center">
+        <DialogContent className="rounded-3xl p-8 max-w-xs text-center border-none shadow-2xl">
           <DialogHeader><DialogTitle className="text-lg font-black uppercase">Admin Verification</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-4 pt-2">
             <Input 
               maxLength={4} 
-              className="text-center text-3xl h-16 font-black rounded-xl border-slate-100" 
+              className="text-center text-3xl h-16 font-black rounded-xl border-slate-100 bg-slate-50" 
               value={verificationCode} 
               onChange={(e) => setVerificationCode(e.target.value)} 
             />
-            <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase">Verify & Unlock</Button>
+            <Button type="submit" className="w-full h-12 rounded-xl bg-blue-600 text-white font-black uppercase border-none">Verify & Unlock</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -506,3 +511,4 @@ export default function Home() {
     </div>
   );
 }
+
