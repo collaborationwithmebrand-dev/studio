@@ -69,7 +69,7 @@ export default function Home() {
   
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(true); // Default to sign up as requested
+  const [isSignUp, setIsSignUp] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
@@ -304,13 +304,14 @@ export default function Home() {
             </h1>
           </div>
           
-          <div className="relative flex-1 max-w-md hidden md:block">
+          {/* Universal Search Bar - Visible on Mobile and Desktop */}
+          <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
             <Input 
               placeholder="Search items..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" 
+              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner text-sm" 
             />
           </div>
 
@@ -430,7 +431,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Auth Dialog - Dual Mode: Login & Sign Up */}
+      {/* Auth Dialog */}
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-4">
