@@ -444,7 +444,7 @@ export default function Home() {
 
       {/* Orders History Dialog */}
       <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
-        <DialogContent className="rounded-3xl p-6 max-w-md border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-6 max-md border-none shadow-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-black uppercase flex items-center gap-2">
               <History className="w-5 h-5 text-green-600" /> My Orders
