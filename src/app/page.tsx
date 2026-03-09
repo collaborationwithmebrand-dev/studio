@@ -687,7 +687,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
+        <DialogContent className="rounded-[2.5rem] p-10 max-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Verify Contact</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div className="space-y-3">
@@ -724,4 +724,3 @@ export default function Home() {
     </div>
   );
 }
-

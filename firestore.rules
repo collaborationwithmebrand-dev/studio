@@ -47,24 +47,23 @@ service cloud.firestore {
     }
     
     match /orders/{orderId} {
+      // Create is allowed for any logged-in user
       allow create: if isSignedIn();
       
-      // Separate list rules to handle different query contexts
-      // Admin context: List all orders
-      allow list: if isAdmin();
-      
-      // User context: List own orders only with strict filtering
-      allow list: if isSignedIn() && 
-                  request.query.limit <= 50 && 
-                  request.query.filters.size() > 0 && 
-                  request.query.filters[0].field == 'userId' && 
-                  request.query.filters[0].value == request.auth.uid;
-      
+      // Get is allowed if you are the owner or the admin
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      // List is allowed if you are the admin OR if you filter strictly by your own userId
+      allow list: if isSignedIn() && (
+        isAdmin() || 
+        (request.query.limit <= 50 && request.query.filters.size() > 0 && request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid)
+      );
       
+      // Update is for admins, or owners cancelling their own pending order
       allow update: if isAdmin() 
                    || (isOwner(resource.data.userId) && resource.data.status == 'pending' && request.resource.data.status == 'cancelled');
       
+      // Delete is for admins, or owners deleting finished orders
       allow delete: if isAdmin()
                    || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
     }
