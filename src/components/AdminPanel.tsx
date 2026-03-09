@@ -302,10 +302,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     </div>
                     <Badge className={cn(
                       "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
-                      order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                      order.status === 'pending' ? "bg-yellow-400 text-black" :
                       order.status === 'confirmed' ? "bg-blue-600 text-white" :
                       order.status === 'delivered' ? "bg-green-600 text-white" :
-                      "bg-red-100 text-red-700"
+                      "bg-red-500 text-white"
                     )}>
                       {order.status}
                     </Badge>
