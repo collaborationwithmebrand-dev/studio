@@ -43,9 +43,14 @@ service cloud.firestore {
     
     match /orders/{orderId} {
       allow create: if isSignedIn();
+      
+      // Allow customers to list their own orders if they include a limit and filter by userId
+      allow list: if isSignedIn() && (
+        (request.query.limit <= 50 && request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid) ||
+        isAdmin()
+      );
+      
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Explicitly allow listing based on owner or admin status
-      allow list: if isSignedIn() && (request.query.limit <= 50);
       
       allow update: if isAdmin() 
                    || (isOwner(resource.data.userId) && resource.data.status == 'pending' && request.resource.data.status == 'cancelled');

@@ -116,6 +116,7 @@ export default function Home() {
 
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || isUserLoading) return null;
+    // We strictly filter by userId and limit to match security rules
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
@@ -149,6 +150,8 @@ export default function Home() {
     if (isSignUp) initiateEmailSignUp(auth, authEmail, authPassword);
     else initiateEmailSignIn(auth, authEmail, authPassword);
     setIsAuthDialogOpen(false);
+    setAuthEmail('');
+    setAuthPassword('');
   };
 
   const handlePhoneSubmit = (e: React.FormEvent) => {
@@ -430,14 +433,16 @@ export default function Home() {
             <DialogDescription className="text-xs font-bold uppercase text-slate-400">Save your orders and get faster delivery</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-4">
-            <Input type="email" placeholder="Email Address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" />
-            <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" />
+            <Input type="email" placeholder="Email Address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" required />
+            <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" required minLength={6} />
             <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none">
-              {isSignUp ? 'Sign Up' : 'Login'}
+              {isSignUp ? 'Create Account' : 'Login'}
             </Button>
-            <p className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer" onClick={() => setIsSignUp(!isSignUp)}>
-              {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-            </p>
+            <div className="pt-2">
+              <p className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer hover:text-green-600 transition-colors" onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? 'Already have an account? Login' : "Don't have an account? Create one"}
+              </p>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
