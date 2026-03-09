@@ -115,14 +115,14 @@ export default function Home() {
   const isAdmin = !!adminRole;
 
   const userOrdersQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || isUserLoading) return null;
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
       orderBy('createdAt', 'desc'),
       limit(20)
     );
-  }, [firestore, user]);
+  }, [firestore, user, isUserLoading]);
   const { data: userOrders } = useCollection(userOrdersQuery);
 
   useEffect(() => {
@@ -303,7 +303,7 @@ export default function Home() {
           
           <div className="relative flex-1 max-w-md hidden md:block">
             <Input 
-              placeholder="Search milk, ghee, groceries..." 
+              placeholder="Search items..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" 

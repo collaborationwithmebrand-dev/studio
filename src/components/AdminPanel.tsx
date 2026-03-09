@@ -23,7 +23,6 @@ interface AdminPanelProps {
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin }) => {
   const firestore = useFirestore();
-  const { user } = useUser();
   const { toast } = useToast();
   
   const [name, setName] = useState('');
