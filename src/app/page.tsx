@@ -22,8 +22,7 @@ import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  initiateEmailSignIn,
-  initiateEmailSignUp
+  initiateEmailSignIn
 } from '@/firebase';
 import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -69,7 +68,6 @@ export default function Home() {
   
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(true);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
@@ -144,8 +142,7 @@ export default function Home() {
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignUp) initiateEmailSignUp(auth, authEmail, authPassword);
-    else initiateEmailSignIn(auth, authEmail, authPassword);
+    initiateEmailSignIn(auth, authEmail, authPassword);
     setIsAuthDialogOpen(false);
     setAuthEmail('');
     setAuthPassword('');
@@ -201,7 +198,6 @@ export default function Home() {
 
   const addToCart = (product: any) => {
     if (!user) {
-      setIsSignUp(true);
       setIsAuthDialogOpen(true);
       return;
     }
@@ -314,15 +310,12 @@ export default function Home() {
           <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border border-white/50 space-y-8">
             <div className="space-y-3">
               <h2 className="text-2xl font-black uppercase text-slate-900">Welcome to Bazaar</h2>
-              <p className="text-xs font-medium text-slate-500">Sign in or create a new account to browse our collection and get delivered in 30 mins.</p>
+              <p className="text-xs font-medium text-slate-500">Sign in to your account to browse our collection and get delivered in 30 mins.</p>
             </div>
 
             <div className="grid gap-4">
-              <Button onClick={() => { setIsSignUp(false); setIsAuthDialogOpen(true); }} className="h-16 rounded-[1.5rem] bg-black text-white font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 border-none">
+              <Button onClick={() => { setIsAuthDialogOpen(true); }} className="h-16 rounded-[1.5rem] bg-black text-white font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 border-none">
                 <LogIn className="w-5 h-5" /> Sign In to Account
-              </Button>
-              <Button onClick={() => { setIsSignUp(true); setIsAuthDialogOpen(true); }} variant="outline" className="h-16 rounded-[1.5rem] border-slate-200 text-slate-900 font-black uppercase text-sm hover:bg-slate-50 transition-all active:scale-95">
-                <UserPlus className="w-5 h-5 mr-2" /> New Account
               </Button>
             </div>
 
@@ -346,9 +339,9 @@ export default function Home() {
         <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
           <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
             <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black uppercase text-slate-900">{isSignUp ? 'Join Bazaar' : 'Welcome Back'}</DialogTitle>
+              <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
               <DialogDescription className="text-xs font-bold uppercase text-slate-400">
-                {isSignUp ? 'Create account for exclusive bazaar deals' : 'Login to track your bazaar history'}
+                Login to track your bazaar history and shop essentials
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAuth} className="space-y-6">
@@ -361,13 +354,8 @@ export default function Home() {
                 <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
               </div>
               <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-                {isSignUp ? 'Create My Account' : 'Login Now'}
+                Login Now
               </Button>
-              <div className="pt-4">
-                <button type="button" className="text-[10px] font-black uppercase text-green-600 hover:underline" onClick={() => setIsSignUp(!isSignUp)}>
-                  {isSignUp ? 'Already have an account? Login' : "New to bazaar? Join Now"}
-                </button>
-              </div>
             </form>
           </DialogContent>
         </Dialog>

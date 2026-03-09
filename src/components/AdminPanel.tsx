@@ -301,7 +301,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       <p className="text-[10px] font-bold text-blue-400 uppercase">{new Date(order.createdAt).toLocaleString()}</p>
                     </div>
                     <Badge className={cn(
-                      "text-[10px] font-black uppercase rounded-xl border-none px-4 py-1.5 shadow-sm",
+                      "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
                       order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
                       order.status === 'confirmed' ? "bg-blue-600 text-white" :
                       order.status === 'delivered' ? "bg-green-600 text-white" :
