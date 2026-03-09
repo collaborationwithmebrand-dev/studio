@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn, Megaphone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +99,9 @@ export default function Home() {
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
+
+  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
+  const { data: announcement } = useDoc(announcementRef);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -297,6 +300,13 @@ export default function Home() {
       <FestiveEffects theme={currentTheme} />
       
       <nav className="sticky top-0 z-50 glass-nav">
+        {announcement?.active && (
+          <div className="bg-yellow-400 text-black py-1.5 px-4 text-center overflow-hidden whitespace-nowrap">
+            <p className="text-[10px] font-black uppercase flex items-center justify-center gap-2 animate-pulse">
+              <Megaphone className="w-3.5 h-3.5" /> {announcement.message}
+            </p>
+          </div>
+        )}
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <h1 className={cn("text-xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
@@ -304,14 +314,13 @@ export default function Home() {
             </h1>
           </div>
           
-          {/* Universal Search Bar - Visible on Mobile and Desktop */}
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
             <Input 
               placeholder="Search items..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner text-sm" 
+              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner text-sm font-bold" 
             />
           </div>
 
@@ -334,7 +343,7 @@ export default function Home() {
             <h2 className="text-xl font-bold text-blue-600 uppercase flex items-center gap-2">
               <Layers className="w-5 h-5" /> Admin Hub
             </h2>
-            <Button variant="outline" size="sm" onClick={() => signOut(auth)} className="rounded-lg text-blue-600 border-blue-200">
+            <Button variant="outline" size="sm" onClick={() => signOut(auth)} className="rounded-lg text-blue-600 border-blue-200 hover:bg-red-50 hover:text-red-600 hover:border-red-100">
               <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
@@ -435,9 +444,9 @@ export default function Home() {
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-4">
-            <DialogTitle className="text-xl font-black uppercase">{isSignUp ? 'Create Account' : 'Welcome Back'}</DialogTitle>
+            <DialogTitle className="text-xl font-black uppercase">{isSignUp ? 'Join Bazaar' : 'Welcome Back'}</DialogTitle>
             <DialogDescription className="text-xs font-bold uppercase text-slate-400">
-              {isSignUp ? 'Join the bazaar to track your orders' : 'Login to see your bazaar history'}
+              {isSignUp ? 'Create an account to start shopping' : 'Login to see your bazaar history'}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-4">

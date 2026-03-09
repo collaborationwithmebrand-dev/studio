@@ -13,7 +13,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck, Sparkles, Loader2 } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck, Sparkles, Loader2, Megaphone, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -43,10 +43,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
   
+  const [announcementMsg, setAnnouncementMsg] = useState('');
+  const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
+  
   const [catalogSearch, setCatalogSearch] = useState('');
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
+
+  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
+  const { data: announcement } = useDoc(announcementRef);
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
@@ -74,6 +80,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     }
   }, [settings]);
 
+  useEffect(() => {
+    if (announcement) {
+      setAnnouncementMsg(announcement.message || '');
+      setIsAnnouncementActive(announcement.active || false);
+    }
+  }, [announcement]);
+
   const handleUpdateTheme = (newTheme: FestivalTheme) => {
     const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
     setDocumentNonBlocking(themeRef, { activeThemeName: newTheme }, { merge: true });
@@ -90,6 +103,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       lastUpdated: new Date().toISOString()
     }, { merge: true });
     toast({ title: "Settings Saved" });
+  };
+
+  const handleUpdateAnnouncement = () => {
+    if (!announcementRef) return;
+    setDocumentNonBlocking(announcementRef, {
+      message: announcementMsg,
+      active: isAnnouncementActive,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+    toast({ title: "Broadcast Updated", description: isAnnouncementActive ? "Announcement is now LIVE" : "Announcement Hidden" });
   };
 
   const handleAdd = async () => {
@@ -163,10 +186,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-blue-50 rounded-2xl h-12 p-1">
-          <TabsTrigger value="inventory" className="rounded-xl font-bold uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Inventory</TabsTrigger>
-          <TabsTrigger value="orders" className="rounded-xl font-bold uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Orders</TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-xl font-bold uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Config</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-blue-50 rounded-2xl h-12 p-1">
+          <TabsTrigger value="inventory" className="rounded-xl font-bold uppercase text-[9px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Inventory</TabsTrigger>
+          <TabsTrigger value="orders" className="rounded-xl font-bold uppercase text-[9px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Orders</TabsTrigger>
+          <TabsTrigger value="broadcast" className="rounded-xl font-bold uppercase text-[9px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Broadcast</TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-xl font-bold uppercase text-[9px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Config</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inventory" className="mt-6 space-y-6">
@@ -239,7 +263,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       placeholder="Search catalog..." 
                       value={catalogSearch} 
                       onChange={(e) => setCatalogSearch(e.target.value)}
-                      className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9 h-10"
+                      className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9 h-10 text-xs"
                     />
                   </div>
                 </div>
@@ -304,6 +328,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="broadcast" className="mt-6">
+          <Card className="rounded-3xl border-none shadow-sm">
+            <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><Megaphone className="w-5 h-5" /> Global Notification</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-blue-600 font-bold uppercase text-[9px]">Broadcast Message</Label>
+                <Textarea 
+                  value={announcementMsg} 
+                  onChange={(e) => setAnnouncementMsg(e.target.value)} 
+                  placeholder="Type a message for all customers..."
+                  className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-24 resize-none uppercase text-xs"
+                />
+              </div>
+              <div className="flex items-center gap-2 bg-blue-50/30 px-3 py-2 rounded-xl border border-blue-100 w-fit">
+                <Checkbox id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="border-blue-300 data-[state=checked]:bg-blue-600" />
+                <Label htmlFor="c-broadcast" className="text-blue-600 font-bold uppercase text-[9px]">Live on Customer Dashboard</Label>
+              </div>
+              <Button onClick={handleUpdateAnnouncement} className="w-full h-12 rounded-xl bg-blue-600 text-white font-bold uppercase text-sm shadow-md border-none hover:bg-blue-700 flex items-center justify-center gap-2">
+                <Send className="w-4 h-4" /> Broadcast to All Customers
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>

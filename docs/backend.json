@@ -47,6 +47,15 @@
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
+    "Announcement": {
+      "title": "Store Announcement",
+      "type": "object",
+      "properties": {
+        "message": { "type": "string" },
+        "active": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "Order": {
       "title": "Order",
       "type": "object",
@@ -90,6 +99,10 @@
     "/storeSettings/mainSettings": {
       "schema": { "$ref": "#/backend/entities/StoreSetting" },
       "description": "Sensitive administrative settings."
+    },
+    "/storeSettings/announcement": {
+      "schema": { "$ref": "#/backend/entities/Announcement" },
+      "description": "Global store announcement for all customers."
     },
     "/publicDisplaySettings/theme": {
       "schema": { "$ref": "#/backend/entities/public_theme_setting" },

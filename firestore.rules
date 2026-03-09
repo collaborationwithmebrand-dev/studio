@@ -30,6 +30,11 @@ service cloud.firestore {
       allow get: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    match /storeSettings/announcement {
+      allow get: if true;
+      allow write: if isAdmin();
+    }
     
     match /publicDisplaySettings/theme {
       allow get, list: if true;
