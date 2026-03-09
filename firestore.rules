@@ -47,7 +47,6 @@ service cloud.firestore {
     }
     
     match /orders/{orderId} {
-      // Create is allowed if signed in.
       allow create: if isSignedIn();
       
       // Allow authenticated users to list. 
@@ -55,7 +54,7 @@ service cloud.firestore {
       // Filtering is enforced by ensuring non-admins only list their own data.
       allow list: if isSignedIn() && (
         isAdmin() || 
-        (request.query.limit <= 20 && request.query.filters.userId == request.auth.uid)
+        (request.query.filters.userId == request.auth.uid)
       );
 
       allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
