@@ -114,9 +114,9 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
+  // We strictly filter by userId and limit to match security rules
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || isUserLoading) return null;
-    // We strictly filter by userId and limit to match security rules
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
@@ -305,13 +305,13 @@ export default function Home() {
           </div>
           
           <div className="relative flex-1 max-w-md hidden md:block">
+            <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
             <Input 
               placeholder="Search items..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none shadow-inner" 
             />
-            <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
 
           <div className="flex items-center gap-2">

@@ -233,13 +233,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 <div className="flex flex-col gap-2">
                   <CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PackageSearch className="w-5 h-5" /> Manage Inventory</CardTitle>
                   <div className="relative">
+                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-400" />
                     <Input 
                       placeholder="Search catalog..." 
                       value={catalogSearch} 
                       onChange={(e) => setCatalogSearch(e.target.value)}
                       className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold pl-9 h-10"
                     />
-                    <Search className="absolute left-3 top-2.5 w-4 h-4 text-blue-400" />
                   </div>
                 </div>
               </CardHeader>

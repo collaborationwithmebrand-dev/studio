@@ -46,7 +46,7 @@ service cloud.firestore {
       
       // Allow customers to list their own orders if they include a limit and filter by userId
       allow list: if isSignedIn() && (
-        (request.query.limit <= 50 && request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid) ||
+        (request.query.limit <= 50 && request.query.filters.size() > 0 && request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid) ||
         isAdmin()
       );
       
