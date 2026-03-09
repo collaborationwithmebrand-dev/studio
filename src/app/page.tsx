@@ -292,78 +292,6 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className={cn("min-h-screen flex flex-col items-center justify-center p-6 text-center transition-all duration-500 bg-slate-50", currentThemeConfig.bg)}>
-        <FestiveEffects theme={currentTheme} />
-        <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in duration-700">
-          <div className="space-y-4">
-            <div className="bg-white p-5 rounded-[2.5rem] shadow-2xl inline-block mb-2">
-              <ShoppingBag className="w-14 h-14 text-green-500" />
-            </div>
-            <h1 className={cn("text-5xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
-              {currentThemeConfig.title}
-            </h1>
-            <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Premium Groceries & Festive Essentials</p>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[3rem] shadow-2xl border border-white/50 space-y-8">
-            <div className="space-y-3">
-              <h2 className="text-2xl font-black uppercase text-slate-900">Welcome to Bazaar</h2>
-              <p className="text-xs font-medium text-slate-500">Sign in to your account to browse our collection and get delivered in 30 mins.</p>
-            </div>
-
-            <div className="grid gap-4">
-              <Button onClick={() => { setIsAuthDialogOpen(true); }} className="h-16 rounded-[1.5rem] bg-black text-white font-black uppercase text-sm flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 border-none">
-                <LogIn className="w-5 h-5" /> Sign In to Account
-              </Button>
-            </div>
-
-            <div className="pt-6 flex items-center justify-center gap-8 opacity-60">
-              <div className="flex flex-col items-center gap-1.5">
-                <ShieldCheck className="w-6 h-6 text-green-600" />
-                <span className="text-[9px] font-black uppercase">Secure</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <Clock className="w-6 h-6 text-green-600" />
-                <span className="text-[9px] font-black uppercase">30m Delivery</span>
-              </div>
-              <div className="flex flex-col items-center gap-1.5">
-                <MapPin className="w-6 h-6 text-green-600" />
-                <span className="text-[9px] font-black uppercase">Bounsi 813104</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-          <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-            <DialogHeader className="mb-6">
-              <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
-              <DialogDescription className="text-xs font-bold uppercase text-slate-400">
-                Login to track your bazaar history and shop essentials
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleAuth} className="space-y-6">
-              <div className="space-y-4">
-                <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label></div>
-                <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
-              </div>
-              <div className="space-y-4">
-                <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label></div>
-                <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
-              </div>
-              <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-                Login Now
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-        <Toaster />
-      </div>
-    );
-  }
-
   return (
     <div className={cn("min-h-screen relative pb-40 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
@@ -382,12 +310,18 @@ export default function Home() {
               {currentThemeConfig.title}
             </h1>
             <div className="flex md:hidden items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
+              <Button variant="ghost" size="icon" onClick={() => user ? setIsOrdersHistoryOpen(true) : setIsAuthDialogOpen(true)} className="rounded-xl h-10 w-10">
                 <History className="w-5 h-5 text-green-600" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
-                <LogOut className="w-5 h-5" />
-              </Button>
+              {user ? (
+                <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" onClick={() => setIsAuthDialogOpen(true)} className="rounded-xl h-10 w-10 text-green-600">
+                  <LogIn className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
           
@@ -412,12 +346,18 @@ export default function Home() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-2xl h-12 w-12 bg-white shadow-sm hover:shadow-md">
+            <Button variant="ghost" size="icon" onClick={() => user ? setIsOrdersHistoryOpen(true) : setIsAuthDialogOpen(true)} className="rounded-2xl h-12 w-12 bg-white shadow-sm hover:shadow-md">
               <History className="w-6 h-6 text-green-600" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
-              <LogOut className="w-6 h-6" />
-            </Button>
+            {user ? (
+              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
+                <LogOut className="w-6 h-6" />
+              </Button>
+            ) : (
+              <Button onClick={() => setIsAuthDialogOpen(true)} className="h-12 px-6 rounded-2xl bg-green-500 text-white font-black uppercase text-xs border-none active:scale-95 transition-all">
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </nav>
@@ -702,6 +642,30 @@ export default function Home() {
               onChange={(e) => setVerificationCode(e.target.value)} 
             />
             <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 text-white font-black uppercase text-sm border-none shadow-xl shadow-blue-100">Verify & Unlock Hub</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
+            <DialogDescription className="text-xs font-bold uppercase text-slate-400">
+              Login to track your bazaar history and shop essentials
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAuth} className="space-y-6">
+            <div className="space-y-4">
+              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label></div>
+              <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
+            </div>
+            <div className="space-y-4">
+              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label></div>
+              <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
+            </div>
+            <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
+              Login Now
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

@@ -298,7 +298,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">ORDER: #{order.id.slice(-6)}</p>
                       <p className="text-sm font-black text-blue-900 flex items-center gap-2"><PhoneCall className="w-3.5 h-3.5" /> {order.phoneNumber}</p>
-                      <p className="text-[10px] font-bold text-blue-400 uppercase">{new Date(order.createdAt).toLocaleString()}</p>
+                      <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
                     </div>
                     <Badge className={cn(
                       "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
