@@ -38,8 +38,11 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       
-      // Allow listing orders if user is admin OR if they are querying their own orders (filtered by userId)
-      allow list: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid));
+      // Split list rules for better query planning and security
+      // 1. Allow admins to list all orders
+      allow list: if isAdmin();
+      // 2. Allow users to list ONLY their own orders (must be filtered by userId in query)
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
       
       // Allow users to update status to 'cancelled' only if it's currently 'pending'
       allow update: if isAdmin() 

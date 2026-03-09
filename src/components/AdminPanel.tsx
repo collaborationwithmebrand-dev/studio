@@ -48,7 +48,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const { data: products } = useCollection(productsQuery);
 
   const ordersQuery = useMemoFirebase(() => {
-    // Only query if the admin state is definitively true
     if (!isAdmin) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
