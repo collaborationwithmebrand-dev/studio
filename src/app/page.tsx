@@ -116,7 +116,6 @@ export default function Home() {
 
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user) return null;
-    // Only fetch personal orders. Admins will fetch full history within the AdminPanel component.
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
@@ -509,7 +508,7 @@ export default function Home() {
 
       {/* Checkout Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-3xl p-6 max-w-sm border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-6 max-sm border-none shadow-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-black uppercase tracking-tight">Checkout Summary</DialogTitle>
           </DialogHeader>
