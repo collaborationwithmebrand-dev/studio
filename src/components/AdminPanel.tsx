@@ -12,9 +12,11 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck, Sparkles, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
+import { Textarea } from '@/components/ui/textarea';
 
 interface AdminPanelProps {
   currentTheme: FestivalTheme;
@@ -31,7 +33,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [unit, setUnit] = useState('kg');
   const [section, setSection] = useState('Daily Essentials');
   const [imageUrl, setImageUrl] = useState('');
+  const [description, setDescription] = useState('');
   const [isPinned, setIsPinned] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
   const [helpline, setHelpline] = useState('');
@@ -90,9 +94,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const handleAdd = async () => {
     if (!name || !price || !imageUrl) return toast({ title: "Error", description: "Fill all required fields", variant: "destructive" });
     addDocumentNonBlocking(collection(firestore, 'products'), {
-      name, price: parseFloat(price), unit, section, category, imageUrl, isPinned, createdAt: new Date().toISOString()
+      name, 
+      price: parseFloat(price), 
+      unit, 
+      section, 
+      category, 
+      imageUrl, 
+      description,
+      isPinned, 
+      createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl('');
+    setName(''); setPrice(''); setImageUrl(''); setDescription('');
     toast({ title: "Product Added Successfully!" });
   };
 
@@ -104,6 +116,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const handleDeleteProduct = (productId: string) => {
     deleteDocumentNonBlocking(doc(firestore, 'products', productId));
     toast({ title: "Product Removed" });
+  };
+
+  const handleAiDescription = async () => {
+    if (!name) return toast({ title: "AI Hint", description: "Enter product name first", variant: "destructive" });
+    setIsAiLoading(true);
+    try {
+      const result = await generateProductDescription({
+        productName: name,
+        keywords: [category, section, unit]
+      });
+      setDescription(result.description);
+      toast({ title: "AI Generated Description" });
+    } catch (e) {
+      toast({ title: "AI Failed", variant: "destructive" });
+    } finally {
+      setIsAiLoading(false);
+    }
   };
 
   const filteredCatalogProducts = useMemo(() => {
@@ -145,10 +174,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
               <CardHeader><CardTitle className="text-blue-600 font-bold uppercase text-sm flex items-center gap-2"><PlusCircle className="w-5 h-5" /> New Product</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label><Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
-                  <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label><Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
-                  <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label><Input value={section} onChange={(e) => setSection(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
-                  <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label><Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
+                  <div className="space-y-1">
+                    <Label className="text-blue-600 font-bold uppercase text-[9px]">Product Name</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-blue-600 font-bold uppercase text-[9px]">Price (₹)</Label>
+                    <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-blue-600 font-bold uppercase text-[9px]">Store Section</Label>
+                    <Input value={section} onChange={(e) => setSection(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-blue-600 font-bold uppercase text-[9px]">Image Link</Label>
+                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-blue-600 font-bold uppercase text-[9px] flex items-center gap-1.5">Description (AI Assisted)</Label>
+                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-6 text-[8px] font-black text-blue-600 hover:bg-blue-100 uppercase gap-1">
+                      {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} Magic AI
+                    </Button>
+                  </div>
+                  <Textarea 
+                    value={description} 
+                    onChange={(e) => setDescription(e.target.value)} 
+                    placeholder="Describe the product..."
+                    className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-medium text-xs resize-none h-24" 
+                  />
                 </div>
 
                 <div className="space-y-2">
