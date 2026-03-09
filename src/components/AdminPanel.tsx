@@ -148,7 +148,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-blue-600 font-bold uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> Measurement Unit</Label>
+                  <Label className="text-blue-600 font-bold uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> Measurement Unit (SI)</Label>
                   <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2">
                     {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
                       <div key={u} className={cn("p-2 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600" : "bg-white border-blue-100")}>

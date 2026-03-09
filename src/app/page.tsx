@@ -26,7 +26,7 @@ import {
   initiateEmailSignIn,
   initiateEmailSignUp
 } from '@/firebase';
-import { collection, doc, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -114,9 +114,15 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
+  // Added limit(20) to satisfy Firestore Security Rules for non-admins
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(firestore, 'orders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+    return query(
+      collection(firestore, 'orders'), 
+      where('userId', '==', user.uid), 
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    );
   }, [firestore, user]);
   const { data: userOrders } = useCollection(userOrdersQuery);
 
@@ -501,7 +507,7 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Existing Dialogs (Payment, QR, Phone, Admin) */}
+      {/* Checkout Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-3xl p-6 max-w-sm border-none shadow-2xl">
           <DialogHeader className="mb-4">
