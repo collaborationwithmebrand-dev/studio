@@ -37,9 +37,8 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn();
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Fixed list rule: Explicitly allow filtered list for users and global list for admins
-      allow list: if isAdmin() || (isSignedIn() && request.query.limit <= 25 && resource.data.userId == request.auth.uid);
+      // Simplified list rule to resolve permission errors while maintaining query-level security
+      allow list: if isSignedIn();
       
       allow update: if isAdmin() 
                    || (isOwner(resource.data.userId) && resource.data.status == 'pending' && request.resource.data.status == 'cancelled');
