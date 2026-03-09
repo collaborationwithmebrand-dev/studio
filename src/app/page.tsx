@@ -116,6 +116,7 @@ export default function Home() {
 
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user) return null;
+    // Only fetch personal orders. Admins will fetch full history within the AdminPanel component.
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 

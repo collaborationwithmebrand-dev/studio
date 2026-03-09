@@ -39,7 +39,9 @@ service cloud.firestore {
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       
       // Explicitly separate admin and user list rules to prevent query rejection
+      // Allow admins to see everything
       allow list: if isAdmin();
+      // Allow users to see only their own orders with a safety limit
       allow list: if isSignedIn() && request.query.limit <= 20 && resource.data.userId == request.auth.uid;
       
       // Allow users to update status to 'cancelled' only if it's currently 'pending'

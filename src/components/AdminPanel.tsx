@@ -48,6 +48,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const { data: products } = useCollection(productsQuery);
 
   const ordersQuery = useMemoFirebase(() => {
+    // Only query if user is explicitly verified as admin to prevent permission errors
     if (!isAdmin) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
@@ -73,7 +74,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const handleUpdateTheme = (newTheme: FestivalTheme) => {
     const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
     setDocumentNonBlocking(themeRef, { activeThemeName: newTheme }, { merge: true });
-    toast({ title: "Theme Updated", description: `Active theme: ${newTheme}` });
+    toast({ title: "Theme Updated" });
   };
 
   const handleUpdateSettings = () => {
@@ -111,6 +112,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     if (!products) return [];
     return products.filter(p => p.name.toLowerCase().includes(catalogSearch.toLowerCase()));
   }, [products, catalogSearch]);
+
+  if (!isAdmin) return null;
 
   return (
     <div className="container mx-auto p-4 space-y-8">
