@@ -66,7 +66,6 @@ export default function Home() {
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isOrdersHistoryOpen, setIsOrdersHistoryOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
@@ -144,11 +143,7 @@ export default function Home() {
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (authMode === 'login') {
-      initiateEmailSignIn(auth, authEmail, authPassword);
-    } else {
-      initiateEmailSignUp(auth, authEmail, authPassword);
-    }
+    initiateEmailSignIn(auth, authEmail, authPassword);
     setIsAuthDialogOpen(false);
     setAuthEmail('');
     setAuthPassword('');
@@ -298,58 +293,6 @@ export default function Home() {
     );
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 p-6">
-        <div className="w-full max-w-md bg-white rounded-[3rem] p-10 shadow-2xl border border-green-100 text-center space-y-8 animate-in fade-in zoom-in duration-500">
-          <div className="bg-green-100 w-24 h-24 rounded-full flex items-center justify-center mx-auto">
-            <ShoppingBag className="w-12 h-12 text-green-600" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-3xl font-black text-green-600 uppercase tracking-tighter">Bounsi Bazaar</h1>
-            <p className="text-slate-400 font-bold text-xs uppercase tracking-widest leading-relaxed">Your premium essential hub. Open your account to start shopping.</p>
-          </div>
-          <div className="space-y-4">
-            <Button onClick={() => { setAuthMode('signup'); setIsAuthDialogOpen(true); }} className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm shadow-xl shadow-green-100 border-none hover:bg-green-600 active:scale-95 transition-all">
-              <UserPlus className="w-5 h-5 mr-3" /> Create New Account
-            </Button>
-            <Button onClick={() => { setAuthMode('login'); setIsAuthDialogOpen(true); }} variant="outline" className="w-full h-16 rounded-2xl border-slate-100 text-slate-600 font-black uppercase text-sm hover:bg-slate-50 active:scale-95 transition-all">
-              <LogIn className="w-5 h-5 mr-3" /> Login to Bazaar
-            </Button>
-          </div>
-          <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-            <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-              <DialogHeader className="mb-6">
-                <DialogTitle className="text-2xl font-black uppercase text-slate-900">
-                  {authMode === 'login' ? 'Welcome Back' : 'Join Bazaar'}
-                </DialogTitle>
-                <DialogDescription className="text-xs font-bold uppercase text-slate-400">
-                  {authMode === 'login' ? 'Login to track your history' : 'Create an account to start shopping'}
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleAuth} className="space-y-6">
-                <div className="space-y-4">
-                  <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label></div>
-                  <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
-                </div>
-                <div className="space-y-4">
-                  <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label></div>
-                  <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-                  {authMode === 'login' ? 'Login Now' : 'Create Account'}
-                </Button>
-                <p onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-[10px] font-black uppercase text-green-600 cursor-pointer hover:underline">
-                  {authMode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Login"}
-                </p>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className={cn("min-h-screen relative pb-40 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
@@ -371,9 +314,15 @@ export default function Home() {
               <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
                 <History className="w-5 h-5 text-green-600" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
-                <LogOut className="w-5 h-5" />
-              </Button>
+              {user ? (
+                <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              ) : (
+                <Button variant="ghost" size="icon" onClick={() => setIsAuthDialogOpen(true)} className="rounded-xl h-10 w-10 text-green-600">
+                  <LogIn className="w-5 h-5" />
+                </Button>
+              )}
             </div>
           </div>
           
@@ -401,9 +350,15 @@ export default function Home() {
             <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-2xl h-12 w-12 bg-white shadow-sm hover:shadow-md">
               <History className="w-6 h-6 text-green-600" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
-              <LogOut className="w-6 h-6" />
-            </Button>
+            {user ? (
+              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
+                <LogOut className="w-6 h-6" />
+              </Button>
+            ) : (
+              <Button onClick={() => setIsAuthDialogOpen(true)} className="rounded-2xl h-12 px-6 font-black uppercase text-xs bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-100">
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </nav>
@@ -569,14 +524,16 @@ export default function Home() {
               </div>
             )}
           </div>
-          <Button onClick={() => { signOut(auth); setIsOrdersHistoryOpen(false); }} variant="outline" className="w-full mt-6 h-14 rounded-2xl border-slate-100 text-slate-400 font-black uppercase text-xs hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all">
-            <LogOut className="w-5 h-5 mr-3" /> Logout Account
-          </Button>
+          {user && (
+            <Button onClick={() => { signOut(auth); setIsOrdersHistoryOpen(false); }} variant="outline" className="w-full mt-6 h-14 rounded-2xl border-slate-100 text-slate-400 font-black uppercase text-xs hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all">
+              <LogOut className="w-5 h-5 mr-3" /> Logout Account
+            </Button>
+          )}
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-8 max-w-md border-none shadow-2xl">
+        <DialogContent className="rounded-[2.5rem] p-8 max-md border-none shadow-2xl">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900">Review Bazaar Basket</DialogTitle>
           </DialogHeader>
@@ -645,7 +602,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10 max-xs text-center border-none shadow-2xl">
+        <DialogContent className="rounded-[3rem] p-10 max-w-xs text-center border-none shadow-2xl">
           <h3 className="text-xl font-black uppercase mb-6">Scan QR for Payment</h3>
           <div className="p-6 bg-white rounded-[2rem] border-4 border-slate-50 shadow-inner mb-6">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain" /> : <div className="w-full aspect-square bg-slate-100 flex items-center justify-center"><QrCode className="w-12 h-12 text-slate-300" /></div>}
@@ -659,7 +616,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-10 max-sm text-center border-none shadow-2xl">
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Verify Contact</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
             <div className="space-y-3">
@@ -695,12 +652,8 @@ export default function Home() {
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase text-slate-900">
-              {authMode === 'login' ? 'Welcome Back' : 'Join Bazaar'}
-            </DialogTitle>
-            <DialogDescription className="text-xs font-bold uppercase text-slate-400">
-              {authMode === 'login' ? 'Login to track your bazaar history' : 'Create an account to start shopping'}
-            </DialogDescription>
+            <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
+            <DialogDescription className="text-xs font-bold uppercase text-slate-400">Login to track your bazaar history</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-6">
             <div className="space-y-4">
@@ -712,11 +665,8 @@ export default function Home() {
               <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
             </div>
             <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-              {authMode === 'login' ? 'Login Now' : 'Create Account'}
+              Login Now
             </Button>
-            <p onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')} className="text-[10px] font-black uppercase text-green-600 cursor-pointer hover:underline">
-              {authMode === 'login' ? "Don't have an account? Sign up" : "Already have an account? Login"}
-            </p>
           </form>
         </DialogContent>
       </Dialog>

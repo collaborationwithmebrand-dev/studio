@@ -50,12 +50,12 @@ service cloud.firestore {
       // Create is allowed for any logged-in user
       allow create: if isSignedIn();
       
-      // Get is allowed if you are the owner or the admin
-      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-
-      // List is allowed if signed in. 
-      // Individual document 'get' rules will filter the results securely.
-      allow list: if isSignedIn();
+      // Read is allowed if you are the owner or the admin
+      allow read: if isSignedIn() && (
+        resource == null || 
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
       
       // Update is for admins, or owners cancelling their own pending order
       allow update: if isAdmin() 
