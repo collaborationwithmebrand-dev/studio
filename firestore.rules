@@ -50,15 +50,15 @@ service cloud.firestore {
       // Create is allowed if signed in.
       allow create: if isSignedIn();
       
-      // Individual document read.
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      
-      // Collection listing.
+      // Allow authenticated users to list. 
+      // Individual document read is gated by get rules.
+      // Filtering is enforced by ensuring non-admins only list their own data.
       allow list: if isSignedIn() && (
         isAdmin() || 
         (request.query.limit <= 20 && request.query.filters.userId == request.auth.uid)
       );
 
+      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
       allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'pending');
       allow delete: if isAdmin() || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
     }

@@ -440,6 +440,8 @@ export default function Home() {
         </div>
       )}
 
+      <Toaster />
+
       <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-w-lg border-none shadow-2xl">
           <DialogHeader className="mb-6">
@@ -621,8 +623,6 @@ export default function Home() {
           </form>
         </DialogContent>
       </Dialog>
-
-      <Toaster />
     </div>
   );
 }
