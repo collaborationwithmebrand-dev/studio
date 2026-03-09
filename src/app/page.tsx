@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn, Megaphone } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn, Megaphone, ArrowRight, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -112,6 +112,7 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
+  // Crucial: Fixed userOrdersQuery to strictly follow security rules and avoid "Missing Permissions"
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -203,7 +204,6 @@ export default function Home() {
     if (!user) {
       setIsSignUp(true);
       setIsAuthDialogOpen(true);
-      toast({ title: "Account Required", description: "Please create an account to start shopping." });
       return;
     }
     setCart(prev => {
@@ -277,7 +277,7 @@ export default function Home() {
     });
   };
 
-  if (locationStatus === 'checking' || isProductsLoading || isUserLoading) {
+  if (locationStatus === 'checking' || isUserLoading) {
     return <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-green-500" />
       <p className="font-bold text-slate-400 text-xs tracking-widest uppercase text-center">Opening Shubh Bounsi Bazaar...</p>
@@ -291,6 +291,88 @@ export default function Home() {
         <h1 className="text-3xl font-black text-slate-900 uppercase">Service Not Available</h1>
         <p className="text-slate-500 max-w-xs font-medium">We deliver within 9km of Bounsi (813104). Please enable location to browse the bazaar.</p>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-bold">RETRY</Button>
+      </div>
+    );
+  }
+
+  // Mandatory Login Logic: If not logged in, show auth landing
+  if (!user) {
+    return (
+      <div className={cn("min-h-screen transition-colors duration-500 flex flex-col items-center justify-center p-6 text-center", currentThemeConfig.bg)}>
+        <FestiveEffects theme={currentTheme} />
+        <div className="max-w-md w-full space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="space-y-4">
+             <div className="bg-white p-4 rounded-3xl shadow-2xl inline-block mb-4">
+               <ShoppingBag className="w-12 h-12 text-green-500" />
+             </div>
+             <h1 className={cn("text-4xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r mb-2", currentThemeConfig.gradient)}>
+                {currentThemeConfig.title}
+             </h1>
+             <p className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Premium Festive Delivery Bazaar</p>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] shadow-2xl border border-white/50 space-y-6">
+            <div className="space-y-2">
+               <h2 className="text-xl font-black uppercase text-slate-900">Welcome to Bazaar</h2>
+               <p className="text-xs font-medium text-slate-500">Please sign in or create an account to start shopping our premium collections.</p>
+            </div>
+            
+            <div className="grid gap-3">
+              <Button onClick={() => { setIsSignUp(false); setIsAuthDialogOpen(true); }} className="h-14 rounded-2xl bg-black text-white font-black uppercase text-xs flex items-center justify-center gap-2 hover:bg-slate-800 transition-all active:scale-95 border-none">
+                <LogIn className="w-4 h-4" /> Sign In to Account
+              </Button>
+              <Button onClick={() => { setIsSignUp(true); setIsAuthDialogOpen(true); }} variant="outline" className="h-14 rounded-2xl border-slate-200 text-slate-900 font-black uppercase text-xs hover:bg-slate-50 transition-all active:scale-95">
+                <UserPlus className="w-4 h-4 mr-2" /> Create New Account
+              </Button>
+            </div>
+            
+            <div className="pt-4 flex items-center justify-center gap-6 opacity-50">
+               <div className="flex flex-col items-center gap-1">
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="text-[8px] font-black uppercase">Secure</span>
+               </div>
+               <div className="flex flex-col items-center gap-1">
+                  <Clock className="w-5 h-5" />
+                  <span className="text-[8px] font-black uppercase">30m Delivery</span>
+               </div>
+               <div className="flex flex-col items-center gap-1">
+                  <MapPin className="w-5 h-5" />
+                  <span className="text-[8px] font-black uppercase">Bounsi</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Auth Dialog inside landing */}
+        <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+          <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-xl font-black uppercase">{isSignUp ? 'Join Bazaar' : 'Welcome Back'}</DialogTitle>
+              <DialogDescription className="text-xs font-bold uppercase text-slate-400">
+                {isSignUp ? 'Create an account to start shopping' : 'Login to see your bazaar history'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div className="space-y-3">
+                <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</Label></div>
+                <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50 font-bold" required />
+              </div>
+              <div className="space-y-3">
+                <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Password</Label></div>
+                <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50 font-bold" required minLength={6} />
+              </div>
+              <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none shadow-lg shadow-green-100">
+                {isSignUp ? 'Create My Account' : 'Login to Bazaar'}
+              </Button>
+              <div className="pt-2">
+                <button type="button" className="text-[10px] font-black uppercase text-green-600 hover:underline" onClick={() => setIsSignUp(!isSignUp)}>
+                  {isSignUp ? 'Already have an account? Login' : "New to bazaar? Create Account"}
+                </button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+        <Toaster />
       </div>
     );
   }
@@ -325,8 +407,8 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => !user ? setIsAuthDialogOpen(true) : setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
-              {!user ? <UserPlus className="w-5 h-5 text-slate-600" /> : <History className="w-5 h-5 text-green-600" />}
+            <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
+              <History className="w-5 h-5 text-green-600" />
             </Button>
             {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-xl h-10 w-10 bg-blue-50">
@@ -425,10 +507,7 @@ export default function Home() {
               </div>
             </div>
             <Button onClick={() => {
-              if (!user) {
-                setIsSignUp(true);
-                setIsAuthDialogOpen(true);
-              } else if (!profile?.phoneNumber) {
+              if (!profile?.phoneNumber) {
                 setIsPhoneDialogOpen(true);
               } else {
                 setIsPaymentDialogOpen(true);
@@ -440,7 +519,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Auth Dialog */}
+      {/* Auth Dialog (Accessible via landing) */}
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-4">
@@ -472,7 +551,7 @@ export default function Home() {
 
       {/* Orders History Dialog */}
       <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
-        <DialogContent className="rounded-3xl p-6 max-w-md border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-6 max-md border-none shadow-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-black uppercase flex items-center gap-2">
               <History className="w-5 h-5 text-green-600" /> My Orders
