@@ -46,7 +46,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  const ordersQuery = useMemoFirebase(() => query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50)), [firestore]);
+  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
+  const { data: adminRole } = useDoc(adminRoleRef);
+  const isAdmin = !!adminRole;
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!isAdmin) return null;
+    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
+  }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
 
   const stats = useMemo(() => {
@@ -110,7 +117,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
 
   return (
     <div className="container mx-auto p-4 space-y-8">
-      {/* Earnings Overview */}
       <div className="grid grid-cols-2 gap-4">
         <Card className="rounded-3xl border-none shadow-sm bg-blue-600 text-white">
           <CardContent className="p-6 flex flex-col items-center justify-center text-center">
