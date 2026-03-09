@@ -296,7 +296,6 @@ export default function Home() {
     );
   }
 
-  // Mandatory Auth Check - Shows Blinkit-style landing
   if (!user) {
     return (
       <div className={cn("min-h-screen flex flex-col items-center justify-center p-6 text-center transition-all duration-500 bg-slate-50", currentThemeConfig.bg)}>
@@ -344,7 +343,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Auth Dialog */}
         <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
           <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
             <DialogHeader className="mb-6">
@@ -378,7 +376,6 @@ export default function Home() {
     );
   }
 
-  // Main UI for Logged-in Users
   return (
     <div className={cn("min-h-screen relative pb-40 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
@@ -400,11 +397,9 @@ export default function Home() {
               <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
                 <History className="w-5 h-5 text-green-600" />
               </Button>
-              {isAdmin && (
-                <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-xl h-10 w-10 bg-blue-50">
-                  <ShieldCheck className="w-5 h-5 text-blue-600" />
-                </Button>
-              )}
+              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
+                <LogOut className="w-5 h-5" />
+              </Button>
             </div>
           </div>
           
@@ -414,19 +409,24 @@ export default function Home() {
               placeholder="Search items, sections or categories..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-12 pl-12 rounded-2xl bg-slate-50 border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
+              className="w-full h-12 pl-12 pr-12 rounded-2xl bg-slate-50 border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
             />
+            {isAdmin && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
+                className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+              >
+                <ShieldCheck className="w-5 h-5" />
+              </Button>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-2xl h-12 w-12 bg-white shadow-sm hover:shadow-md">
               <History className="w-6 h-6 text-green-600" />
             </Button>
-            {isAdmin && (
-              <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-2xl h-12 w-12 bg-blue-50 hover:bg-blue-100">
-                <ShieldCheck className="w-6 h-6 text-blue-600" />
-              </Button>
-            )}
             <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
               <LogOut className="w-6 h-6" />
             </Button>
@@ -440,8 +440,8 @@ export default function Home() {
             <h2 className="text-2xl font-black text-blue-600 uppercase flex items-center gap-3">
               <Layers className="w-6 h-6" /> Administrator Hub
             </h2>
-            <Button variant="outline" size="sm" onClick={() => signOut(auth)} className="rounded-xl text-blue-600 border-blue-100 hover:bg-red-50 hover:text-red-600">
-              <LogOut className="w-4 h-4 mr-2" /> Exit Session
+            <Button variant="outline" size="sm" onClick={() => setIsAdminPanelVisible(false)} className="rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50">
+              <ChevronRight className="w-4 h-4 rotate-90" /> Hide Hub
             </Button>
           </div>
           <AdminPanel currentTheme={currentTheme} isAdmin={isAdmin} />
@@ -538,7 +538,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Orders History Dialog */}
       <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-w-lg border-none shadow-2xl">
           <DialogHeader className="mb-6">
@@ -602,7 +601,6 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Checkout Summary Dialog */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-w-md border-none shadow-2xl">
           <DialogHeader className="mb-6">

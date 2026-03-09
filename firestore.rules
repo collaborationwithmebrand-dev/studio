@@ -53,7 +53,8 @@ service cloud.firestore {
       // Get is allowed if you are the owner or the admin
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
 
-      // List is allowed if you are the admin OR if you filter strictly by your own userId
+      // Administrators can list all orders
+      // Regular users can only list their own orders
       allow list: if isSignedIn() && (
         isAdmin() || 
         (request.query.limit <= 50 && request.query.filters.size() > 0 && request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid)
