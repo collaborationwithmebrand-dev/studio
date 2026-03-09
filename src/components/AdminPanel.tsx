@@ -245,7 +245,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 </div>
               </CardHeader>
               <CardContent className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                {filteredCatalogProducts.map((p: any) => (
+                {filteredCatalogProducts?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-2 bg-blue-50/30 rounded-xl border border-blue-50">
                     <div className="flex items-center gap-3">
                       <img src={p.imageUrl} className="w-8 h-8 rounded-lg object-cover" alt="" />

@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2 } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +22,6 @@ import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  initiateAnonymousSignIn,
   initiateEmailSignIn,
   initiateEmailSignUp
 } from '@/firebase';
@@ -70,7 +69,7 @@ export default function Home() {
   
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(true); // Default to sign up as requested
   const [phoneNumber, setPhoneNumber] = useState('');
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
@@ -95,10 +94,6 @@ export default function Home() {
     );
   }, []);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) initiateAnonymousSignIn(auth);
-  }, [user, isUserLoading, auth]);
-
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(profileRef);
 
@@ -115,7 +110,7 @@ export default function Home() {
   const isAdmin = !!adminRole;
 
   const userOrdersQuery = useMemoFirebase(() => {
-    if (!user || user.isAnonymous) return null;
+    if (!user) return null;
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
@@ -202,6 +197,12 @@ export default function Home() {
   }, [products, searchQuery]);
 
   const addToCart = (product: any) => {
+    if (!user) {
+      setIsSignUp(true);
+      setIsAuthDialogOpen(true);
+      toast({ title: "Account Required", description: "Please create an account to start shopping." });
+      return;
+    }
     setCart(prev => {
       const existing = prev[product.id];
       return {
@@ -314,8 +315,8 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => user?.isAnonymous ? setIsAuthDialogOpen(true) : setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
-              {user?.isAnonymous ? <UserIcon className="w-5 h-5 text-slate-600" /> : <History className="w-5 h-5 text-green-600" />}
+            <Button variant="ghost" size="icon" onClick={() => !user ? setIsAuthDialogOpen(true) : setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
+              {!user ? <UserPlus className="w-5 h-5 text-slate-600" /> : <History className="w-5 h-5 text-green-600" />}
             </Button>
             {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-xl h-10 w-10 bg-blue-50">
@@ -414,9 +415,14 @@ export default function Home() {
               </div>
             </div>
             <Button onClick={() => {
-              if (!user || user.isAnonymous) setIsAuthDialogOpen(true);
-              else if (!profile?.phoneNumber) setIsPhoneDialogOpen(true);
-              else setIsPaymentDialogOpen(true);
+              if (!user) {
+                setIsSignUp(true);
+                setIsAuthDialogOpen(true);
+              } else if (!profile?.phoneNumber) {
+                setIsPhoneDialogOpen(true);
+              } else {
+                setIsPaymentDialogOpen(true);
+              }
             }} className="bg-white text-green-700 hover:bg-slate-50 h-12 px-6 rounded-xl font-black uppercase text-xs flex items-center gap-2 border-none">
               VIEW CART <ChevronRight className="w-4 h-4" />
             </Button>
@@ -512,7 +518,7 @@ export default function Home() {
               </div>
             )}
           </div>
-          <Button onClick={() => signOut(auth)} variant="outline" className="w-full mt-4 h-11 rounded-xl border-slate-200 text-slate-400 font-black uppercase text-[10px] hover:text-red-500 hover:border-red-100 hover:bg-red-50">
+          <Button onClick={() => { signOut(auth); setIsOrdersHistoryOpen(false); }} variant="outline" className="w-full mt-4 h-11 rounded-xl border-slate-200 text-slate-400 font-black uppercase text-[10px] hover:text-red-500 hover:border-red-100 hover:bg-red-50">
             <LogOut className="w-4 h-4 mr-2" /> Logout Account
           </Button>
         </DialogContent>
