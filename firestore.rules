@@ -36,18 +36,19 @@ service cloud.firestore {
     }
     match /orders/{orderId} {
       allow create: if isSignedIn();
-      allow get: if isSignedIn() && (isOwner(resource.data.userId) || isAdmin());
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       
-      // Allow users to list their own orders with a limit, or admins to list all
-      allow list: if isAdmin() || (isSignedIn() && request.query.limit <= 20 && resource.data.userId == request.auth.uid);
+      // Explicitly separate admin and user list rules to prevent query rejection
+      allow list: if isAdmin();
+      allow list: if isSignedIn() && request.query.limit <= 20 && resource.data.userId == request.auth.uid;
       
       // Allow users to update status to 'cancelled' only if it's currently 'pending'
-      allow update: if (isOwner(resource.data.userId) && resource.data.status == 'pending' && request.resource.data.status == 'cancelled')
-                   || isAdmin();
+      allow update: if isAdmin() 
+                   || (isOwner(resource.data.userId) && resource.data.status == 'pending' && request.resource.data.status == 'cancelled');
       
       // Allow users to delete their own orders if they are finished (delivered or cancelled)
-      allow delete: if (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'))
-                   || isAdmin();
+      allow delete: if isAdmin()
+                   || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
     }
   }
 }

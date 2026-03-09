@@ -18,9 +18,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AdminPanelProps {
   currentTheme: FestivalTheme;
+  isAdmin: boolean;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin }) => {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
@@ -45,10 +46,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme }) => {
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
-
-  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
-  const { data: adminRole } = useDoc(adminRoleRef);
-  const isAdmin = !!adminRole;
 
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin) return null;

@@ -114,7 +114,6 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  // Added limit(20) to satisfy Firestore Security Rules for non-admins
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(
@@ -335,7 +334,7 @@ export default function Home() {
               <LogOut className="w-4 h-4 mr-2" /> Logout
             </Button>
           </div>
-          <AdminPanel currentTheme={currentTheme} />
+          <AdminPanel currentTheme={currentTheme} isAdmin={isAdmin} />
         </div>
       )}
 
@@ -578,7 +577,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 max-w-xs text-center border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-8 max-xs text-center border-none shadow-2xl">
           <h3 className="text-lg font-black uppercase mb-4">Scan QR to Pay</h3>
           <div className="p-4 bg-white rounded-2xl border-4 border-slate-50 shadow-inner mb-4">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-48 h-48 mx-auto object-contain" /> : <div className="w-48 h-48 bg-slate-100 flex items-center justify-center"><QrCode className="w-10 h-10 text-slate-300" /></div>}
