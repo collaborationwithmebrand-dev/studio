@@ -49,11 +49,16 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn();
       
-      // Split list rules for clarity and to satisfy Firestore query constraints
+      // Separate list rules to handle different query contexts
+      // Admin context: List all orders
       allow list: if isAdmin();
-      allow list: if isSignedIn() && request.query.limit <= 50 && request.query.filters.size() > 0 && 
-                  ((request.query.filters[0].field == 'userId' && request.query.filters[0].value == request.auth.uid) ||
-                   (request.query.filters.size() > 1 && request.query.filters[1].field == 'userId' && request.query.filters[1].value == request.auth.uid));
+      
+      // User context: List own orders only with strict filtering
+      allow list: if isSignedIn() && 
+                  request.query.limit <= 50 && 
+                  request.query.filters.size() > 0 && 
+                  request.query.filters[0].field == 'userId' && 
+                  request.query.filters[0].value == request.auth.uid;
       
       allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       
