@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,11 +20,15 @@ import {
   useMemoFirebase,
   setDocumentNonBlocking,
   addDocumentNonBlocking,
-  initiateAnonymousSignIn
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  initiateAnonymousSignIn,
+  initiateEmailSignIn,
+  initiateEmailSignUp
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
@@ -61,7 +65,12 @@ export default function Home() {
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [isOrdersHistoryOpen, setIsOrdersHistoryOpen] = useState(false);
   
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
@@ -93,7 +102,7 @@ export default function Home() {
   const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
   const { data: profile } = useDoc(profileRef);
 
-  const settingsRef = useMemoFirebase(() => user ? doc(firestore, 'storeSettings', 'mainSettings') : null, [firestore, user]);
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
@@ -104,6 +113,12 @@ export default function Home() {
   const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
+
+  const userOrdersQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(firestore, 'orders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [firestore, user]);
+  const { data: userOrders } = useCollection(userOrdersQuery);
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -124,6 +139,13 @@ export default function Home() {
     }
   };
 
+  const handleAuth = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSignUp) initiateEmailSignUp(auth, authEmail, authPassword);
+    else initiateEmailSignIn(auth, authEmail, authPassword);
+    setIsAuthDialogOpen(false);
+  };
+
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneNumber || phoneNumber.length < 10) {
@@ -131,11 +153,21 @@ export default function Home() {
       return;
     }
     if (user) {
-      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber }, { merge: true });
+      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber, email: user.email || '' }, { merge: true });
       setIsPhoneDialogOpen(false);
       setIsPaymentDialogOpen(true);
       toast({ title: "Phone Verified" });
     }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: 'cancelled' });
+    toast({ title: "Order Cancelled" });
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    deleteDocumentNonBlocking(doc(firestore, 'orders', orderId));
+    toast({ title: "Order Removed from History" });
   };
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -230,6 +262,7 @@ export default function Home() {
       setIsQrDialogOpen(false);
       setIsPaymentDialogOpen(false);
       setCart({});
+      toast({ title: "Order Placed Successfully!" });
     });
   };
 
@@ -274,28 +307,14 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge className="bg-green-100 text-green-700 px-3 py-1 rounded-lg border-none font-bold text-[10px] hidden sm:flex items-center gap-1">
-              <Clock className="w-3 h-3" /> 30 MIN
-            </Badge>
-            <Button variant="outline" size="icon" onClick={() => window.open(`tel:${settings?.helpLineNumber || "917319965930"}`)} className="rounded-xl h-10 w-10 border-slate-200">
-              <PhoneCall className="w-4 h-4 text-slate-600" />
+            <Button variant="ghost" size="icon" onClick={() => user?.isAnonymous ? setIsAuthDialogOpen(true) : setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
+              {user?.isAnonymous ? <UserIcon className="w-5 h-5 text-slate-600" /> : <History className="w-5 h-5 text-green-600" />}
             </Button>
             {isAdmin && (
               <Button variant="ghost" size="icon" onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)} className="rounded-xl h-10 w-10 bg-blue-50">
                 <ShieldCheck className="w-5 h-5 text-blue-600" />
               </Button>
             )}
-          </div>
-        </div>
-        <div className="md:hidden px-4 pb-3">
-          <div className="relative">
-            <Input 
-              placeholder="Search groceries..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-11 pl-10 rounded-xl bg-slate-50 border-none" 
-            />
-            <Search className="absolute left-3.5 top-3.5 text-slate-400 w-4 h-4" />
           </div>
         </div>
       </nav>
@@ -375,7 +394,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Sticky View Cart Bar (Blinkit Style) */}
       {cartCount > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-[60] animate-in slide-in-from-bottom-8 duration-500">
           <div className="bg-green-600 text-white rounded-2xl p-4 flex items-center justify-between shadow-2xl border border-green-400">
@@ -389,7 +407,8 @@ export default function Home() {
               </div>
             </div>
             <Button onClick={() => {
-              if (!user || !profile?.phoneNumber) setIsPhoneDialogOpen(true);
+              if (!user || user.isAnonymous) setIsAuthDialogOpen(true);
+              else if (!profile?.phoneNumber) setIsPhoneDialogOpen(true);
               else setIsPaymentDialogOpen(true);
             }} className="bg-white text-green-700 hover:bg-slate-50 h-12 px-6 rounded-xl font-black uppercase text-xs flex items-center gap-2 border-none">
               VIEW CART <ChevronRight className="w-4 h-4" />
@@ -398,7 +417,91 @@ export default function Home() {
         </div>
       )}
 
-      {/* Payment Summary Dialog */}
+      {/* Auth Dialog */}
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-black uppercase">{isSignUp ? 'Create Account' : 'Welcome Back'}</DialogTitle>
+            <DialogDescription className="text-xs font-bold uppercase text-slate-400">Save your orders and get faster delivery</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAuth} className="space-y-4">
+            <Input type="email" placeholder="Email Address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" />
+            <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" />
+            <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none">
+              {isSignUp ? 'Sign Up' : 'Login'}
+            </Button>
+            <p className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer" onClick={() => setIsSignUp(!isSignUp)}>
+              {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
+            </p>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Orders History Dialog */}
+      <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
+        <DialogContent className="rounded-3xl p-6 max-w-md border-none shadow-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-xl font-black uppercase flex items-center gap-2">
+              <History className="w-5 h-5 text-green-600" /> My Orders
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            {userOrders && userOrders.length > 0 ? (
+              userOrders.map((order: any) => (
+                <div key={order.id} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Order ID: #{order.id.slice(-6)}</p>
+                      <p className="text-[10px] font-bold text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <Badge className={cn(
+                      "text-[9px] font-black uppercase rounded-lg border-none",
+                      order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                      order.status === 'confirmed' ? "bg-blue-100 text-blue-700" :
+                      order.status === 'delivered' ? "bg-green-100 text-green-700" :
+                      "bg-red-100 text-red-700"
+                    )}>
+                      {order.status}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    {order.items?.map((item: any, i: number) => (
+                      <p key={i} className="text-[10px] font-bold text-slate-600 uppercase">
+                        • {item.name} ({item.quantity} {item.unit})
+                      </p>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t border-dashed border-slate-200">
+                    <span className="text-sm font-black text-slate-900">₹{order.totalAmount}</span>
+                    <div className="flex gap-2">
+                      {order.status === 'pending' && (
+                        <Button onClick={() => handleCancelOrder(order.id)} size="sm" variant="outline" className="h-8 rounded-lg text-red-600 border-red-100 hover:bg-red-50 text-[9px] font-black uppercase">
+                          <XCircle className="w-3 h-3 mr-1" /> Cancel
+                        </Button>
+                      )}
+                      {(order.status === 'delivered' || order.status === 'cancelled') && (
+                        <Button onClick={() => handleDeleteOrder(order.id)} size="sm" variant="ghost" className="h-8 rounded-lg text-slate-400 hover:text-red-500 text-[9px] font-black uppercase">
+                          <Trash2 className="w-3 h-3" /> Delete History
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-12 text-center space-y-2">
+                <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto" />
+                <p className="text-[10px] font-black text-slate-400 uppercase">No orders yet</p>
+              </div>
+            )}
+          </div>
+          <Button onClick={() => signOut(auth)} variant="outline" className="w-full mt-4 h-11 rounded-xl border-slate-200 text-slate-400 font-black uppercase text-[10px]">
+            <LogOut className="w-4 h-4 mr-2" /> Logout Account
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      {/* Existing Dialogs (Payment, QR, Phone, Admin) */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-3xl p-6 max-w-sm border-none shadow-2xl">
           <DialogHeader className="mb-4">

@@ -27,7 +27,8 @@
       "title": "User Profile",
       "type": "object",
       "properties": {
-        "phoneNumber": { "type": "string" }
+        "phoneNumber": { "type": "string" },
+        "email": { "type": "string" }
       }
     },
     "StoreSetting": {
@@ -50,12 +51,12 @@
       "title": "Order",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
         "phoneNumber": { "type": "string" },
-        "productId": { "type": "string" },
-        "productName": { "type": "string" },
-        "quantity": { "type": "number" },
-        "amount": { "type": "number" },
-        "status": { "type": "string" },
+        "items": { "type": "array" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "delivered", "cancelled"] },
         "createdAt": { "type": "string", "format": "date-time" }
       }
     },
