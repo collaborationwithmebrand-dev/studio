@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -172,14 +171,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-blue-600 text-white">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
             <TrendingUp className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Bazaar Orders</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Total Bazaar Orders</p>
             <p className="text-4xl font-black">{stats.orders}</p>
           </CardContent>
         </Card>
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-blue-600 text-white">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
             <DollarSign className="w-8 h-8 mb-3 opacity-80" />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Total Revenue</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Total Revenue</p>
             <p className="text-4xl font-black">₹{stats.earnings}</p>
           </CardContent>
         </Card>
