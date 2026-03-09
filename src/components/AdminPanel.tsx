@@ -211,7 +211,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <Label className="text-blue-600 font-bold uppercase text-[9px] flex items-center gap-1.5"><Ruler className="w-3.5 h-3.5" /> Measurement Unit (SI)</Label>
                   <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2">
                     {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
-                      <div key={u} className={cn("p-2 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600" : "bg-white border-blue-100")}>
+                      <div key={u} className={cn("p-2 rounded-xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600 shadow-inner" : "bg-white border-blue-100")}>
                         <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
                         <Label htmlFor={`u-${u}`} className={cn("font-bold text-[10px] cursor-pointer uppercase", unit === u ? "text-white" : "text-blue-600")}>{u}</Label>
                       </div>
@@ -224,7 +224,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <Label htmlFor="c-pin" className="text-blue-600 font-bold uppercase text-[9px]">Feature at Top</Label>
                 </div>
 
-                <Button onClick={handleAdd} className="w-full h-12 rounded-xl bg-blue-600 text-white font-bold uppercase text-sm shadow-md border-none">Publish to Bazaar</Button>
+                <Button onClick={handleAdd} className="w-full h-12 rounded-xl bg-blue-600 text-white font-bold uppercase text-sm shadow-md border-none hover:bg-blue-700">Publish to Bazaar</Button>
               </CardContent>
             </Card>
 
@@ -319,7 +319,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     variant={currentTheme === t ? "default" : "outline"} 
                     className={cn(
                       "rounded-xl h-10 font-bold uppercase text-[9px]", 
-                      currentTheme === t ? "bg-blue-600 text-white border-none" : "text-blue-600 border-blue-100 hover:bg-blue-50"
+                      currentTheme === t ? "bg-blue-600 text-white border-none shadow-md" : "text-blue-600 border-blue-100 hover:bg-blue-50"
                     )}
                   >
                     {t}
@@ -337,7 +337,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 </div>
                 <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI ID</Label><Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
                 <div className="space-y-1"><Label className="text-blue-600 font-bold uppercase text-[9px]">UPI QR Image URL</Label><Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/30 border-none text-blue-900 font-bold h-10" /></div>
-                <Button onClick={handleUpdateSettings} className="w-full h-11 rounded-xl bg-blue-600 text-white font-bold uppercase text-xs border-none shadow-md">Save Configuration</Button>
+                <Button onClick={handleUpdateSettings} className="w-full h-11 rounded-xl bg-blue-600 text-white font-bold uppercase text-xs border-none shadow-md hover:bg-blue-700">Save Configuration</Button>
               </CardContent>
             </Card>
           </div>

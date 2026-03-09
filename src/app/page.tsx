@@ -114,16 +114,15 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isAdmin = !!adminRole;
 
-  // We strictly filter by userId and limit to match security rules
   const userOrdersQuery = useMemoFirebase(() => {
-    if (!user || isUserLoading) return null;
+    if (!user || user.isAnonymous) return null;
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
       orderBy('createdAt', 'desc'),
       limit(20)
     );
-  }, [firestore, user, isUserLoading]);
+  }, [firestore, user]);
   const { data: userOrders } = useCollection(userOrdersQuery);
 
   useEffect(() => {
@@ -277,7 +276,7 @@ export default function Home() {
   if (locationStatus === 'checking' || isProductsLoading || isUserLoading) {
     return <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
       <Loader2 className="w-10 h-10 animate-spin text-green-500" />
-      <p className="font-bold text-slate-400 text-xs tracking-widest uppercase">Opening Bounsi Bazaar...</p>
+      <p className="font-bold text-slate-400 text-xs tracking-widest uppercase text-center">Opening Shubh Bounsi Bazaar...</p>
     </div>;
   }
 
@@ -425,23 +424,31 @@ export default function Home() {
         </div>
       )}
 
-      {/* Auth Dialog */}
+      {/* Auth Dialog - Dual Mode: Login & Sign Up */}
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-black uppercase">{isSignUp ? 'Create Account' : 'Welcome Back'}</DialogTitle>
-            <DialogDescription className="text-xs font-bold uppercase text-slate-400">Save your orders and get faster delivery</DialogDescription>
+            <DialogDescription className="text-xs font-bold uppercase text-slate-400">
+              {isSignUp ? 'Join the bazaar to track your orders' : 'Login to see your bazaar history'}
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-4">
-            <Input type="email" placeholder="Email Address" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" required />
-            <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50" required minLength={6} />
-            <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none">
-              {isSignUp ? 'Create Account' : 'Login'}
+            <div className="space-y-3">
+              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Email Address</Label></div>
+              <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50 font-bold" required />
+            </div>
+            <div className="space-y-3">
+              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-1">Password</Label></div>
+              <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-12 rounded-xl border-slate-100 bg-slate-50 font-bold" required minLength={6} />
+            </div>
+            <Button type="submit" className="w-full h-12 rounded-xl bg-green-500 text-white font-black uppercase border-none shadow-lg shadow-green-100">
+              {isSignUp ? 'Create My Account' : 'Login to Bazaar'}
             </Button>
             <div className="pt-2">
-              <p className="text-[10px] font-bold uppercase text-slate-400 cursor-pointer hover:text-green-600 transition-colors" onClick={() => setIsSignUp(!isSignUp)}>
-                {isSignUp ? 'Already have an account? Login' : "Don't have an account? Create one"}
-              </p>
+              <button type="button" className="text-[10px] font-black uppercase text-green-600 hover:underline" onClick={() => setIsSignUp(!isSignUp)}>
+                {isSignUp ? 'Already have an account? Login' : "New to bazaar? Create Account"}
+              </button>
             </div>
           </form>
         </DialogContent>
@@ -449,7 +456,7 @@ export default function Home() {
 
       {/* Orders History Dialog */}
       <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
-        <DialogContent className="rounded-3xl p-6 max-md border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-6 max-w-md border-none shadow-2xl">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-xl font-black uppercase flex items-center gap-2">
               <History className="w-5 h-5 text-green-600" /> My Orders
@@ -465,11 +472,11 @@ export default function Home() {
                       <p className="text-[10px] font-bold text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
                     <Badge className={cn(
-                      "text-[9px] font-black uppercase rounded-lg border-none",
-                      order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
-                      order.status === 'confirmed' ? "bg-blue-100 text-blue-700" :
-                      order.status === 'delivered' ? "bg-green-100 text-green-700" :
-                      "bg-red-100 text-red-700"
+                      "text-[9px] font-black uppercase rounded-lg border-none shadow-sm",
+                      order.status === 'pending' ? "bg-yellow-400 text-black" :
+                      order.status === 'confirmed' ? "bg-blue-500 text-white" :
+                      order.status === 'delivered' ? "bg-green-500 text-white" :
+                      "bg-red-500 text-white"
                     )}>
                       {order.status}
                     </Badge>
@@ -491,7 +498,7 @@ export default function Home() {
                       )}
                       {(order.status === 'delivered' || order.status === 'cancelled') && (
                         <Button onClick={() => handleDeleteOrder(order.id)} size="sm" variant="ghost" className="h-8 rounded-lg text-slate-400 hover:text-red-500 text-[9px] font-black uppercase">
-                          <Trash2 className="w-3 h-3" /> Delete History
+                          <Trash2 className="w-3 h-3 mr-1" /> Delete Record
                         </Button>
                       )}
                     </div>
@@ -501,11 +508,11 @@ export default function Home() {
             ) : (
               <div className="py-12 text-center space-y-2">
                 <ShoppingBag className="w-12 h-12 text-slate-200 mx-auto" />
-                <p className="text-[10px] font-black text-slate-400 uppercase">No orders yet</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase">Your order history is empty</p>
               </div>
             )}
           </div>
-          <Button onClick={() => signOut(auth)} variant="outline" className="w-full mt-4 h-11 rounded-xl border-slate-200 text-slate-400 font-black uppercase text-[10px]">
+          <Button onClick={() => signOut(auth)} variant="outline" className="w-full mt-4 h-11 rounded-xl border-slate-200 text-slate-400 font-black uppercase text-[10px] hover:text-red-500 hover:border-red-100 hover:bg-red-50">
             <LogOut className="w-4 h-4 mr-2" /> Logout Account
           </Button>
         </DialogContent>
