@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, Clock, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, User as UserIcon, History, XCircle, CheckCircle2, UserPlus, LogIn, Megaphone, ArrowRight, Sparkles } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, History, XCircle, LogIn, Megaphone, ArrowRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,8 +22,7 @@ import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  initiateEmailSignIn,
-  initiateEmailSignUp
+  initiateEmailSignIn
 } from '@/firebase';
 import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -112,7 +111,7 @@ export default function Home() {
   const isAdmin = !!adminRole;
 
   const userOrdersQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return query(
       collection(firestore, 'orders'), 
       where('userId', '==', user.uid), 
@@ -159,7 +158,6 @@ export default function Home() {
       setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber, email: user.email || '' }, { merge: true });
       setIsPhoneDialogOpen(false);
       setIsPaymentDialogOpen(true);
-      toast({ title: "Phone Verified" });
     }
   };
 
@@ -170,7 +168,7 @@ export default function Home() {
 
   const handleDeleteOrder = (orderId: string) => {
     deleteDocumentNonBlocking(doc(firestore, 'orders', orderId));
-    toast({ title: "Order Removed from History" });
+    toast({ title: "Removed from History" });
   };
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -241,20 +239,14 @@ export default function Home() {
     return Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  const calculateFinalTotal = () => {
-    const deliveryGST = cartTotal < 100 ? 125 : 25;
-    const packagingFee = packagingType === 'Gift' ? 40 : 0;
-    return cartTotal + deliveryGST + packagingFee;
-  };
-
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     const phone = profile?.phoneNumber || phoneNumber;
-    const finalPrice = calculateFinalTotal();
-    const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit}) - ₹${item.price * item.quantity}`).join('\n');
+    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0);
+    const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     navigator.geolocation.getCurrentPosition((pos) => {
       const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Delivering in 30 mins!_ ⚡`;
+      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Fast Delivery (30 min)!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         phoneNumber: phone,
@@ -277,7 +269,7 @@ export default function Home() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-green-500" />
-        <p className="font-bold text-slate-400 text-xs tracking-widest uppercase text-center">Opening Bazaar...</p>
+        <p className="font-bold text-slate-400 text-xs tracking-widest uppercase">Opening Bazaar...</p>
       </div>
     );
   }
@@ -326,10 +318,10 @@ export default function Home() {
             </div>
           </div>
           
-          <div className="relative flex-1 w-full max-w-xl">
+          <div className="relative flex-1 w-full max-w-xl group">
             <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
             <Input 
-              placeholder="Search items, sections or categories..." 
+              placeholder="Search items, sections..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="w-full h-12 pl-12 pr-12 rounded-2xl bg-slate-50 border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
@@ -339,7 +331,7 @@ export default function Home() {
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 transition-colors"
               >
                 <ShieldCheck className="w-5 h-5" />
               </Button>
@@ -365,83 +357,64 @@ export default function Home() {
 
       {isAdmin && isAdminPanelVisible && (
         <div className="bg-white py-10 border-b animate-in fade-in slide-in-from-top-4 duration-500">
-          <div className="container mx-auto px-4 flex justify-between items-center mb-8">
-            <h2 className="text-2xl font-black text-blue-600 uppercase flex items-center gap-3">
-              <Layers className="w-6 h-6" /> Administrator Hub
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => setIsAdminPanelVisible(false)} className="rounded-xl text-blue-600 border-blue-100 hover:bg-blue-50">
-              <ChevronRight className="w-4 h-4 rotate-90" /> Hide Hub
-            </Button>
-          </div>
           <AdminPanel currentTheme={currentTheme} isAdmin={isAdmin} />
         </div>
       )}
 
       <main className="container mx-auto px-4 py-10">
         <div className="space-y-16">
-          {Object.entries(filteredProductsBySection).length > 0 ? (
-            Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
-              <section key={section} className="space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                  <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
-                    <LayoutGrid className="w-7 h-7 text-green-500" /> {section}
-                  </h2>
-                  <Badge variant="outline" className="rounded-full px-4 border-slate-100 text-slate-400 font-bold text-[10px] uppercase">{items.length} ITEMS</Badge>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                  {items.map((p: any) => {
-                    const cartItem = cart[p.id];
-                    return (
-                      <div key={p.id} className="group product-card-blinkit rounded-3xl p-4 flex flex-col h-full shadow-sm">
-                        <div className="relative aspect-square mb-4 rounded-2xl overflow-hidden bg-slate-50">
-                          <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                          {p.isPinned && (
-                            <div className="absolute top-3 left-3 bg-yellow-400 text-black px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1 shadow-md">
-                              <Pin className="w-3 h-3 fill-black" /> TOP PICK
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <h3 className="font-bold text-sm text-slate-800 line-clamp-2 uppercase leading-snug min-h-[2.5rem]">{p.name}</h3>
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-none rounded-lg text-[9px] font-black uppercase">
-                              {p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="mt-5 flex items-center justify-between gap-3">
-                          <span className="text-base font-black text-slate-900">₹{p.price}</span>
-                          {cartItem ? (
-                            <div className="flex items-center gap-2 bg-green-500 rounded-xl p-1 shadow-lg shadow-green-100 flex-1 justify-between">
-                              <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white rounded-lg border-none active:scale-90 transition-all">
-                                <Minus className="w-4 h-4" />
-                              </Button>
-                              <span className="text-white font-black text-sm">{cartItem.quantity}</span>
-                              <Button onClick={() => addToCart(p)} size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white rounded-lg border-none active:scale-90 transition-all">
-                                <Plus className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button onClick={() => addToCart(p)} className="rounded-xl h-10 px-6 font-black text-xs bg-green-500 text-white hover:bg-green-600 uppercase shadow-lg shadow-green-100 border-none active:scale-95 transition-all">
-                              ADD
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))
-          ) : (
-            <div className="py-32 text-center space-y-4">
-              <div className="bg-slate-50 p-6 rounded-full inline-block">
-                <Search className="w-16 h-16 text-slate-200 mx-auto" />
+          {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
+            <section key={section} className="space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                  <LayoutGrid className="w-7 h-7 text-green-500" /> {section}
+                </h2>
+                <Badge variant="outline" className="rounded-full px-4 border-slate-100 text-slate-400 font-bold text-[10px] uppercase">{items.length} ITEMS</Badge>
               </div>
-              <p className="text-slate-400 font-bold uppercase text-xs tracking-widest">No matching products found in Bazaar</p>
-            </div>
-          )}
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {items.map((p: any) => {
+                  const cartItem = cart[p.id];
+                  return (
+                    <div key={p.id} className="group product-card-blinkit rounded-3xl p-4 flex flex-col h-full shadow-sm">
+                      <div className="relative aspect-square mb-4 rounded-2xl overflow-hidden bg-slate-50">
+                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        {p.isPinned && (
+                          <div className="absolute top-3 left-3 bg-yellow-400 text-black px-2 py-1 rounded-lg text-[9px] font-black flex items-center gap-1">
+                            <Pin className="w-3 h-3 fill-black" /> TOP PICK
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-bold text-sm text-slate-800 line-clamp-2 uppercase min-h-[2.5rem]">{p.name}</h3>
+                        <Badge className="bg-slate-100 text-slate-500 hover:bg-slate-200 border-none rounded-lg text-[9px] font-black uppercase">
+                          {p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}
+                        </Badge>
+                      </div>
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <span className="text-base font-black text-slate-900">₹{p.price}</span>
+                        {cartItem ? (
+                          <div className="flex items-center gap-2 bg-green-500 rounded-xl p-1 flex-1 justify-between shadow-lg shadow-green-100">
+                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white rounded-lg border-none active:scale-90 transition-all">
+                              <Minus className="w-4 h-4" />
+                            </Button>
+                            <span className="text-white font-black text-sm">{cartItem.quantity}</span>
+                            <Button onClick={() => addToCart(p)} size="icon" className="h-8 w-8 bg-green-600 hover:bg-green-700 text-white rounded-lg border-none active:scale-90 transition-all">
+                              <Plus className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button onClick={() => addToCart(p)} className="rounded-xl h-10 px-6 font-black text-xs bg-green-500 text-white hover:bg-green-600 uppercase shadow-lg shadow-green-100 active:scale-95">
+                            ADD
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
       </main>
 
@@ -461,7 +434,7 @@ export default function Home() {
               if (!profile?.phoneNumber) setIsPhoneDialogOpen(true);
               else setIsPaymentDialogOpen(true);
             }} className="bg-white text-green-700 hover:bg-slate-50 h-14 px-8 rounded-2xl font-black uppercase text-sm flex items-center gap-2 border-none active:scale-95 transition-all">
-              GO TO CHECKOUT <ChevronRight className="w-5 h-5" />
+              CHECKOUT <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -471,7 +444,7 @@ export default function Home() {
         <DialogContent className="rounded-[2.5rem] p-8 max-w-lg border-none shadow-2xl">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-black uppercase flex items-center gap-3">
-              <History className="w-6 h-6 text-green-600" /> My Bazaar History
+              <History className="w-6 h-6 text-green-600" /> Bazaar History
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5 max-h-[500px] overflow-y-auto pr-3 custom-scrollbar">
@@ -481,7 +454,7 @@ export default function Home() {
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ID: #{order.id.slice(-6)}</p>
-                      <p className="text-[11px] font-bold text-slate-500 uppercase">{new Date(order.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-[11px] font-bold text-slate-500 uppercase">{new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
                     <Badge className={cn(
                       "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
@@ -496,7 +469,7 @@ export default function Home() {
                   <div className="space-y-2">
                     {order.items?.map((item: any, i: number) => (
                       <p key={i} className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">
-                        <ArrowRight className="w-3 h-3 text-slate-300" /> {item.name} <span className="text-slate-400 text-[10px]">({item.quantity} {item.unit})</span>
+                        • {item.name} <span className="text-slate-400 text-[10px]">({item.quantity} {item.unit})</span>
                       </p>
                     ))}
                   </div>
@@ -504,13 +477,13 @@ export default function Home() {
                     <span className="text-base font-black text-slate-900">₹{order.totalAmount}</span>
                     <div className="flex gap-2">
                       {order.status === 'pending' && (
-                        <Button onClick={() => handleCancelOrder(order.id)} size="sm" variant="outline" className="h-10 rounded-xl text-red-600 border-red-100 hover:bg-red-50 text-[10px] font-black uppercase px-5">
-                          <XCircle className="w-4 h-4 mr-2" /> Cancel
+                        <Button onClick={() => handleCancelOrder(order.id)} size="sm" variant="outline" className="h-10 rounded-xl text-red-600 border-red-100 text-[10px] font-black uppercase px-5">
+                          Cancel
                         </Button>
                       )}
                       {(order.status === 'delivered' || order.status === 'cancelled') && (
-                        <Button onClick={() => handleDeleteOrder(order.id)} size="sm" variant="ghost" className="h-10 rounded-xl text-slate-400 hover:text-red-500 text-[10px] font-black uppercase px-5">
-                          <Trash2 className="w-4 h-4 mr-2" /> Remove
+                        <Button onClick={() => handleDeleteOrder(order.id)} size="sm" variant="ghost" className="h-10 rounded-xl text-slate-400 text-[10px] font-black uppercase px-5">
+                          Remove
                         </Button>
                       )}
                     </div>
@@ -520,22 +493,17 @@ export default function Home() {
             ) : (
               <div className="py-20 text-center space-y-4">
                 <ShoppingBag className="w-20 h-20 text-slate-100 mx-auto" />
-                <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">Your history is currently empty</p>
+                <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">No history yet</p>
               </div>
             )}
           </div>
-          {user && (
-            <Button onClick={() => { signOut(auth); setIsOrdersHistoryOpen(false); }} variant="outline" className="w-full mt-6 h-14 rounded-2xl border-slate-100 text-slate-400 font-black uppercase text-xs hover:text-red-600 hover:bg-red-50 active:scale-95 transition-all">
-              <LogOut className="w-5 h-5 mr-3" /> Logout Account
-            </Button>
-          )}
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-md border-none shadow-2xl">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900">Review Bazaar Basket</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-slate-900">Checkout</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
@@ -555,13 +523,13 @@ export default function Home() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Select Packaging Style</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Packaging</Label>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setPackagingType('Normal')} className={cn("p-4 rounded-2xl border text-left transition-all group", packagingType === 'Normal' ? "border-green-500 bg-green-50/50" : "border-slate-100")}>
+                <button onClick={() => setPackagingType('Normal')} className={cn("p-4 rounded-2xl border text-left transition-all", packagingType === 'Normal' ? "border-green-500 bg-green-50/50" : "border-slate-100")}>
                   <Package className={cn("w-5 h-5 mb-2", packagingType === 'Normal' ? "text-green-500" : "text-slate-300")} />
                   <p className="text-[11px] font-black uppercase">Normal (Free)</p>
                 </button>
-                <button onClick={() => setPackagingType('Gift')} className={cn("p-4 rounded-2xl border text-left transition-all group", packagingType === 'Gift' ? "border-pink-500 bg-pink-50/50" : "border-slate-100")}>
+                <button onClick={() => setPackagingType('Gift')} className={cn("p-4 rounded-2xl border text-left transition-all", packagingType === 'Gift' ? "border-pink-500 bg-pink-50/50" : "border-slate-100")}>
                   <Gift className={cn("w-5 h-5 mb-2", packagingType === 'Gift' ? "text-pink-500" : "text-slate-300")} />
                   <p className="text-[11px] font-black uppercase">Gift Wrap (+₹40)</p>
                 </button>
@@ -570,28 +538,22 @@ export default function Home() {
 
             <div className="bg-slate-50 rounded-[2rem] p-6 space-y-3 border border-slate-100">
               <div className="flex justify-between text-[11px] font-bold text-slate-500 uppercase">
-                <span>Basket Subtotal</span>
+                <span>Subtotal</span>
                 <span>₹{cartTotal}</span>
               </div>
               <div className="flex justify-between text-[11px] font-bold text-slate-500 uppercase">
-                <span>Delivery & GST Fee</span>
+                <span>Delivery & GST</span>
                 <span>₹{cartTotal < 100 ? 125 : 25}</span>
               </div>
-              {packagingType === 'Gift' && (
-                <div className="flex justify-between text-[11px] font-bold text-pink-500 uppercase">
-                  <span>Special Packaging</span>
-                  <span>₹40</span>
-                </div>
-              )}
               <div className="pt-4 border-t border-dashed border-slate-200 flex justify-between items-center">
-                <span className="text-lg font-black uppercase text-slate-900">Total to Pay</span>
-                <span className="text-2xl font-black text-green-600">₹{calculateFinalTotal()}</span>
+                <span className="text-lg font-black uppercase text-slate-900">Total</span>
+                <span className="text-2xl font-black text-green-600">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0)}</span>
               </div>
             </div>
 
             <div className="pt-2 flex flex-col gap-3">
               <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-16 rounded-2xl bg-green-500 text-white font-black text-sm uppercase shadow-xl shadow-green-100 border-none hover:bg-green-600 active:scale-95 transition-all">
-                <Smartphone className="w-5 h-5 mr-3" /> Pay via UPI Fast
+                <Smartphone className="w-5 h-5 mr-3" /> Pay via UPI
               </Button>
               <Button onClick={() => finalizeOrder('COD')} variant="outline" className="h-16 rounded-2xl border-slate-100 text-slate-600 font-black text-sm uppercase hover:bg-slate-50 active:scale-95 transition-all">
                 <Banknote className="w-5 h-5 mr-3" /> Cash on Delivery
@@ -603,40 +565,34 @@ export default function Home() {
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
         <DialogContent className="rounded-[3rem] p-10 max-w-xs text-center border-none shadow-2xl">
-          <h3 className="text-xl font-black uppercase mb-6">Scan QR for Payment</h3>
+          <h3 className="text-xl font-black uppercase mb-6">Scan QR</h3>
           <div className="p-6 bg-white rounded-[2rem] border-4 border-slate-50 shadow-inner mb-6">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain" /> : <div className="w-full aspect-square bg-slate-100 flex items-center justify-center"><QrCode className="w-12 h-12 text-slate-300" /></div>}
           </div>
-          <div className="space-y-1 mb-8">
-            <p className="text-[10px] font-black text-slate-400 uppercase">Verified UPI ID</p>
-            <p className="text-xs font-black text-slate-900 uppercase tracking-tight">{settings?.upiId || "N/A"}</p>
-          </div>
-          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-16 rounded-2xl bg-black text-white font-black uppercase text-sm border-none active:scale-95 transition-all shadow-xl">I've Completed Payment</Button>
+          <p className="text-xs font-black text-slate-900 uppercase mb-8">{settings?.upiId || "N/A"}</p>
+          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-16 rounded-2xl bg-black text-white font-black uppercase text-sm border-none active:scale-95 transition-all shadow-xl">Payment Completed</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-          <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Verify Contact</DialogTitle></DialogHeader>
+          <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Contact Number</DialogTitle></DialogHeader>
           <form onSubmit={handlePhoneSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">10-Digit Mobile Number</Label>
-              <Input 
-                type="tel" 
-                placeholder="9876543210" 
-                value={phoneNumber} 
-                onChange={(e) => setPhoneNumber(e.target.value)} 
-                className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
-              />
-            </div>
-            <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100">Continue to Checkout</Button>
+            <Input 
+              type="tel" 
+              placeholder="9876543210" 
+              value={phoneNumber} 
+              onChange={(e) => setPhoneNumber(e.target.value)} 
+              className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
+            />
+            <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100">Confirm & Pay</Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-xs text-center border-none shadow-2xl">
-          <DialogHeader><DialogTitle className="text-xl font-black uppercase text-blue-600">Admin Clearance</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="text-xl font-black uppercase text-blue-600">Admin Login</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-6 pt-4">
             <Input 
               maxLength={4} 
@@ -644,7 +600,7 @@ export default function Home() {
               value={verificationCode} 
               onChange={(e) => setVerificationCode(e.target.value)} 
             />
-            <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 text-white font-black uppercase text-sm border-none shadow-xl shadow-blue-100">Verify & Unlock Hub</Button>
+            <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 text-white font-black uppercase text-sm border-none shadow-xl shadow-blue-100">Unlock Hub</Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -653,19 +609,14 @@ export default function Home() {
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
-            <DialogDescription className="text-xs font-bold uppercase text-slate-400">Login to track your bazaar history</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-6">
             <div className="space-y-4">
-              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label></div>
-              <Input type="email" placeholder="example@email.com" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
-            </div>
-            <div className="space-y-4">
-              <div className="text-left"><Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label></div>
-              <Input type="password" placeholder="••••••••" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required minLength={6} />
+              <Input type="email" placeholder="Email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
+              <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
             </div>
             <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-              Login Now
+              Login
             </Button>
           </form>
         </DialogContent>

@@ -58,7 +58,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const { data: products } = useCollection(productsQuery);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!isAdmin) return null;
+    if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
@@ -112,7 +112,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       active: isAnnouncementActive,
       updatedAt: new Date().toISOString()
     }, { merge: true });
-    toast({ title: "Broadcast Updated", description: isAnnouncementActive ? "Announcement is now LIVE" : "Announcement Hidden" });
+    toast({ title: "Broadcast Updated" });
   };
 
   const handleAdd = async () => {
@@ -134,7 +134,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus });
-    toast({ title: `Order ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}` });
+    toast({ title: `Order ${newStatus}` });
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -353,7 +353,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 <Label htmlFor="c-broadcast" className="text-blue-600 font-black uppercase text-[11px] cursor-pointer">Activate Stream on Dashboard</Label>
               </div>
               <Button onClick={handleUpdateAnnouncement} className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase text-base shadow-xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-4">
-                <Send className="w-6 h-6" /> Push Notification to Bazaar
+                <Send className="w-6 h-6" /> Push Notification
               </Button>
             </CardContent>
           </Card>
