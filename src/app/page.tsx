@@ -400,16 +400,15 @@ export default function Home() {
       <FestiveEffects theme={currentTheme} />
       
       <div className="relative z-50">
-        {announcement?.active && (
-          <div className="bg-yellow-400 text-black py-3 px-6 text-center border-b-2 border-black shadow-lg">
-            <div className="container mx-auto flex items-center justify-center gap-3">
-              <Megaphone className="w-5 h-5 animate-bounce shrink-0" />
-              <p className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">
-                {announcement.message}
-              </p>
-            </div>
+        <div className="bg-yellow-400 text-black py-3 px-6 text-center border-b-2 border-black shadow-lg">
+          <div className="container mx-auto flex items-center justify-center gap-3">
+            <Megaphone className="w-5 h-5 animate-bounce shrink-0" />
+            <p className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">
+              Welcome to Bounsi Bazaar 🔺🍥🍤🌴💐
+              {announcement?.active && ` — ${announcement.message}`}
+            </p>
           </div>
-        )}
+        </div>
 
         <nav className="sticky top-0 glass-nav">
           <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
@@ -420,7 +419,7 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <div className="relative md:hidden">
                    <Bell className="w-5 h-5 text-slate-400" />
-                   {announcement?.active && (
+                   {(announcement?.active || true) && (
                      <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse" />
                    )}
                 </div>
@@ -447,7 +446,7 @@ export default function Home() {
               </div>
               <div className="relative hidden md:flex h-12 w-12 items-center justify-center bg-white rounded-2xl shadow-inner group">
                  <Bell className="w-5 h-5 text-slate-400 group-hover:text-yellow-500 transition-colors" />
-                 {announcement?.active && (
+                 {(announcement?.active || true) && (
                    <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse" />
                  )}
               </div>
