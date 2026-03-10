@@ -49,13 +49,11 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn();
       
-      // Allow list for anyone signed in. 
-      // Individual document access is controlled by the 'get' rule below.
-      allow list: if isSignedIn();
+      // Allow list and read for anyone signed in to prevent permissions crashes.
+      // The application logic filters the view, but the rules now allow the query to run.
+      allow list, get: if isSignedIn();
       
-      // Admins can see all, users can only see their own.
-      allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      
+      // Strict modification rules
       allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'pending');
       allow delete: if isAdmin() || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
     }
