@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -170,26 +171,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       <div className="grid grid-cols-2 gap-6">
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-blue-600 text-white">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
-            <TrendingUp className="w-8 h-8 mb-3 opacity-80" />
+            <TrendingUp className="w-8 h-8 mb-3 opacity-80 text-blue-100" />
             <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Total Bazaar Orders</p>
-            <p className="text-4xl font-black">{stats.orders}</p>
+            <p className="text-4xl font-black text-white">{stats.orders}</p>
           </CardContent>
         </Card>
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-blue-600 text-white">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
-            <DollarSign className="w-8 h-8 mb-3 opacity-80" />
+            <DollarSign className="w-8 h-8 mb-3 opacity-80 text-blue-100" />
             <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Total Revenue</p>
-            <p className="text-4xl font-black">₹{stats.earnings}</p>
+            <p className="text-4xl font-black text-white">₹{stats.earnings}</p>
           </CardContent>
         </Card>
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-blue-50 rounded-[1.5rem] h-14 p-1.5 mb-8">
-          <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Inventory</TabsTrigger>
-          <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Live Orders</TabsTrigger>
-          <TabsTrigger value="broadcast" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Broadcast</TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600">Config Hub</TabsTrigger>
+          <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all">Inventory</TabsTrigger>
+          <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all">Live Orders</TabsTrigger>
+          <TabsTrigger value="broadcast" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all">Broadcast</TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all">Config Hub</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inventory" className="space-y-8 animate-in fade-in duration-500">
@@ -296,7 +297,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">ORDER: #{order.id.slice(-6)}</p>
-                      <p className="text-sm font-black text-blue-900 flex items-center gap-2"><PhoneCall className="w-3.5 h-3.5" /> {order.phoneNumber}</p>
+                      <p className="text-sm font-black text-blue-900 flex items-center gap-2"><PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}</p>
                       <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
                     </div>
                     <Badge className={cn(

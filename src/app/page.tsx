@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -409,7 +410,7 @@ export default function Home() {
                             </Button>
                           </div>
                         ) : (
-                          <Button onClick={() => addToCart(p)} className="rounded-xl h-10 px-6 font-black text-xs bg-green-500 text-white hover:bg-green-600 uppercase shadow-lg shadow-green-100 active:scale-95">
+                          <Button onClick={() => addToCart(p)} className="rounded-xl h-10 px-6 font-black text-xs bg-green-500 text-white hover:bg-green-600 uppercase shadow-lg shadow-green-100 active:scale-95 transition-all">
                             ADD
                           </Button>
                         )}
@@ -623,7 +624,7 @@ export default function Home() {
               <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
             </div>
             <div className="space-y-3">
-              <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
+              <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600 transition-all active:scale-95">
                 {isSignUp ? "Create Account" : "Login"}
               </Button>
               <Button 
