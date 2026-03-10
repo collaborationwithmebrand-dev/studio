@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -19,8 +20,7 @@ import {
   setDocumentNonBlocking,
   useUser,
   useAuth,
-  initiateEmailSignIn,
-  initiateEmailSignUp
+  initiateAnonymousSignIn
 } from '@/firebase';
 import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -60,7 +60,6 @@ export default function Home() {
 
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -79,17 +78,19 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
-
   const notifiedOrders = useRef<Set<string>>(new Set());
   const initialLoadDone = useRef(false);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
-
   const GIFT_CHARGE = 20;
+
+  // Auto-sign in anonymously if not logged in
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [user, isUserLoading, auth]);
 
   useEffect(() => {
     if (!user) return;
@@ -126,17 +127,17 @@ export default function Home() {
     return doc(firestore, 'admin_roles', user.uid);
   }, [user, firestore]);
   const { data: adminRole } = useDoc(adminRoleRef);
+  const isActuallyAdmin = !!adminRole;
 
   useEffect(() => {
-    if (adminRole && !isAdmin) {
-      setIsAdmin(true);
+    if (isActuallyAdmin) {
       toast({ 
         title: "Admin Access Active", 
         description: "Dashboard features are now enabled.",
         className: "bg-blue-600 text-white font-black" 
       });
     }
-  }, [adminRole, isAdmin, toast]);
+  }, [isActuallyAdmin, toast]);
 
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -243,19 +244,6 @@ export default function Home() {
       toast({ title: "Identity Verified" });
     } else {
       toast({ title: "Invalid OTP", variant: "destructive" });
-    }
-  };
-
-  const handleAuthSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast({ title: "Email and Password required", variant: "destructive" });
-      return;
-    }
-    if (isSignUp) {
-      initiateEmailSignUp(auth, email, password);
-    } else {
-      initiateEmailSignIn(auth, email, password);
     }
   };
 
@@ -368,50 +356,11 @@ export default function Home() {
     );
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
         <Loader2 className="w-12 h-12 animate-spin text-green-500 mb-6" />
         <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] animate-pulse">Bazaar Loading...</p>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
-        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl space-y-8 md:space-y-10 text-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="space-y-4">
-            <h1 className="text-3xl md:text-4xl font-black text-slate-900 uppercase italic tracking-tighter">Bounsi Bazaar</h1>
-            <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em]">Entry Portal</p>
-          </div>
-          
-          <form onSubmit={handleAuthSubmit} className="space-y-5 md:space-y-6">
-            <div className="space-y-2 text-left">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Email Address</Label>
-              <div className="relative group">
-                <Mail className="absolute left-5 top-5 text-slate-300 w-5 h-5 group-focus-within:text-green-500 transition-colors" />
-                <Input type="email" placeholder="name@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-14 md:h-16 pl-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold focus:bg-white transition-all" />
-              </div>
-            </div>
-            <div className="space-y-2 text-left">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Password</Label>
-              <div className="relative group">
-                <Lock className="absolute left-5 top-5 text-slate-300 w-5 h-5 group-focus-within:text-green-500 transition-colors" />
-                <Input type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="h-14 md:h-16 pl-14 rounded-2xl border-slate-100 bg-slate-50/50 font-bold focus:bg-white transition-all" />
-              </div>
-            </div>
-            <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-black text-white font-black uppercase text-xs md:text-sm shadow-xl hover:shadow-2xl active:scale-95 transition-all">
-              {isSignUp ? "Create Account" : "Login to Shop"}
-            </Button>
-          </form>
-
-          <div className="pt-4 border-t border-slate-100">
-            <button onClick={() => setIsSignUp(!isSignUp)} className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors">
-              {isSignUp ? "Already have an account? Login" : "New to Bazaar? Create Account"}
-            </button>
-          </div>
-        </div>
       </div>
     );
   }
@@ -436,7 +385,6 @@ export default function Home() {
           <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">We deliver within 9km of Bounsi (813104). Please enable location access.</p>
         </div>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">RETRY ACCESS</Button>
-        <Button variant="ghost" onClick={() => signOut(auth)} className="text-[10px] font-black uppercase text-slate-400">Logout</Button>
       </div>
     );
   }
@@ -462,11 +410,6 @@ export default function Home() {
               <h1 className={cn("text-2xl md:text-3xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r drop-shadow-sm", currentThemeConfig.gradient)}>
                 {currentThemeConfig.title}
               </h1>
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="md:hidden text-slate-400 hover:text-red-500 h-10 w-10">
-                  <LogOut className="w-5 h-5" />
-                </Button>
-              </div>
             </div>
             
             <div className="relative flex-1 w-full max-w-2xl flex items-center gap-3">
@@ -479,7 +422,7 @@ export default function Home() {
                   className="w-full h-12 pl-11 rounded-xl bg-white border-none shadow-sm text-sm font-bold placeholder:text-slate-400" 
                 />
               </div>
-              {isAdmin && (
+              {isActuallyAdmin && (
                 <Button 
                   onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
                   className={cn("h-12 w-12 rounded-xl shadow-md border-none", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
@@ -488,17 +431,13 @@ export default function Home() {
                 </Button>
               )}
             </div>
-
-            <Button variant="ghost" onClick={() => signOut(auth)} className="hidden md:flex text-[10px] font-black uppercase text-slate-400 hover:text-red-500 h-12 px-5 gap-3">
-              <LogOut className="w-4 h-4" /> Logout
-            </Button>
           </div>
         </nav>
       </header>
 
-      {isAdmin && isAdminPanelVisible && (
+      {isActuallyAdmin && isAdminPanelVisible && (
         <div className="bg-white/70 backdrop-blur-3xl py-8 md:py-12 border-b border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
-          <AdminPanel currentTheme={currentTheme} isAdmin={isAdmin} />
+          <AdminPanel currentTheme={currentTheme} isAdmin={isActuallyAdmin} />
         </div>
       )}
 
@@ -741,3 +680,4 @@ export default function Home() {
     </div>
   );
 }
+
