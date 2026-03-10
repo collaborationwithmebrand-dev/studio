@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -301,11 +302,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       </div>
                       
                       <div className="space-y-1">
-                        {order.isForSomeoneElse ? (
+                        <p className="text-sm font-black text-blue-900 flex items-center gap-2">
+                          <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}
+                        </p>
+                        {order.isForSomeoneElse && (
                           <>
-                            <p className="text-[11px] font-black text-blue-900 flex items-center gap-2">
-                              <User2 className="w-3.5 h-3.5 text-blue-600" /> FROM: {order.senderPhone}
-                            </p>
                             <p className="text-[11px] font-black text-pink-600 flex items-center gap-2">
                               <Gift className="w-3.5 h-3.5 text-pink-500" /> TO: {order.recipientPhone}
                             </p>
@@ -313,10 +314,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                               <MapPinned className="w-3.5 h-3.5 text-blue-400 shrink-0" /> {order.deliveryAddress}
                             </p>
                           </>
-                        ) : (
-                          <p className="text-sm font-black text-blue-900 flex items-center gap-2">
-                            <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}
-                          </p>
                         )}
                         <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
                       </div>

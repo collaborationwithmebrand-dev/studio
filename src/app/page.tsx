@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -66,7 +67,6 @@ export default function Home() {
   const [isSmsVerifyDialogOpen, setIsSmsVerifyDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [senderPhone, setSenderPhone] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [isForSomeoneElse, setIsForSomeoneElse] = useState(false);
@@ -141,7 +141,7 @@ export default function Home() {
       setSmsVerifyCode('');
       toast({ title: "Identity Verified" });
     } else {
-      toast({ title: "Invalid OTP", description: "Use 7788 for testing", variant: "destructive" });
+      toast({ title: "Invalid OTP", variant: "destructive" });
     }
   };
 
@@ -231,7 +231,7 @@ export default function Home() {
       let message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
       
       if (isForSomeoneElse) {
-        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${senderPhone}\n*Recipient:* ${recipientPhone}\n*Address:* ${deliveryAddress}\n\n`;
+        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n*Address:* ${deliveryAddress}\n\n`;
       } else {
         message += `*Location:* ${locationData}\n*Phone:* ${phoneNumber}\n\n`;
       }
@@ -240,8 +240,8 @@ export default function Home() {
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         userId: user.uid,
-        phoneNumber: isForSomeoneElse ? recipientPhone : phoneNumber,
-        senderPhone: isForSomeoneElse ? senderPhone : null,
+        phoneNumber: phoneNumber,
+        senderPhone: isForSomeoneElse ? phoneNumber : null,
         recipientPhone: isForSomeoneElse ? recipientPhone : null,
         deliveryAddress: isForSomeoneElse ? deliveryAddress : null,
         isForSomeoneElse: isForSomeoneElse,
@@ -572,6 +572,7 @@ export default function Home() {
           <DialogHeader className="mb-4">
             <DialogTitle className="text-2xl font-black uppercase text-slate-900">Order Details</DialogTitle>
           </DialogHeader>
+          
           <div className="flex items-center justify-center gap-3 mb-8 bg-slate-50 p-4 rounded-2xl">
             <UserCircle className={cn("w-5 h-5", !isForSomeoneElse ? "text-green-500" : "text-slate-300")} />
             <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} />
@@ -581,46 +582,36 @@ export default function Home() {
 
           <form onSubmit={(e) => { 
             e.preventDefault(); 
+            if (!phoneNumber) {
+              toast({ title: "Phone Number Required", variant: "destructive" });
+              return;
+            }
             if (isForSomeoneElse) {
-              if (!senderPhone || !recipientPhone || !deliveryAddress) {
-                toast({ title: "Details Missing", description: "Fill all numbers and address", variant: "destructive" });
+              if (!recipientPhone || !deliveryAddress) {
+                toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
                 return;
               }
               setIsPhoneDialogOpen(false);
               setIsSmsVerifyDialogOpen(true);
             } else {
-              if (!phoneNumber) {
-                toast({ title: "Phone Missing", variant: "destructive" });
-                return;
-              }
               setIsPhoneDialogOpen(false);
               setIsPaymentDialogOpen(true);
             }
           }} className="space-y-6">
             
-            {!isForSomeoneElse ? (
-              <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
-                <Input 
-                  type="tel" 
-                  placeholder="9876543210" 
-                  value={phoneNumber} 
-                  onChange={(e) => setPhoneNumber(e.target.value)} 
-                  className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
-                />
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Sender Phone (Your Number)</Label>
-                  <Input 
-                    type="tel" 
-                    placeholder="9876543210" 
-                    value={senderPhone} 
-                    onChange={(e) => setSenderPhone(e.target.value)} 
-                    className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-slate-50" 
-                  />
-                </div>
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
+              <Input 
+                type="tel" 
+                placeholder="9876543210" 
+                value={phoneNumber} 
+                onChange={(e) => setPhoneNumber(e.target.value)} 
+                className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
+              />
+            </div>
+
+            {isForSomeoneElse && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="space-y-2 text-left">
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Recipient Phone (For Delivery)</Label>
                   <Input 
@@ -652,8 +643,8 @@ export default function Home() {
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-          <DialogHeader className="mb-6"><DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3"><MessageSquareCode className="w-6 h-6 text-green-500" /> Verify Number</DialogTitle></DialogHeader>
-          <p className="text-[10px] font-black uppercase text-slate-400 mb-6">Enter OTP sent to both numbers</p>
+          <DialogHeader className="mb-6"><DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3"><MessageSquareCode className="w-6 h-6 text-green-500" /> Identity Verification</DialogTitle></DialogHeader>
+          <p className="text-[10px] font-black uppercase text-slate-400 mb-6">Enter OTP sent to your number</p>
           <form onSubmit={handleSmsVerifyCode} className="space-y-6">
             <Input 
               maxLength={4} 
@@ -663,7 +654,6 @@ export default function Home() {
               onChange={(e) => setSmsVerifyCode(e.target.value)} 
             />
             <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100">Verify & Place Order</Button>
-            <p className="text-[9px] font-black uppercase text-slate-300">Test Code: 7788</p>
           </form>
         </DialogContent>
       </Dialog>
