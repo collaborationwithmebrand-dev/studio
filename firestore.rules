@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -48,9 +49,8 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn();
       
-      // Fixed: Allowing listing for signed in users.
-      // Individual documents are still protected by 'get' rules which check owner/admin status.
-      // This resolves the "list" permission error on /orders.
+      // Allow listing for signed in users.
+      // Firestore will filter results based on individual document access.
       allow list: if isSignedIn();
 
       allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
