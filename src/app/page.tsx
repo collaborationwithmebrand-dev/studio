@@ -138,12 +138,12 @@ export default function Home() {
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber) {
-      toast({ title: "Phone Number Required", variant: "destructive" });
+    if (!phoneNumber || phoneNumber.length < 10) {
+      toast({ title: "Valid 10-Digit Phone Required", variant: "destructive" });
       return;
     }
-    if (isForSomeoneElse && (!recipientPhone || !deliveryAddress)) {
-      toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
+    if (isForSomeoneElse && (!recipientPhone || recipientPhone.length < 10 || !deliveryAddress)) {
+      toast({ title: "Details Missing", description: "Fill 10-digit recipient number and address", variant: "destructive" });
       return;
     }
 
@@ -157,7 +157,7 @@ export default function Home() {
       
       toast({ 
         title: `Verification Code Generated`, 
-        description: `SMS sent from ${SENDER_PHONE} to ${phoneNumber}. Your code is: ${result.code}`,
+        description: `SMS sent from ${SENDER_PHONE} to ${phoneNumber}. Code: ${result.code}`,
         duration: 10000 
       });
     } catch (err) {
@@ -620,8 +620,12 @@ export default function Home() {
               <Input 
                 type="tel" 
                 placeholder="" 
+                maxLength={10}
                 value={phoneNumber} 
-                onChange={(e) => setPhoneNumber(e.target.value)} 
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  if (val.length <= 10) setPhoneNumber(val);
+                }} 
                 className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-white tracking-widest" 
               />
             </div>
@@ -633,8 +637,12 @@ export default function Home() {
                   <Input 
                     type="tel" 
                     placeholder="" 
+                    maxLength={10}
                     value={recipientPhone} 
-                    onChange={(e) => setRecipientPhone(e.target.value)} 
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 10) setRecipientPhone(val);
+                    }} 
                     className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-white" 
                   />
                 </div>
@@ -658,7 +666,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
+        <DialogContent className="rounded-[2.5rem] p-10 max-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6">
             <DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3">
               <MessageSquareCode className="w-6 h-6 text-green-500" /> Identity Verification
@@ -679,7 +687,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-10 max-w-xs text-center border-none shadow-2xl">
+        <DialogContent className="rounded-[2.5rem] p-10 max-xs text-center border-none shadow-2xl">
           <DialogHeader><DialogTitle className="text-xl font-black uppercase text-blue-600">Admin Login</DialogTitle></DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-6 pt-4">
             <Input 
