@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -13,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck, Sparkles, Loader2, Megaphone, Send, Pin, LayoutGrid, PhoneCall } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Ruler, TrendingUp, Trash2, PackageSearch, Search, DollarSign, ListOrdered, CheckCircle2, Clock, XCircle, Truck, Sparkles, Loader2, Megaphone, Send, Pin, LayoutGrid, PhoneCall, Gift, MapPinned, User2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -296,11 +295,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 <div key={order.id} className="p-6 bg-blue-50/30 rounded-[2rem] border border-blue-50 space-y-6">
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">ORDER: #{order.id.slice(-6)}</p>
-                      <p className="text-sm font-black text-blue-900 flex items-center gap-2">
-                        <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}
-                      </p>
-                      <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">ORDER: #{order.id.slice(-6)}</p>
+                        {order.isForSomeoneElse && <Badge className="bg-pink-100 text-pink-600 text-[8px] font-black uppercase border-none h-4">GIFT ORDER</Badge>}
+                      </div>
+                      
+                      <div className="space-y-1">
+                        {order.isForSomeoneElse ? (
+                          <>
+                            <p className="text-[11px] font-black text-blue-900 flex items-center gap-2">
+                              <User2 className="w-3.5 h-3.5 text-blue-600" /> FROM: {order.senderPhone}
+                            </p>
+                            <p className="text-[11px] font-black text-pink-600 flex items-center gap-2">
+                              <Gift className="w-3.5 h-3.5 text-pink-500" /> TO: {order.recipientPhone}
+                            </p>
+                            <p className="text-[10px] font-bold text-slate-500 flex items-center gap-2 mt-2 bg-white/50 p-2 rounded-xl">
+                              <MapPinned className="w-3.5 h-3.5 text-blue-400 shrink-0" /> {order.deliveryAddress}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-sm font-black text-blue-900 flex items-center gap-2">
+                            <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}
+                          </p>
+                        )}
+                        <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
+                      </div>
                     </div>
                     <Badge className={cn(
                       "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",

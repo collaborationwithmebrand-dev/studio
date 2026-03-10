@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MapPinned, MessageSquareCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +26,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { signOut } from 'firebase/auth';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -62,10 +63,16 @@ export default function Home() {
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
+  const [isSmsVerifyDialogOpen, setIsSmsVerifyDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [senderPhone, setSenderPhone] = useState('');
+  const [recipientPhone, setRecipientPhone] = useState('');
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [isForSomeoneElse, setIsForSomeoneElse] = useState(false);
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
+  const [smsVerifyCode, setSmsVerifyCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
 
@@ -75,8 +82,8 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
+  const SMS_OTP_SIMULATED = '7788'; // Simulated OTP for dual number verification
 
-  // Fast Location Check: Run only after user is authenticated
   useEffect(() => {
     if (!user) return;
     
@@ -123,6 +130,18 @@ export default function Home() {
       toast({ title: "Admin Access Granted" });
     } else {
       toast({ title: "Invalid Code", variant: "destructive" });
+    }
+  };
+
+  const handleSmsVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (smsVerifyCode === SMS_OTP_SIMULATED) {
+      setIsSmsVerifyDialogOpen(false);
+      setIsPaymentDialogOpen(true);
+      setSmsVerifyCode('');
+      toast({ title: "Identity Verified" });
+    } else {
+      toast({ title: "Invalid OTP", description: "Use 7788 for testing", variant: "destructive" });
     }
   };
 
@@ -208,13 +227,24 @@ export default function Home() {
     const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0);
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
-    navigator.geolocation.getCurrentPosition((pos) => {
-      const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phoneNumber}\n\n_Fast Delivery (30 min)!_ ⚡`;
+    const sendOrder = (locationData: string) => {
+      let message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
+      
+      if (isForSomeoneElse) {
+        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${senderPhone}\n*Recipient:* ${recipientPhone}\n*Address:* ${deliveryAddress}\n\n`;
+      } else {
+        message += `*Location:* ${locationData}\n*Phone:* ${phoneNumber}\n\n`;
+      }
+      
+      message += `_Fast Delivery (30 min)!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         userId: user.uid,
-        phoneNumber: phoneNumber,
+        phoneNumber: isForSomeoneElse ? recipientPhone : phoneNumber,
+        senderPhone: isForSomeoneElse ? senderPhone : null,
+        recipientPhone: isForSomeoneElse ? recipientPhone : null,
+        deliveryAddress: isForSomeoneElse ? deliveryAddress : null,
+        isForSomeoneElse: isForSomeoneElse,
         items: Object.values(cart),
         totalAmount: finalPrice,
         status: 'pending',
@@ -226,7 +256,16 @@ export default function Home() {
       setIsPaymentDialogOpen(false);
       setCart({});
       toast({ title: "Order Placed Successfully!" });
-    });
+    };
+
+    if (isForSomeoneElse) {
+      sendOrder(deliveryAddress);
+    } else {
+      navigator.geolocation.getCurrentPosition((pos) => {
+        const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+        sendOrder(locLink);
+      });
+    }
   };
 
   if (isUserLoading) {
@@ -461,7 +500,7 @@ export default function Home() {
           </DialogHeader>
 
           <div className="space-y-6">
-            <div className="max-h-[250px] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            <div className="max-h-[200px] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
               {Object.values(cart).map((item) => (
                 <div key={item.id} className="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100">
                   <div className="flex items-center gap-4">
@@ -529,17 +568,102 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
+        <DialogContent className="rounded-[2.5rem] p-10 max-w-md text-center border-none shadow-2xl">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="text-2xl font-black uppercase text-slate-900">Order Details</DialogTitle>
+          </DialogHeader>
+          <div className="flex items-center justify-center gap-3 mb-8 bg-slate-50 p-4 rounded-2xl">
+            <UserCircle className={cn("w-5 h-5", !isForSomeoneElse ? "text-green-500" : "text-slate-300")} />
+            <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} />
+            <Gift className={cn("w-5 h-5", isForSomeoneElse ? "text-pink-500" : "text-slate-300")} />
+            <span className="text-[10px] font-black uppercase text-slate-400">Order for Someone Else?</span>
+          </div>
+
+          <form onSubmit={(e) => { 
+            e.preventDefault(); 
+            if (isForSomeoneElse) {
+              if (!senderPhone || !recipientPhone || !deliveryAddress) {
+                toast({ title: "Details Missing", description: "Fill all numbers and address", variant: "destructive" });
+                return;
+              }
+              setIsPhoneDialogOpen(false);
+              setIsSmsVerifyDialogOpen(true);
+            } else {
+              if (!phoneNumber) {
+                toast({ title: "Phone Missing", variant: "destructive" });
+                return;
+              }
+              setIsPhoneDialogOpen(false);
+              setIsPaymentDialogOpen(true);
+            }
+          }} className="space-y-6">
+            
+            {!isForSomeoneElse ? (
+              <div className="space-y-2 text-left">
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
+                <Input 
+                  type="tel" 
+                  placeholder="9876543210" 
+                  value={phoneNumber} 
+                  onChange={(e) => setPhoneNumber(e.target.value)} 
+                  className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
+                />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2 text-left">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Sender Phone (Your Number)</Label>
+                  <Input 
+                    type="tel" 
+                    placeholder="9876543210" 
+                    value={senderPhone} 
+                    onChange={(e) => setSenderPhone(e.target.value)} 
+                    className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-slate-50" 
+                  />
+                </div>
+                <div className="space-y-2 text-left">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Recipient Phone (For Delivery)</Label>
+                  <Input 
+                    type="tel" 
+                    placeholder="9123456780" 
+                    value={recipientPhone} 
+                    onChange={(e) => setRecipientPhone(e.target.value)} 
+                    className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-slate-50" 
+                  />
+                </div>
+                <div className="space-y-2 text-left">
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Delivery Address</Label>
+                  <Textarea 
+                    placeholder="Street, Landmark, City..." 
+                    value={deliveryAddress} 
+                    onChange={(e) => setDeliveryAddress(e.target.value)} 
+                    className="rounded-2xl border-slate-100 bg-slate-50 font-medium h-24 p-4" 
+                  />
+                </div>
+              </div>
+            )}
+
+            <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 active:scale-95 transition-all">
+              {isForSomeoneElse ? "Proceed to Verify" : "Confirm & Pay"}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-          <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Contact Number</DialogTitle></DialogHeader>
-          <form onSubmit={(e) => { e.preventDefault(); setIsPhoneDialogOpen(false); setIsPaymentDialogOpen(true); }} className="space-y-6">
+          <DialogHeader className="mb-6"><DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3"><MessageSquareCode className="w-6 h-6 text-green-500" /> Verify Number</DialogTitle></DialogHeader>
+          <p className="text-[10px] font-black uppercase text-slate-400 mb-6">Enter OTP sent to both numbers</p>
+          <form onSubmit={handleSmsVerifyCode} className="space-y-6">
             <Input 
-              type="tel" 
-              placeholder="9876543210" 
-              value={phoneNumber} 
-              onChange={(e) => setPhoneNumber(e.target.value)} 
-              className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
+              maxLength={4} 
+              placeholder="••••"
+              className="text-center text-4xl h-20 font-black rounded-2xl border-slate-100 bg-slate-50 tracking-[0.5em]" 
+              value={smsVerifyCode} 
+              onChange={(e) => setSmsVerifyCode(e.target.value)} 
             />
-            <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100">Confirm & Pay</Button>
+            <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100">Verify & Place Order</Button>
+            <p className="text-[9px] font-black uppercase text-slate-300">Test Code: 7788</p>
           </form>
         </DialogContent>
       </Dialog>
