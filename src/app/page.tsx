@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

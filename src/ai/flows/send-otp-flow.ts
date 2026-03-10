@@ -38,13 +38,13 @@ const generateOtpFlow = ai.defineFlow(
     // Generate a secure random 4-digit code
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     
-    // In a production environment, you would integrate an SMS Gateway API here (e.g., Twilio, Msg91).
-    // The message would only arrive if the SIM card is active and correctly formatted.
+    // In a production environment, you would integrate an SMS Gateway API here.
+    // We return "bounsibazaar.com code" as the sender identity.
     
     return {
       code,
       sender: 'bounsibazaar.com code',
-      message: `OTP successfully generated for ${input.phoneNumber}. Real SMS delivery simulated for prototype.`,
+      message: `OTP successfully generated for ${input.phoneNumber}. Verification required to place order.`,
     };
   }
 );
