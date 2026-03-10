@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
@@ -17,6 +16,7 @@ import {
   useFirestore, 
   useMemoFirebase,
   addDocumentNonBlocking,
+  setDocumentNonBlocking,
   useUser,
   useAuth,
   initiateEmailSignIn,
@@ -121,6 +121,18 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
+  const adminRoleRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'admin_roles', user.uid);
+  }, [user, firestore]);
+  const { data: adminRole } = useDoc(adminRoleRef);
+
+  useEffect(() => {
+    if (adminRole) {
+      setIsAdmin(true);
+    }
+  }, [adminRole]);
+
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
@@ -167,7 +179,17 @@ export default function Home() {
       setIsAdmin(true);
       setIsVerificationDialogOpen(false);
       setVerificationCode('');
-      toast({ title: "Admin Access Granted", className: "bg-blue-600 text-white font-black" });
+      
+      if (user) {
+        setDocumentNonBlocking(doc(firestore, 'admin_roles', user.uid), {
+          assignedAt: new Date().toISOString()
+        }, { merge: true });
+      }
+
+      toast({ 
+        title: "Admin Access Granted", 
+        className: "bg-blue-600 text-white font-black" 
+      });
     } else {
       toast({ title: "Invalid Code", variant: "destructive" });
     }
