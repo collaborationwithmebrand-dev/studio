@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -416,32 +417,48 @@ export default function Home() {
               <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
                 {currentThemeConfig.title}
               </h1>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => signOut(auth)}
-                className="md:hidden text-slate-400 hover:text-red-500"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="relative md:hidden">
+                   <Bell className="w-5 h-5 text-slate-400" />
+                   {announcement?.active && (
+                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse" />
+                   )}
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => signOut(auth)}
+                  className="md:hidden text-slate-400 hover:text-red-500"
+                >
+                  <LogOut className="w-5 h-5" />
+                </Button>
+              </div>
             </div>
             
-            <div className="relative flex-1 w-full max-w-xl group">
-              <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
-              <Input 
-                placeholder="Search items, sections..." 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className="w-full h-12 pl-12 pr-12 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
-              />
+            <div className="relative flex-1 w-full max-w-xl group flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
+                <Input 
+                  placeholder="Search items, sections..." 
+                  value={searchQuery} 
+                  onChange={(e) => setSearchQuery(e.target.value)} 
+                  className="w-full h-12 pl-12 pr-12 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
+                />
+              </div>
+              <div className="relative hidden md:flex h-12 w-12 items-center justify-center bg-white rounded-2xl shadow-inner group">
+                 <Bell className="w-5 h-5 text-slate-400 group-hover:text-yellow-500 transition-colors" />
+                 {announcement?.active && (
+                   <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse" />
+                 )}
+              </div>
               {isAdmin && (
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                  className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 transition-colors"
+                  className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors shadow-inner"
                 >
-                  <ShieldCheck className="w-5 h-5" />
+                  <ShieldCheck className="w-6 h-6" />
                 </Button>
               )}
             </div>
