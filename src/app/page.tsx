@@ -82,7 +82,7 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
-  const SMS_OTP_SIMULATED = '7788'; // Simulated OTP for dual number verification
+  const SMS_OTP_SIMULATED = '7788'; 
 
   useEffect(() => {
     if (!user) return;

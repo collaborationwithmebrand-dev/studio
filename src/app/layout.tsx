@@ -3,8 +3,8 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'Bounsi Bazaar - Festive Edition',
-  description: 'Your premium festive store powered by Bounsi Bazaar',
+  title: 'Bounsi Bazaar',
+  description: 'Your premium local store - Bounsi Bazaar',
 };
 
 export default function RootLayout({

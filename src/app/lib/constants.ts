@@ -21,7 +21,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Diwali: {
     bg: 'bg-[#1a0f00]',
     nav: 'bg-[#2a1700]',
-    title: '🪔 SHUBH DIWALI 🪔',
+    title: '🪔 BOUNSI DIWALI 🪔',
     accent: 'text-yellow-500',
     effects: 'Diwali',
     gradient: 'from-orange-600 via-red-600 to-yellow-500'
@@ -29,7 +29,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Holi: {
     bg: 'bg-pink-50',
     nav: 'bg-white',
-    title: '🎨 HAPPY HOLI 🎨',
+    title: '🎨 BOUNSI HOLI 🎨',
     accent: 'text-pink-600',
     effects: 'Holi',
     gradient: 'from-yellow-400 via-red-500 to-pink-500'
@@ -37,7 +37,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Eid: {
     bg: 'bg-[#002b1c]',
     nav: 'bg-[#003d27]',
-    title: '🌙 EID MUBARAK 🌙',
+    title: '🌙 BOUNSI EID 🌙',
     accent: 'text-emerald-400',
     effects: 'Eid',
     gradient: 'from-emerald-700 to-green-900'
@@ -45,7 +45,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Rakhi: {
     bg: 'bg-rose-50',
     nav: 'bg-white',
-    title: '🎀 RAKSHA BANDHAN 🎀',
+    title: '🎀 BOUNSI RAKHI 🎀',
     accent: 'text-rose-600',
     effects: 'Rakhi',
     gradient: 'from-rose-500 to-pink-700'
@@ -53,7 +53,7 @@ export const THEME_DATA: Record<FestivalTheme, ThemeConfig> = {
   Christmas: {
     bg: 'bg-sky-50',
     nav: 'bg-white',
-    title: '🎄 MERRY CHRISTMAS 🎄',
+    title: '🎄 BOUNSI XMAS 🎄',
     accent: 'text-red-600',
     effects: 'Christmas',
     gradient: 'from-red-600 to-green-700'
