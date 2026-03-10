@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -66,7 +67,7 @@ export default function Home() {
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
+  const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -75,11 +76,16 @@ export default function Home() {
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
 
+  // Fast Location Check: Run only after user is authenticated
   useEffect(() => {
+    if (!user) return;
+    
     if (!navigator.geolocation) {
       setLocationStatus('denied');
       return;
     }
+
+    setLocationStatus('checking');
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const dist = calculateDistance(BOUNSI_LAT, BOUNSI_LNG, pos.coords.latitude, pos.coords.longitude);
@@ -88,7 +94,7 @@ export default function Home() {
       },
       () => setLocationStatus('denied')
     );
-  }, []);
+  }, [user]);
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
@@ -223,22 +229,11 @@ export default function Home() {
     });
   };
 
-  if (locationStatus === 'checking' || isUserLoading) {
+  if (isUserLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
-        <Loader2 className="w-10 h-10 animate-spin text-green-500" />
-        <p className="font-bold text-slate-400 text-xs tracking-widest uppercase">Opening Bazaar...</p>
-      </div>
-    );
-  }
-
-  if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-6">
-        <MapPin className="w-16 h-16 text-red-500" />
-        <h1 className="text-3xl font-black text-slate-900 uppercase">Service Not Available</h1>
-        <p className="text-slate-500 max-w-xs font-medium">We deliver within 9km of Bounsi (813104). Please enable location to browse.</p>
-        <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-bold">RETRY</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 animate-spin text-green-500 mb-2" />
+        <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Waking Up Bazaar...</p>
       </div>
     );
   }
@@ -246,7 +241,7 @@ export default function Home() {
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
-        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-xl space-y-8 text-center">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-xl space-y-8 text-center animate-in fade-in zoom-in-95 duration-500">
           <div className="space-y-2">
             <h1 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Bounsi Bazaar</h1>
             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Entry Portal</p>
@@ -293,6 +288,27 @@ export default function Home() {
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (locationStatus === 'checking') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
+        <Loader2 className="w-10 h-10 animate-spin text-green-500" />
+        <p className="font-bold text-slate-400 text-xs tracking-widest uppercase">Checking Delivery Zone...</p>
+      </div>
+    );
+  }
+
+  if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-6">
+        <MapPin className="w-16 h-16 text-red-500" />
+        <h1 className="text-3xl font-black text-slate-900 uppercase">Service Not Available</h1>
+        <p className="text-slate-500 max-w-xs font-medium">We deliver within 9km of Bounsi (813104). Please enable location to browse.</p>
+        <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-bold">RETRY</Button>
+        <Button variant="ghost" onClick={() => signOut(auth)} className="text-[10px] font-black uppercase text-slate-400">Logout</Button>
       </div>
     );
   }

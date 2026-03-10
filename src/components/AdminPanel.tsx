@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -58,7 +59,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
-    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(25));
+    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
 
@@ -296,7 +297,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
                       <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">ORDER: #{order.id.slice(-6)}</p>
-                      <p className="text-sm font-black text-blue-900 flex items-center gap-2"><PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}</p>
+                      <p className="text-sm font-black text-blue-900 flex items-center gap-2">
+                        <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> {order.phoneNumber}
+                      </p>
                       <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
                     </div>
                     <Badge className={cn(
