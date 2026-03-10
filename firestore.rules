@@ -52,7 +52,7 @@ service cloud.firestore {
       // Split read into get and list for clarity.
       // Admins can see all. Users can only see their own.
       allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || request.query.limit <= 25);
+      allow list: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid));
       
       allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'pending');
       allow delete: if isAdmin() || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
