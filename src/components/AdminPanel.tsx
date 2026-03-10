@@ -175,113 +175,119 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   if (!isAdmin) return null;
 
   return (
-    <div className="container mx-auto p-6 space-y-12">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="space-y-2">
-          <h2 className="text-4xl font-black text-blue-900 uppercase italic tracking-tighter">Bazaar Control Hub</h2>
-          <p className="text-[11px] font-black text-blue-400 uppercase tracking-widest">Admin Dashboard / {currentTheme}</p>
+    <div className="container mx-auto px-4 space-y-8 md:space-y-12">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-1 text-center md:text-left">
+          <h2 className="text-2xl md:text-4xl font-black text-blue-900 uppercase italic tracking-tighter">Admin Control Hub</h2>
+          <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Dashboard / {currentTheme}</p>
         </div>
-        <div className="grid grid-cols-2 gap-6 w-full md:w-auto">
-          <Card className="rounded-[2.5rem] border-none shadow-2xl bg-blue-600 text-white p-8 min-w-[200px] flex flex-col items-center justify-center text-center">
-             <BarChart3 className="w-8 h-8 mb-4 text-blue-100 opacity-80" />
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 mb-2">Total Orders</p>
-             <p className="text-5xl font-black italic">{stats.orders}</p>
+        <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
+          <Card className="rounded-3xl border-none shadow-xl bg-blue-600 text-white p-4 md:p-8 min-w-[140px] flex flex-col items-center justify-center text-center">
+             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-blue-100 mb-1">Orders</p>
+             <p className="text-3xl md:text-5xl font-black italic">{stats.orders}</p>
           </Card>
-          <Card className="rounded-[2.5rem] border-none shadow-2xl bg-blue-600 text-white p-8 min-w-[200px] flex flex-col items-center justify-center text-center">
-             <DollarSign className="w-8 h-8 mb-4 text-blue-100 opacity-80" />
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-100 mb-2">Manual Earnings</p>
-             <p className="text-5xl font-black italic">₹{settings?.manualRevenue || 0}</p>
+          <Card className="rounded-3xl border-none shadow-xl bg-blue-600 text-white p-4 md:p-8 min-w-[140px] flex flex-col items-center justify-center text-center">
+             <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-blue-100 mb-1">Manual Revenue</p>
+             <p className="text-3xl md:text-5xl font-black italic">₹{settings?.manualRevenue || 0}</p>
           </Card>
         </div>
       </div>
 
       <Tabs defaultValue="inventory" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-blue-50 rounded-[2rem] h-20 p-2 mb-12 shadow-inner">
-          <TabsTrigger value="inventory" className="rounded-[1.5rem] font-black uppercase text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-2 tracking-widest"><Database className="w-4 h-4" /> Inventory</TabsTrigger>
-          <TabsTrigger value="orders" className="rounded-[1.5rem] font-black uppercase text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-2 tracking-widest"><ListOrdered className="w-4 h-4" /> Live Stream</TabsTrigger>
-          <TabsTrigger value="broadcast" className="rounded-[1.5rem] font-black uppercase text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-2 tracking-widest"><Megaphone className="w-4 h-4" /> Broadcast</TabsTrigger>
-          <TabsTrigger value="settings" className="rounded-[1.5rem] font-black uppercase text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-2 tracking-widest"><Settings2 className="w-4 h-4" /> Config Hub</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-blue-50 rounded-2xl md:rounded-[2rem] h-14 md:h-20 p-1 md:p-2 mb-8 md:mb-12 shadow-inner overflow-hidden">
+          <TabsTrigger value="inventory" className="rounded-xl md:rounded-[1.5rem] font-black uppercase text-[8px] md:text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-1 md:gap-2 tracking-tighter md:tracking-widest">
+            <Database className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden xs:inline">Inv</span><span className="inline xs:hidden">Inv</span>
+          </TabsTrigger>
+          <TabsTrigger value="orders" className="rounded-xl md:rounded-[1.5rem] font-black uppercase text-[8px] md:text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-1 md:gap-2 tracking-tighter md:tracking-widest">
+            <ListOrdered className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden xs:inline">Orders</span><span className="inline xs:hidden">Ord</span>
+          </TabsTrigger>
+          <TabsTrigger value="broadcast" className="rounded-xl md:rounded-[1.5rem] font-black uppercase text-[8px] md:text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-1 md:gap-2 tracking-tighter md:tracking-widest">
+            <Megaphone className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden xs:inline">Broadcast</span><span className="inline xs:hidden">Cast</span>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="rounded-xl md:rounded-[1.5rem] font-black uppercase text-[8px] md:text-[11px] data-[state=active]:bg-blue-600 data-[state=active]:text-white text-blue-600 transition-all gap-1 md:gap-2 tracking-tighter md:tracking-widest">
+            <Settings2 className="w-3 h-3 md:w-4 md:h-4" /> <span className="hidden xs:inline">Config</span><span className="inline xs:hidden">Cfg</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="inventory" className="space-y-12 animate-in fade-in duration-700">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <Card className="rounded-[3rem] border-none shadow-2xl h-fit bg-white p-4">
-              <CardHeader className="pb-8 border-b-2 border-blue-50 mb-8"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-4 italic tracking-tighter"><PlusCircle className="w-8 h-8" /> Publish New Item</CardTitle></CardHeader>
-              <CardContent className="space-y-8">
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-3">
-                    <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Product Title</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 focus:bg-white transition-all shadow-inner" placeholder="Fresh Mango" />
+        <TabsContent value="inventory" className="space-y-8 md:space-y-12 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+            <Card className="rounded-3xl md:rounded-[3rem] border-none shadow-xl h-fit bg-white p-4">
+              <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-8"><CardTitle className="text-blue-600 font-black uppercase text-lg md:text-xl flex items-center gap-3 md:gap-4 italic tracking-tighter"><PlusCircle className="w-6 h-6 md:w-8 md:h-8" /> Publish Item</CardTitle></CardHeader>
+              <CardContent className="space-y-6 md:space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                  <div className="space-y-2">
+                    <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Title</Label>
+                    <Input value={name} onChange={(e) => setName(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4 md:px-6" placeholder="Fresh Mango" />
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Market Price (₹)</Label>
-                    <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 focus:bg-white transition-all shadow-inner" placeholder="0.00" />
+                  <div className="space-y-2">
+                    <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Price (₹)</Label>
+                    <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4 md:px-6" placeholder="0.00" />
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Section</Label>
-                    <Input value={section} onChange={(e) => setSection(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 focus:bg-white transition-all shadow-inner" placeholder="Fresh Fruits" />
+                  <div className="space-y-2">
+                    <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Section</Label>
+                    <Input value={section} onChange={(e) => setSection(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4 md:px-6" placeholder="Fresh Fruits" />
                   </div>
-                  <div className="space-y-3">
-                    <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Image URL</Label>
-                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 focus:bg-white transition-all shadow-inner" placeholder="https://..." />
+                  <div className="space-y-2">
+                    <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Image URL</Label>
+                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4 md:px-6" placeholder="https://..." />
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between px-2">
-                    <Label className="text-blue-600 font-black uppercase text-[10px] flex items-center gap-3 tracking-widest">Product Bio (AI Optimized)</Label>
-                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-10 text-[10px] font-black text-blue-600 hover:bg-blue-50 uppercase gap-3 px-6 rounded-full border border-blue-100 transition-all">
-                      {isAiLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />} Magical AI
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between px-1">
+                    <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Bio (AI Optimized)</Label>
+                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-8 text-[9px] font-black text-blue-600 uppercase gap-2 px-3 rounded-full border border-blue-100">
+                      {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />} AI
                     </Button>
                   </div>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Engaging details for your customers..." className="rounded-[1.5rem] bg-blue-50/50 border-none text-blue-900 font-bold text-sm resize-none h-40 px-6 py-6 focus:bg-white transition-all shadow-inner" />
+                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Product details..." className="rounded-xl md:rounded-[1.5rem] bg-blue-50/50 border-none text-blue-900 font-bold text-sm resize-none h-32 md:h-40 px-4 md:px-6 py-4 md:py-6" />
                 </div>
 
-                <div className="space-y-4">
-                  <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 flex items-center gap-3 tracking-widest"><Ruler className="w-5 h-5" /> Measurement Logic (SI Units)</Label>
-                  <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-4">
+                <div className="space-y-3">
+                  <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Measurement Logic</Label>
+                  <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2 md:gap-4">
                     {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
-                      <div key={u} className={cn("p-5 rounded-2xl border-2 flex items-center justify-center cursor-pointer transition-all shadow-sm", unit === u ? "bg-blue-600 border-blue-600 shadow-blue-200" : "bg-white border-blue-50 hover:border-blue-200")}>
+                      <div key={u} className={cn("p-3 md:p-5 rounded-xl md:rounded-2xl border flex items-center justify-center cursor-pointer transition-all", unit === u ? "bg-blue-600 border-blue-600 text-white shadow-md shadow-blue-100" : "bg-white border-blue-50 text-blue-600")}>
                         <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
-                        <Label htmlFor={`u-${u}`} className={cn("font-black text-[12px] cursor-pointer uppercase tracking-widest", unit === u ? "text-white" : "text-blue-600")}>{u}</Label>
+                        <Label htmlFor={`u-${u}`} className="font-black text-[10px] md:text-[12px] cursor-pointer uppercase tracking-widest">{u}</Label>
                       </div>
                     ))}
                   </RadioGroup>
                 </div>
 
-                <div className="flex items-center gap-4 bg-blue-50/50 px-6 py-4 rounded-2xl border border-blue-100 w-fit shadow-inner">
-                  <Checkbox id="c-pin" checked={isPinned} onCheckedChange={(checked) => setIsPinned(checked)} className="border-blue-400 data-[state=checked]:bg-blue-600 rounded-md h-5 w-5" />
-                  <Label htmlFor="c-pin" className="text-blue-600 font-black uppercase text-[11px] cursor-pointer tracking-widest">Pin to Bazaar Top</Label>
+                <div className="flex items-center gap-3 bg-blue-50/50 px-4 py-3 md:px-6 md:py-4 rounded-xl border border-blue-100 w-fit">
+                  <Checkbox id="c-pin" checked={isPinned} onCheckedChange={(checked) => setIsPinned(checked)} className="border-blue-400 data-[state=checked]:bg-blue-600" />
+                  <Label htmlFor="c-pin" className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] cursor-pointer tracking-widest">Pin to Top</Label>
                 </div>
 
-                <Button onClick={handleAdd} className="w-full h-20 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase text-base shadow-2xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all italic tracking-tighter">Publish to Live Store</Button>
+                <Button onClick={handleAdd} className="w-full h-16 md:h-20 rounded-xl md:rounded-[1.5rem] bg-blue-600 text-white font-black uppercase text-sm md:text-base shadow-lg hover:bg-blue-700 active:scale-95 transition-all italic">Publish Live</Button>
               </CardContent>
             </Card>
 
-            <Card className="rounded-[3rem] border-none shadow-2xl h-fit bg-white p-4">
-              <CardHeader className="pb-8 border-b-2 border-blue-50 mb-8">
-                <div className="flex flex-col gap-6">
-                  <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-4 italic tracking-tighter"><PackageSearch className="w-8 h-8" /> Inventory Control</CardTitle>
+            <Card className="rounded-3xl md:rounded-[3rem] border-none shadow-xl h-fit bg-white p-4">
+              <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-8">
+                <div className="flex flex-col gap-4">
+                  <CardTitle className="text-blue-600 font-black uppercase text-lg md:text-xl flex items-center gap-3 md:gap-4 italic tracking-tighter"><PackageSearch className="w-6 h-6 md:w-8 md:h-8" /> Inventory</CardTitle>
                   <div className="relative group">
-                    <Search className="absolute left-5 top-5 w-5 h-5 text-blue-400 group-focus-within:text-blue-600 transition-colors" />
-                    <Input placeholder="Search live catalog..." value={catalogSearch} onChange={(e) => setCatalogSearch(e.target.value)} className="rounded-[1.5rem] bg-blue-50/50 border-none text-blue-900 font-black pl-14 h-16 text-sm shadow-inner" />
+                    <Search className="absolute left-4 top-4 w-4 h-4 text-blue-400" />
+                    <Input placeholder="Search catalog..." value={catalogSearch} onChange={(e) => setCatalogSearch(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black pl-11 h-12 text-xs" />
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4 max-h-[700px] overflow-y-auto pr-4 custom-scrollbar">
+              <CardContent className="space-y-3 max-h-[500px] md:max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
                 {filteredCatalogProducts?.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between p-4 bg-blue-50/20 rounded-[1.5rem] border border-blue-50 group hover:bg-blue-50/50 transition-all hover:shadow-md">
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-md border-2 border-white">
+                  <div key={p.id} className="flex items-center justify-between p-3 bg-blue-50/20 rounded-xl border border-blue-50 group">
+                    <div className="flex items-center gap-3 md:gap-5">
+                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl overflow-hidden shadow-sm border border-white">
                         <img src={p.imageUrl} className="w-full h-full object-cover" alt="" />
                       </div>
                       <div>
-                        <p className="text-blue-900 font-black text-xs uppercase truncate max-w-[180px] tracking-tight">{p.name}</p>
-                        <p className="text-blue-400 font-black text-[10px] tracking-widest mt-1">₹{p.price} / {p.unit}</p>
+                        <p className="text-blue-900 font-black text-[10px] md:text-xs uppercase truncate max-w-[120px] md:max-w-[180px]">{p.name}</p>
+                        <p className="text-blue-400 font-black text-[8px] md:text-[10px] tracking-widest mt-1">₹{p.price} / {p.unit}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-200 hover:text-red-600 hover:bg-red-50 rounded-2xl h-12 w-12 transition-all">
-                      <Trash2 className="w-6 h-6" />
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="text-blue-200 hover:text-red-600 h-10 w-10">
+                      <Trash2 className="w-5 h-5" />
                     </Button>
                   </div>
                 ))}
@@ -290,43 +296,39 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
           </div>
         </TabsContent>
 
-        <TabsContent value="orders" className="space-y-10 animate-in fade-in duration-700">
-          <Card className="rounded-[3rem] border-none shadow-2xl bg-white p-4">
-            <CardHeader className="pb-8 border-b-2 border-blue-50 mb-8"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-4 italic tracking-tighter"><ListOrdered className="w-8 h-8" /> Live Stream Dashboard</CardTitle></CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 max-h-[1000px] overflow-y-auto pr-6 custom-scrollbar">
+        <TabsContent value="orders" className="space-y-8 md:space-y-10 animate-in fade-in duration-500">
+          <Card className="rounded-3xl md:rounded-[3rem] border-none shadow-xl bg-white p-4">
+            <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-8"><CardTitle className="text-blue-600 font-black uppercase text-lg md:text-xl flex items-center gap-3 md:gap-4 italic tracking-tighter"><ListOrdered className="w-6 h-6 md:w-8 md:h-8" /> Live Order Stream</CardTitle></CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10 max-h-[800px] md:max-h-[1000px] overflow-y-auto pr-2 custom-scrollbar">
               {orders?.map((order: any) => (
-                <div key={order.id} className="p-8 bg-blue-50/30 rounded-[2.5rem] border border-blue-100 space-y-8 flex flex-col justify-between hover:shadow-xl transition-all relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <BarChart3 className="w-20 h-20 text-blue-900" />
-                  </div>
-                  <div className="space-y-6">
-                    <div className="flex justify-between items-start relative z-10">
+                <div key={order.id} className="p-6 md:p-8 bg-blue-50/30 rounded-2xl md:rounded-[2.5rem] border border-blue-100 space-y-6 flex flex-col justify-between hover:shadow-lg transition-all">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-start">
                       <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">REF: #{order.id.slice(-6)}</p>
-                          {order.isForSomeoneElse && <Badge className="bg-pink-100 text-pink-600 text-[9px] font-black uppercase border-none px-3 py-1">GIFT BAG</Badge>}
+                        <div className="flex items-center gap-2">
+                          <p className="text-[8px] md:text-[10px] font-black text-blue-400 uppercase tracking-widest">#{order.id.slice(-6)}</p>
+                          {order.isForSomeoneElse && <Badge className="bg-pink-100 text-pink-600 text-[8px] font-black uppercase border-none px-2 py-0.5">GIFT</Badge>}
                         </div>
-                        <div className="space-y-3">
-                          <p className="text-xl font-black text-blue-900 flex items-center gap-3 italic">
-                            <PhoneCall className="w-5 h-5 text-blue-600" /> {order.phoneNumber}
+                        <div className="space-y-2">
+                          <p className="text-lg md:text-xl font-black text-blue-900 flex items-center gap-2 italic">
+                            <PhoneCall className="w-4 h-4 text-blue-600" /> {order.phoneNumber}
                           </p>
-                          <div className="text-[11px] font-bold text-slate-500 bg-white/80 p-4 rounded-2xl border border-blue-50 shadow-sm leading-relaxed">
-                            <MapPinned className="w-4 h-4 text-blue-400 mb-2" /> {order.deliveryAddress || "Address Unavailable"}
+                          <div className="text-[10px] md:text-[11px] font-bold text-slate-500 bg-white/80 p-3 rounded-xl border border-blue-50 leading-relaxed">
+                            <MapPinned className="w-3 h-3 text-blue-400 mb-1" /> {order.deliveryAddress || "No Address"}
                           </div>
                           {order.isForSomeoneElse && (
-                            <div className="bg-pink-50 p-4 rounded-2xl border border-pink-100">
-                               <p className="text-[9px] font-black text-pink-300 uppercase mb-1">RECIPIENT CONTACT</p>
-                               <p className="text-sm font-black text-pink-600 flex items-center gap-2 italic">
-                                 <Gift className="w-4 h-4" /> {order.recipientPhone}
+                            <div className="bg-pink-50 p-3 rounded-xl border border-pink-100">
+                               <p className="text-[8px] font-black text-pink-300 uppercase mb-0.5">RECIPIENT</p>
+                               <p className="text-xs md:text-sm font-black text-pink-600 flex items-center gap-2 italic">
+                                 <Gift className="w-3 h-3" /> {order.recipientPhone}
                                </p>
                             </div>
                           )}
-                          <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest">{new Date(order.createdAt).toLocaleString()}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-3">
+                      <div className="flex flex-col items-end gap-2">
                         <Badge className={cn(
-                          "text-[10px] font-black uppercase rounded-xl border-none shadow-md px-5 py-2 tracking-widest",
+                          "text-[8px] md:text-[10px] font-black uppercase rounded-lg border-none px-3 py-1 shadow-sm",
                           order.status === 'pending' ? "bg-yellow-400 text-black" :
                           order.status === 'confirmed' ? "bg-blue-600 text-white" :
                           order.status === 'delivered' ? "bg-green-600 text-white" :
@@ -334,30 +336,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                         )}>
                           {order.status}
                         </Badge>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-12 w-12 text-slate-200 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all">
-                          <Trash2 className="w-6 h-6" />
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-10 w-10 text-slate-200 hover:text-red-600 transition-all">
+                          <Trash2 className="w-5 h-5" />
                         </Button>
                       </div>
                     </div>
-                    <div className="space-y-3 bg-white/60 p-6 rounded-[2rem] border border-blue-50 shadow-inner">
-                      <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-4">ITEM LIST</p>
+                    <div className="space-y-2 bg-white/60 p-4 rounded-xl border border-blue-50 shadow-inner">
                       {order.items?.map((item: any, i: number) => (
-                        <p key={i} className="text-[12px] font-black text-blue-800 uppercase flex items-center justify-between gap-4 border-b border-blue-50 pb-2 last:border-none">
+                        <p key={i} className="text-[10px] md:text-[12px] font-black text-blue-800 uppercase flex items-center justify-between gap-2 border-b border-blue-50/50 pb-1.5 last:border-none">
                           <span className="truncate">{item.name}</span>
                           <span className="text-blue-400 shrink-0">{item.quantity} {item.unit}</span>
                         </p>
                       ))}
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-4 pt-8 mt-4 border-t-2 border-dashed border-blue-100">
-                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} disabled={order.status !== 'pending'} className="flex-1 h-14 rounded-2xl bg-blue-600 text-white font-black text-[11px] uppercase shadow-lg shadow-blue-100 active:scale-95 transition-all tracking-widest">
-                      <CheckCircle2 className="w-5 h-5 mr-3" /> Confirm
+                  <div className="flex flex-wrap gap-2 md:gap-4 pt-4 border-t border-dashed border-blue-100">
+                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} disabled={order.status !== 'pending'} className="flex-1 h-12 rounded-xl bg-blue-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
+                      Confirm
                     </Button>
-                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} disabled={order.status !== 'confirmed'} className="flex-1 h-14 rounded-2xl bg-green-600 text-white font-black text-[11px] uppercase shadow-lg shadow-green-100 active:scale-95 transition-all tracking-widest">
-                      <Truck className="w-5 h-5 mr-3" /> Deliver
-                    </Button>
-                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} disabled={order.status === 'delivered' || order.status === 'cancelled'} variant="outline" className="flex-1 h-14 rounded-2xl border-2 border-red-100 text-red-600 font-black text-[11px] uppercase hover:bg-red-50 active:scale-95 transition-all tracking-widest">
-                      <XCircle className="w-5 h-5 mr-3" /> Reject
+                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} disabled={order.status !== 'confirmed'} className="flex-1 h-12 rounded-xl bg-green-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
+                      Deliver
                     </Button>
                   </div>
                 </div>
@@ -366,70 +364,69 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
           </Card>
         </TabsContent>
 
-        <TabsContent value="broadcast" className="animate-in fade-in duration-700">
-          <Card className="rounded-[3.5rem] border-none shadow-2xl bg-white p-8">
-            <CardHeader className="pb-8 border-b-2 border-blue-50 mb-10"><CardTitle className="text-blue-600 font-black uppercase text-2xl flex items-center gap-5 italic tracking-tighter"><Megaphone className="w-10 h-10" /> Global Information Hub</CardTitle></CardHeader>
-            <CardContent className="space-y-10">
-              <div className="space-y-4">
-                <Label className="text-blue-600 font-black uppercase text-[11px] ml-6 tracking-[0.3em]">Notification Content</Label>
+        <TabsContent value="broadcast" className="animate-in fade-in duration-500">
+          <Card className="rounded-3xl md:rounded-[3.5rem] border-none shadow-xl bg-white p-6 md:p-8">
+            <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-10"><CardTitle className="text-blue-600 font-black uppercase text-xl md:text-2xl flex items-center gap-3 md:gap-5 italic tracking-tighter"><Megaphone className="w-8 h-8 md:w-10 md:h-10" /> Store Broadcast</CardTitle></CardHeader>
+            <CardContent className="space-y-8 md:space-y-10">
+              <div className="space-y-3">
+                <Label className="text-blue-600 font-black uppercase text-[10px] md:text-[11px] tracking-widest">Message Content</Label>
                 <Textarea 
                   value={announcementMsg} 
                   onChange={(e) => setAnnouncementMsg(e.target.value)} 
-                  placeholder="Alert all customers instantly..."
-                  className="rounded-[2.5rem] bg-blue-50/50 border-none text-blue-900 font-black h-56 resize-none uppercase text-lg p-12 shadow-inner focus:bg-white transition-all italic leading-tight"
+                  placeholder="Inform all active customers..."
+                  className="rounded-2xl md:rounded-[2.5rem] bg-blue-50/50 border-none text-blue-900 font-black h-40 md:h-56 resize-none uppercase text-base md:text-lg p-6 md:p-12 shadow-inner"
                 />
               </div>
-              <div className="flex items-center gap-6 bg-blue-50/50 px-10 py-6 rounded-[2rem] border-2 border-blue-100 w-fit shadow-inner">
-                <Checkbox id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="border-blue-400 data-[state=checked]:bg-blue-600 rounded-lg h-8 w-8" />
-                <div className="space-y-1">
-                   <Label htmlFor="c-broadcast" className="text-blue-900 font-black uppercase text-sm cursor-pointer italic">Live Global Display</Label>
-                   <p className="text-[10px] font-bold text-blue-300 uppercase tracking-widest">Active users will see this in the top bar</p>
+              <div className="flex items-center gap-4 bg-blue-50/50 px-6 py-4 rounded-xl md:rounded-[2rem] border border-blue-100 w-fit">
+                <Checkbox id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="border-blue-400 data-[state=checked]:bg-blue-600 h-6 w-6" />
+                <div className="space-y-0.5">
+                   <Label htmlFor="c-broadcast" className="text-blue-900 font-black uppercase text-xs md:text-sm cursor-pointer italic">Live Global Display</Label>
+                   <p className="text-[8px] md:text-[10px] font-bold text-blue-300 uppercase tracking-widest">Visible to all users in the top bar</p>
                 </div>
               </div>
-              <Button onClick={handleUpdateAnnouncement} className="w-full h-24 rounded-[2rem] bg-blue-600 text-white font-black uppercase text-xl shadow-2xl shadow-blue-100 hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-6 italic tracking-tighter">
-                <Send className="w-10 h-10" /> Push Real-Time Information
+              <Button onClick={handleUpdateAnnouncement} className="w-full h-16 md:h-24 rounded-xl md:rounded-[2rem] bg-blue-600 text-white font-black uppercase text-sm md:text-xl shadow-lg hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-3 md:gap-6 italic">
+                <Send className="w-6 h-6 md:w-10 md:h-10" /> Push Real-Time Info
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-12 animate-in fade-in duration-700">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-            <Card className="rounded-[3rem] border-none shadow-2xl bg-white p-4">
-              <CardHeader className="pb-8 border-b-2 border-blue-50 mb-8"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-4 italic tracking-tighter"><Palette className="w-8 h-8" /> Visual Themes</CardTitle></CardHeader>
-              <CardContent className="grid grid-cols-3 gap-5">
+        <TabsContent value="settings" className="space-y-8 md:space-y-12 animate-in fade-in duration-500">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+            <Card className="rounded-3xl md:rounded-[3rem] border-none shadow-xl bg-white p-4">
+              <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-8"><CardTitle className="text-blue-600 font-black uppercase text-lg md:text-xl flex items-center gap-3 md:gap-4 italic tracking-tighter"><Palette className="w-6 h-6 md:w-8 md:h-8" /> Visual Themes</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-3 gap-3 md:gap-5">
                 {(Object.keys(THEME_DATA) as FestivalTheme[]).map(t => (
                   <Button 
                     key={t} 
                     onClick={() => handleUpdateTheme(t)} 
                     variant={currentTheme === t ? "default" : "outline"} 
                     className={cn(
-                      "rounded-3xl h-20 font-black uppercase text-[11px] transition-all active:scale-90 tracking-widest flex flex-col gap-1", 
-                      currentTheme === t ? "bg-blue-600 text-white border-none shadow-xl shadow-blue-200" : "text-blue-600 border-2 border-blue-50 hover:bg-blue-50"
+                      "rounded-2xl h-16 md:h-20 font-black uppercase text-[9px] md:text-[11px] transition-all tracking-tighter md:tracking-widest flex flex-col gap-0.5 md:gap-1", 
+                      currentTheme === t ? "bg-blue-600 text-white border-none shadow-md" : "text-blue-600 border border-blue-50"
                     )}
                   >
-                    <Sparkles className="w-4 h-4 opacity-40" />
+                    <Sparkles className="w-3 h-3 opacity-40" />
                     {t}
                   </Button>
                 ))}
               </CardContent>
             </Card>
 
-            <Card className="rounded-[3rem] border-none shadow-2xl bg-white p-4">
-              <CardHeader className="pb-8 border-b-2 border-blue-50 mb-8"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-4 italic tracking-tighter"><Wallet className="w-8 h-8" /> Bazaar Financials</CardTitle></CardHeader>
-              <CardContent className="space-y-8">
-                <div className="space-y-3">
-                  <Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Manual Revenue Controller (₹)</Label>
-                  <Input type="number" value={manualRevenue} onChange={(e) => setManualRevenue(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-16 px-8 text-xl shadow-inner focus:bg-white transition-all italic" placeholder="0.00" />
-                  <p className="text-[9px] font-bold text-blue-300 uppercase px-4 italic">Overrides automated tracking for dashboard display</p>
+            <Card className="rounded-3xl md:rounded-[3rem] border-none shadow-xl bg-white p-4">
+              <CardHeader className="pb-4 border-b border-blue-50 mb-6 md:mb-8"><CardTitle className="text-blue-600 font-black uppercase text-lg md:text-xl flex items-center gap-3 md:gap-4 italic tracking-tighter"><Wallet className="w-6 h-6 md:w-8 md:h-8" /> Financials</CardTitle></CardHeader>
+              <CardContent className="space-y-6 md:space-y-8">
+                <div className="space-y-2">
+                  <Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Manual Revenue (₹)</Label>
+                  <Input type="number" value={manualRevenue} onChange={(e) => setManualRevenue(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-16 px-4 md:px-8 text-lg md:text-xl shadow-inner focus:bg-white transition-all" placeholder="0.00" />
                 </div>
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="space-y-3"><Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">WhatsApp ID</Label><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 shadow-inner" /></div>
-                  <div className="space-y-3"><Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Helpline</Label><Input value={helpline} onChange={(e) => setHelpline(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 shadow-inner" /></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+                  <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">WhatsApp ID</Label><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4" /></div>
+                  <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">Helpline</Label><Input value={helpline} onChange={(e) => setHelpline(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4" /></div>
                 </div>
-                <div className="space-y-3"><Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">Verified VPA / UPI ID</Label><Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 shadow-inner" /></div>
-                <div className="space-y-3"><Label className="text-blue-600 font-black uppercase text-[10px] ml-4 tracking-widest">QR Asset URL</Label><Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-14 px-6 shadow-inner" /></div>
-                <Button onClick={handleUpdateSettings} className="w-full h-20 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase text-base border-none shadow-2xl shadow-blue-200 hover:bg-blue-700 active:scale-95 transition-all italic tracking-tighter">Synchronize Global Config</Button>
+                <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">UPI ID</Label><Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4" /></div>
+                <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] tracking-widest">QR Asset URL</Label><Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} className="rounded-xl bg-blue-50/50 border-none text-blue-900 font-black h-12 md:h-14 px-4" /></div>
+                <Button onClick={handleUpdateSettings} className="w-full h-16 md:h-20 rounded-xl md:rounded-[1.5rem] bg-blue-600 text-white font-black uppercase text-sm md:text-base border-none shadow-lg hover:bg-blue-700 active:scale-95 transition-all italic">Synchronize Config</Button>
               </CardContent>
             </Card>
           </div>
