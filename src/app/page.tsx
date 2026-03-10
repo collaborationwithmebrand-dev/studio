@@ -21,7 +21,8 @@ import {
   addDocumentNonBlocking,
   updateDocumentNonBlocking,
   deleteDocumentNonBlocking,
-  initiateEmailSignIn
+  initiateEmailSignIn,
+  initiateEmailSignUp
 } from '@/firebase';
 import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
@@ -63,6 +64,7 @@ export default function Home() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
   const [isOrdersHistoryOpen, setIsOrdersHistoryOpen] = useState(false);
   
   const [authEmail, setAuthEmail] = useState('');
@@ -141,7 +143,11 @@ export default function Home() {
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    initiateEmailSignIn(auth, authEmail, authPassword);
+    if (isSignUp) {
+      initiateEmailSignUp(auth, authEmail, authPassword);
+    } else {
+      initiateEmailSignIn(auth, authEmail, authPassword);
+    }
     setIsAuthDialogOpen(false);
     setAuthEmail('');
     setAuthPassword('');
@@ -609,16 +615,26 @@ export default function Home() {
       <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase text-slate-900">Welcome Back</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase text-slate-900">{isSignUp ? "Join Bazaar" : "Welcome Back"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAuth} className="space-y-6">
             <div className="space-y-4">
               <Input type="email" placeholder="Email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
               <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
             </div>
-            <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
-              Login
-            </Button>
+            <div className="space-y-3">
+              <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600">
+                {isSignUp ? "Create Account" : "Login"}
+              </Button>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                onClick={() => setIsSignUp(!isSignUp)}
+                className="w-full text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50"
+              >
+                {isSignUp ? "Already have an account? Login" : "New to Bazaar? Sign Up"}
+              </Button>
+            </div>
           </form>
         </DialogContent>
       </Dialog>
