@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -28,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { signOut } from 'firebase/auth';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { generateOtp } from '@/ai/flows/send-otp-flow';
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -72,6 +74,8 @@ export default function Home() {
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
   const [smsVerifyCode, setSmsVerifyCode] = useState('');
+  const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
 
@@ -81,8 +85,9 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
-  const SMS_OTP_SIMULATED = '7788'; 
+  const SENDER_PHONE = '9693959033';
 
+  // Fast Geolocation: Only check after user is logged in
   useEffect(() => {
     if (!user) return;
     
@@ -132,9 +137,38 @@ export default function Home() {
     }
   };
 
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber) {
+      toast({ title: "Phone Number Required", variant: "destructive" });
+      return;
+    }
+    if (isForSomeoneElse && (!recipientPhone || !deliveryAddress)) {
+      toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
+      return;
+    }
+
+    setIsOtpLoading(true);
+    try {
+      const result = await generateOtp({ phoneNumber });
+      setGeneratedOtp(result.code);
+      setIsPhoneDialogOpen(false);
+      setIsSmsVerifyDialogOpen(true);
+      toast({ 
+        title: `SMS Sent from ${SENDER_PHONE}`, 
+        description: `Your verification code is: ${result.code}`,
+        duration: 10000 
+      });
+    } catch (err) {
+      toast({ title: "Failed to send SMS", variant: "destructive" });
+    } finally {
+      setIsOtpLoading(false);
+    }
+  };
+
   const handleSmsVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (smsVerifyCode === SMS_OTP_SIMULATED) {
+    if (smsVerifyCode === generatedOtp) {
       setIsSmsVerifyDialogOpen(false);
       setIsPaymentDialogOpen(true);
       setSmsVerifyCode('');
@@ -276,6 +310,7 @@ export default function Home() {
     );
   }
 
+  // Mandatory Login Screen (Clean & Professional)
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
@@ -579,21 +614,7 @@ export default function Home() {
             <span className="text-[10px] font-black uppercase text-slate-400">Order for Someone Else?</span>
           </div>
 
-          <form onSubmit={(e) => { 
-            e.preventDefault(); 
-            if (!phoneNumber) {
-              toast({ title: "Phone Number Required", variant: "destructive" });
-              return;
-            }
-            if (isForSomeoneElse && (!recipientPhone || !deliveryAddress)) {
-              toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
-              return;
-            }
-            // Universal phone verification before ordering
-            setIsPhoneDialogOpen(false);
-            setIsSmsVerifyDialogOpen(true);
-          }} className="space-y-6">
-            
+          <form onSubmit={handleSendOtp} className="space-y-6">
             <div className="space-y-2 text-left">
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
               <Input 
@@ -629,8 +650,8 @@ export default function Home() {
               </div>
             )}
 
-            <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 active:scale-95 transition-all">
-              Proceed to Verify
+            <Button type="submit" disabled={isOtpLoading} className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 active:scale-95 transition-all">
+              {isOtpLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Proceed to Verify"}
             </Button>
           </form>
         </DialogContent>
@@ -638,7 +659,11 @@ export default function Home() {
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-          <DialogHeader className="mb-6"><DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3"><MessageSquareCode className="w-6 h-6 text-green-500" /> Identity Verification</DialogTitle></DialogHeader>
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-xl font-black uppercase text-slate-900 flex items-center justify-center gap-3">
+              <MessageSquareCode className="w-6 h-6 text-green-500" /> Identity Verification
+            </DialogTitle>
+          </DialogHeader>
           <p className="text-[10px] font-black uppercase text-slate-400 mb-6">Enter OTP sent to your number</p>
           <form onSubmit={handleSmsVerifyCode} className="space-y-6">
             <Input 

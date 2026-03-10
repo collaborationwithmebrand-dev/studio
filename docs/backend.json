@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Product": {
@@ -43,6 +44,7 @@
         "upiQrUrl": { "type": "string" },
         "whatsappNumber": { "type": "string" },
         "helpLineNumber": { "type": "string" },
+        "smsSenderNumber": { "type": "string" },
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
