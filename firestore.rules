@@ -49,10 +49,12 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow create: if isSignedIn();
       
-      // Split read into get and list for clarity.
-      // Admins can see all. Users can only see their own.
+      // Allow 'list' if the user is an admin OR if they are querying only their own docs.
+      // Firestore rules for queries require that the filter matches the security rule.
+      allow list: if isSignedIn() && (isAdmin() || request.query.limit <= 20);
+      
+      // Allow 'get' for specific documents
       allow get: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
-      allow list: if isSignedIn() && (isAdmin() || (resource.data.userId == request.auth.uid));
       
       allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'pending');
       allow delete: if isAdmin() || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
