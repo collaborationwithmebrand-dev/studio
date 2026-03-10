@@ -1,7 +1,8 @@
+
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell, MapPin, CheckCircle2 } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell, MapPin, CheckCircle2, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +22,7 @@ import {
   initiateEmailSignIn,
   initiateEmailSignUp
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -82,6 +83,9 @@ export default function Home() {
   const [password, setPassword] = useState('');
   const [isSignUp, setIsSignUp] = useState(false);
 
+  const notifiedOrders = useRef<Set<string>>(new Set());
+  const initialLoadDone = useRef(false);
+
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
 
@@ -116,6 +120,39 @@ export default function Home() {
   const { data: themeData } = useDoc(themeDocRef);
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
+
+  const userOrdersQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(
+      collection(firestore, 'orders'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+  }, [user, firestore]);
+  const { data: userOrders } = useCollection(userOrdersQuery);
+
+  useEffect(() => {
+    if (!userOrders) return;
+
+    if (!initialLoadDone.current) {
+      userOrders.forEach(o => notifiedOrders.current.add(o.id));
+      initialLoadDone.current = true;
+      return;
+    }
+
+    userOrders.forEach(order => {
+      if (order.status === 'cancelled' && !notifiedOrders.current.has(order.id)) {
+        toast({
+          title: "Order Cancelled",
+          description: "Your order has been cancelled or is not available. 🍥",
+          variant: "destructive",
+          duration: 10000
+        });
+        notifiedOrders.current.add(order.id);
+      }
+    });
+  }, [userOrders, toast]);
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -404,7 +441,7 @@ export default function Home() {
                    <div className="p-2.5 bg-slate-50 rounded-xl md:rounded-2xl transition-colors cursor-pointer">
                      <Bell className="w-5 h-5 text-slate-600" />
                    </div>
-                   {(announcement?.active || true) && (
+                   {(announcement?.active || userOrders?.some(o => o.status === 'cancelled')) && (
                      <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full notification-pulse" />
                    )}
                 </div>

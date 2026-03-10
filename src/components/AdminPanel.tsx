@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -351,11 +352,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2 md:gap-4 pt-4 border-t border-dashed border-blue-100">
-                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} disabled={order.status !== 'pending'} className="flex-1 h-12 rounded-xl bg-blue-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
+                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} disabled={order.status !== 'pending'} className="flex-1 h-10 rounded-xl bg-blue-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
                       Confirm
                     </Button>
-                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} disabled={order.status !== 'confirmed'} className="flex-1 h-12 rounded-xl bg-green-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
+                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} disabled={order.status !== 'confirmed'} className="flex-1 h-10 rounded-xl bg-green-600 text-white font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
                       Deliver
+                    </Button>
+                    <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} disabled={order.status === 'cancelled' || order.status === 'delivered'} className="flex-1 h-10 rounded-xl bg-white border-2 border-red-500 text-red-500 font-black text-[9px] md:text-[11px] uppercase tracking-tighter">
+                      Cancel
                     </Button>
                   </div>
                 </div>
