@@ -151,17 +151,21 @@ export default function Home() {
     try {
       const result = await generateOtp({ phoneNumber });
       setGeneratedOtp(result.code);
+      
+      // WhatsApp OTP Simulation: Open WhatsApp to send the code to the customer
+      const waMessage = encodeURIComponent(`Bounsi Bazaar Verification Code: ${result.code}\n(Authorized Sender: ${SENDER_PHONE})`);
+      window.open(`https://wa.me/${phoneNumber}?text=${waMessage}`, '_blank');
+      
       setIsPhoneDialogOpen(false);
       setIsSmsVerifyDialogOpen(true);
       
-      // Simulate real SMS delivery to the specific number entered
       toast({ 
-        title: `SMS Sent to ${phoneNumber}`, 
-        description: `Bounsi Bazaar code: ${result.code} (From: ${SENDER_PHONE})`,
+        title: `WhatsApp Verification Sent`, 
+        description: `Check WhatsApp on ${phoneNumber} for code: ${result.code}`,
         duration: 10000 
       });
     } catch (err) {
-      toast({ title: "Failed to send SMS", variant: "destructive" });
+      toast({ title: "Failed to generate OTP", variant: "destructive" });
     } finally {
       setIsOtpLoading(false);
     }
