@@ -128,10 +128,15 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
 
   useEffect(() => {
-    if (adminRole) {
+    if (adminRole && !isAdmin) {
       setIsAdmin(true);
+      toast({ 
+        title: "Admin Access Active", 
+        description: "Dashboard features are now enabled.",
+        className: "bg-blue-600 text-white font-black" 
+      });
     }
-  }, [adminRole]);
+  }, [adminRole, isAdmin, toast]);
 
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -176,7 +181,6 @@ export default function Home() {
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
     if (verificationCode === ADMIN_VERIFICATION_CODE) {
-      setIsAdmin(true);
       setIsVerificationDialogOpen(false);
       setVerificationCode('');
       
@@ -184,12 +188,12 @@ export default function Home() {
         setDocumentNonBlocking(doc(firestore, 'admin_roles', user.uid), {
           assignedAt: new Date().toISOString()
         }, { merge: true });
+        
+        toast({ 
+          title: "Promoting to Admin...", 
+          description: "One moment while we confirm permissions.",
+        });
       }
-
-      toast({ 
-        title: "Admin Access Granted", 
-        className: "bg-blue-600 text-white font-black" 
-      });
     } else {
       toast({ title: "Invalid Code", variant: "destructive" });
     }
