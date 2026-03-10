@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -112,18 +111,6 @@ export default function Home() {
 
   const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
   const { data: announcement } = useDoc(announcementRef);
-
-  // Trigger global notification when a new announcement is pushed
-  useEffect(() => {
-    if (announcement?.active && announcement?.message) {
-      toast({
-        title: "NEW INFORMATION",
-        description: announcement.message,
-        className: "bg-yellow-400 text-black font-black border-4 border-black animate-bounce",
-        duration: 8000
-      });
-    }
-  }, [announcement?.message, announcement?.active]);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -411,58 +398,64 @@ export default function Home() {
     <div className={cn("min-h-screen relative pb-40 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
-      <nav className="sticky top-0 z-50 glass-nav">
+      <div className="relative z-50">
         {announcement?.active && (
-          <div className="bg-yellow-400 text-black py-2 px-4 text-center overflow-hidden">
-            <p className="text-[10px] font-black uppercase flex items-center justify-center gap-2 animate-pulse">
-              <Megaphone className="w-4 h-4" /> {announcement.message}
-            </p>
+          <div className="bg-yellow-400 text-black py-3 px-6 text-center border-b-2 border-black shadow-lg">
+            <div className="container mx-auto flex items-center justify-center gap-3">
+              <Megaphone className="w-5 h-5 animate-bounce shrink-0" />
+              <p className="text-xs md:text-sm font-black uppercase tracking-tight leading-none">
+                {announcement.message}
+              </p>
+            </div>
           </div>
         )}
-        <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center justify-between w-full md:w-auto gap-4">
-            <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
-              {currentThemeConfig.title}
-            </h1>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => signOut(auth)}
-              className="md:hidden text-slate-400 hover:text-red-500"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
-          </div>
-          
-          <div className="relative flex-1 w-full max-w-xl group">
-            <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
-            <Input 
-              placeholder="Search items, sections..." 
-              value={searchQuery} 
-              onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-12 pl-12 pr-12 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
-            />
-            {isAdmin && (
+
+        <nav className="sticky top-0 glass-nav">
+          <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center justify-between w-full md:w-auto gap-4">
+              <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
+                {currentThemeConfig.title}
+              </h1>
               <Button 
                 variant="ghost" 
                 size="icon" 
-                onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 transition-colors"
+                onClick={() => signOut(auth)}
+                className="md:hidden text-slate-400 hover:text-red-500"
               >
-                <ShieldCheck className="w-5 h-5" />
+                <LogOut className="w-5 h-5" />
               </Button>
-            )}
-          </div>
+            </div>
+            
+            <div className="relative flex-1 w-full max-w-xl group">
+              <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
+              <Input 
+                placeholder="Search items, sections..." 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+                className="w-full h-12 pl-12 pr-12 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
+              />
+              {isAdmin && (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
+                  className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                </Button>
+              )}
+            </div>
 
-          <Button 
-            variant="ghost" 
-            onClick={() => signOut(auth)}
-            className="hidden md:flex text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors gap-2"
-          >
-            <LogOut className="w-4 h-4" /> Logout
-          </Button>
-        </div>
-      </nav>
+            <Button 
+              variant="ghost" 
+              onClick={() => signOut(auth)}
+              className="hidden md:flex text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors gap-2"
+            >
+              <LogOut className="w-4 h-4" /> Logout
+            </Button>
+          </div>
+        </nav>
+      </div>
 
       {isAdmin && isAdminPanelVisible && (
         <div className="bg-white py-10 border-b animate-in fade-in slide-in-from-top-4 duration-500">
