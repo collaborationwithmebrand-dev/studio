@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Development mode: Allow public read/write access to all collections
-    // Note: For production, you should restrict write access to authorized users.
+    // This supports the "No Login" flow where anyone can browse and order.
     match /{document=**} {
       allow read, write: if true;
     }
