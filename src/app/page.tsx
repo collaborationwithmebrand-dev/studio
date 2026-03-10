@@ -75,7 +75,6 @@ export default function Home() {
   const [verificationCode, setVerificationCode] = useState('');
   const [smsVerifyCode, setSmsVerifyCode] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
-  const [otpSender, setOtpSender] = useState('');
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
@@ -86,6 +85,8 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
+
+  const GIFT_CHARGE = 20;
 
   useEffect(() => {
     if (!user) return;
@@ -155,7 +156,6 @@ export default function Home() {
     try {
       const result = await generateOtp({ phoneNumber });
       setGeneratedOtp(result.code);
-      setOtpSender(result.sender);
       
       setIsPhoneDialogOpen(false);
       setIsSmsVerifyDialogOpen(true);
@@ -263,7 +263,7 @@ export default function Home() {
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
-    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0);
+    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0);
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     const sendOrder = (locationData: string) => {
@@ -567,7 +567,7 @@ export default function Home() {
                 </button>
                 <button onClick={() => setPackagingType('Gift')} className={cn("p-4 rounded-2xl border text-left transition-all", packagingType === 'Gift' ? "border-pink-500 bg-pink-50/50" : "border-slate-100")}>
                   <Gift className={cn("w-5 h-5 mb-2", packagingType === 'Gift' ? "text-pink-500" : "text-slate-300")} />
-                  <p className="text-[11px] font-black uppercase">Gift Wrap (+₹40)</p>
+                  <p className="text-[11px] font-black uppercase">Gift Wrap (+₹{GIFT_CHARGE})</p>
                 </button>
               </div>
             </div>
@@ -583,7 +583,7 @@ export default function Home() {
               </div>
               <div className="pt-4 border-t border-dashed border-slate-200 flex justify-between items-center">
                 <span className="text-lg font-black uppercase text-slate-900">Total</span>
-                <span className="text-2xl font-black text-green-600">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0)}</span>
+                <span className="text-2xl font-black text-green-600">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
               </div>
             </div>
 
