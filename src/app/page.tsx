@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -296,7 +295,7 @@ export default function Home() {
                   placeholder="name@example.com" 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)} 
-                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-slate-50 font-bold"
+                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-white font-bold"
                 />
               </div>
             </div>
@@ -309,7 +308,7 @@ export default function Home() {
                   placeholder="••••••••" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
-                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-slate-50 font-bold"
+                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-white font-bold"
                 />
               </div>
             </div>
@@ -385,7 +384,7 @@ export default function Home() {
               placeholder="Search items, sections..." 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full h-12 pl-12 pr-12 rounded-2xl bg-slate-50 border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
+              className="w-full h-12 pl-12 pr-12 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400" 
             />
             {isAdmin && (
               <Button 
@@ -586,17 +585,13 @@ export default function Home() {
               toast({ title: "Phone Number Required", variant: "destructive" });
               return;
             }
-            if (isForSomeoneElse) {
-              if (!recipientPhone || !deliveryAddress) {
-                toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
-                return;
-              }
-              setIsPhoneDialogOpen(false);
-              setIsSmsVerifyDialogOpen(true);
-            } else {
-              setIsPhoneDialogOpen(false);
-              setIsPaymentDialogOpen(true);
+            if (isForSomeoneElse && (!recipientPhone || !deliveryAddress)) {
+              toast({ title: "Details Missing", description: "Fill recipient number and address", variant: "destructive" });
+              return;
             }
+            // Universal phone verification before ordering
+            setIsPhoneDialogOpen(false);
+            setIsSmsVerifyDialogOpen(true);
           }} className="space-y-6">
             
             <div className="space-y-2 text-left">
@@ -606,7 +601,7 @@ export default function Home() {
                 placeholder="" 
                 value={phoneNumber} 
                 onChange={(e) => setPhoneNumber(e.target.value)} 
-                className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
+                className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-white tracking-widest" 
               />
             </div>
 
@@ -619,7 +614,7 @@ export default function Home() {
                     placeholder="" 
                     value={recipientPhone} 
                     onChange={(e) => setRecipientPhone(e.target.value)} 
-                    className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-slate-50" 
+                    className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-white" 
                   />
                 </div>
                 <div className="space-y-2 text-left">
@@ -628,14 +623,14 @@ export default function Home() {
                     placeholder="Street, Landmark, City..." 
                     value={deliveryAddress} 
                     onChange={(e) => setDeliveryAddress(e.target.value)} 
-                    className="rounded-2xl border-slate-100 bg-slate-50 font-medium h-24 p-4" 
+                    className="rounded-2xl border-slate-100 bg-white font-medium h-24 p-4" 
                   />
                 </div>
               </div>
             )}
 
             <Button type="submit" className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 active:scale-95 transition-all">
-              {isForSomeoneElse ? "Proceed to Verify" : "Confirm & Pay"}
+              Proceed to Verify
             </Button>
           </form>
         </DialogContent>
@@ -649,7 +644,7 @@ export default function Home() {
             <Input 
               maxLength={4} 
               placeholder="••••"
-              className="text-center text-4xl h-20 font-black rounded-2xl border-slate-100 bg-slate-50 tracking-[0.5em]" 
+              className="text-center text-4xl h-20 font-black rounded-2xl border-slate-100 bg-white tracking-[0.5em]" 
               value={smsVerifyCode} 
               onChange={(e) => setSmsVerifyCode(e.target.value)} 
             />
@@ -664,7 +659,7 @@ export default function Home() {
           <form onSubmit={handleVerifyCode} className="space-y-6 pt-4">
             <Input 
               maxLength={4} 
-              className="text-center text-4xl h-20 font-black rounded-2xl border-slate-100 bg-slate-50 tracking-[0.5em] text-blue-600" 
+              className="text-center text-4xl h-20 font-black rounded-2xl border-slate-100 bg-white tracking-[0.5em] text-blue-600" 
               value={verificationCode} 
               onChange={(e) => setVerificationCode(e.target.value)} 
             />
