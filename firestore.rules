@@ -2,60 +2,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isSignedIn() {
-      return request.auth != null;
-    }
-    
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admin_roles/$(request.auth.uid));
-    }
-    
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    match /products/{productId} {
-      allow get, list: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /admin_roles/{adminUid} {
-      allow get: if isSignedIn();
-      allow list: if isAdmin();
-      allow create: if isSignedIn() && request.auth.uid == adminUid;
-      allow update, delete: if isAdmin();
-    }
-    
-    match /storeSettings/mainSettings {
-      allow get: if true;
-      allow write: if isAdmin();
-    }
-
-    match /storeSettings/announcement {
-      allow get: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /publicDisplaySettings/theme {
-      allow get, list: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /userProfiles/{userId} {
-      allow get, write: if isOwner(userId);
-      allow list: if isAdmin();
-    }
-    
-    match /orders/{orderId} {
-      allow create: if isSignedIn();
-      
-      // Allow list and read for anyone signed in to prevent permissions crashes.
-      // The application logic filters the view, but the rules now allow the query to run.
-      allow list, get: if isSignedIn();
-      
-      // Strict modification rules
-      allow update: if isAdmin() || (isOwner(resource.data.userId) && resource.data.status == 'pending');
-      allow delete: if isAdmin() || (isOwner(resource.data.userId) && (resource.data.status == 'delivered' || resource.data.status == 'cancelled'));
+    // Development mode: Allow public read/write access to all collections
+    // Note: For production, you should restrict write access to authorized users.
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

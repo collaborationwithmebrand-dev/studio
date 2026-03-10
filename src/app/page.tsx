@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LogOut, LayoutGrid, PhoneCall, MapPin, Package, Gift, Layers, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Trash2, ShoppingCart, History, XCircle, LogIn, Megaphone, ArrowRight } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,19 +15,12 @@ import {
   useCollection, 
   useDoc, 
   useFirestore, 
-  useAuth, 
-  useUser, 
   useMemoFirebase,
   setDocumentNonBlocking,
   addDocumentNonBlocking,
-  updateDocumentNonBlocking,
-  deleteDocumentNonBlocking,
-  initiateEmailSignIn,
-  initiateEmailSignUp
 } from '@/firebase';
-import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
-import { signOut } from 'firebase/auth';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { collection, doc } from 'firebase/firestore';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 
@@ -54,22 +47,16 @@ interface CartItem {
 
 export default function Home() {
   const firestore = useFirestore();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
   const [isPhoneDialogOpen, setIsPhoneDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [isOrdersHistoryOpen, setIsOrdersHistoryOpen] = useState(false);
   
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
@@ -94,9 +81,6 @@ export default function Home() {
     );
   }, []);
 
-  const profileRef = useMemoFirebase(() => user ? doc(firestore, 'userProfiles', user.uid) : null, [firestore, user]);
-  const { data: profile } = useDoc(profileRef);
-
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -108,21 +92,6 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
-  const adminRoleRef = useMemoFirebase(() => user ? doc(firestore, 'admin_roles', user.uid) : null, [firestore, user]);
-  const { data: adminRole } = useDoc(adminRoleRef);
-  const isAdmin = !!adminRole;
-
-  const userOrdersQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'orders'), 
-      where('userId', '==', user.uid), 
-      orderBy('createdAt', 'desc'),
-      limit(20)
-    );
-  }, [firestore, user]);
-  const { data: userOrders } = useCollection(userOrdersQuery);
-
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
       setIsVerificationDialogOpen(true);
@@ -132,8 +101,8 @@ export default function Home() {
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
-    if (verificationCode === ADMIN_VERIFICATION_CODE && user) {
-      setDocumentNonBlocking(doc(firestore, 'admin_roles', user.uid), { assignedAt: new Date().toISOString() }, { merge: true });
+    if (verificationCode === ADMIN_VERIFICATION_CODE) {
+      setIsAdmin(true);
       setIsVerificationDialogOpen(false);
       setVerificationCode('');
       toast({ title: "Admin Access Granted" });
@@ -142,39 +111,14 @@ export default function Home() {
     }
   };
 
-  const handleAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSignUp) {
-      initiateEmailSignUp(auth, authEmail, authPassword);
-    } else {
-      initiateEmailSignIn(auth, authEmail, authPassword);
-    }
-    setIsAuthDialogOpen(false);
-    setAuthEmail('');
-    setAuthPassword('');
-  };
-
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!phoneNumber || phoneNumber.length < 10) {
       toast({ title: "Invalid Phone Number", variant: "destructive" });
       return;
     }
-    if (user) {
-      setDocumentNonBlocking(doc(firestore, 'userProfiles', user.uid), { phoneNumber, email: user.email || '' }, { merge: true });
-      setIsPhoneDialogOpen(false);
-      setIsPaymentDialogOpen(true);
-    }
-  };
-
-  const handleCancelOrder = (orderId: string) => {
-    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: 'cancelled' });
-    toast({ title: "Order Cancelled" });
-  };
-
-  const handleDeleteOrder = (orderId: string) => {
-    deleteDocumentNonBlocking(doc(firestore, 'orders', orderId));
-    toast({ title: "Removed from History" });
+    setIsPhoneDialogOpen(false);
+    setIsPaymentDialogOpen(true);
   };
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -202,10 +146,6 @@ export default function Home() {
   }, [products, searchQuery]);
 
   const addToCart = (product: any) => {
-    if (!user) {
-      setIsAuthDialogOpen(true);
-      return;
-    }
     setCart(prev => {
       const existing = prev[product.id];
       return {
@@ -246,20 +186,18 @@ export default function Home() {
   }, [cart]);
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
-    const phone = profile?.phoneNumber || phoneNumber;
     const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0);
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     navigator.geolocation.getCurrentPosition((pos) => {
       const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phone}\n\n_Fast Delivery (30 min)!_ ⚡`;
+      const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phoneNumber}\n\n_Fast Delivery (30 min)!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
-        phoneNumber: phone,
+        phoneNumber: phoneNumber,
         items: Object.values(cart),
         totalAmount: finalPrice,
         status: 'pending',
-        userId: user?.uid,
         createdAt: new Date().toISOString()
       });
 
@@ -271,7 +209,7 @@ export default function Home() {
     });
   };
 
-  if (locationStatus === 'checking' || isUserLoading) {
+  if (locationStatus === 'checking') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-green-500" />
@@ -308,20 +246,6 @@ export default function Home() {
             <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
               {currentThemeConfig.title}
             </h1>
-            <div className="flex md:hidden items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-xl h-10 w-10">
-                <History className="w-5 h-5 text-green-600" />
-              </Button>
-              {user ? (
-                <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-xl h-10 w-10 text-slate-400">
-                  <LogOut className="w-5 h-5" />
-                </Button>
-              ) : (
-                <Button variant="ghost" size="icon" onClick={() => setIsAuthDialogOpen(true)} className="rounded-xl h-10 w-10 text-green-600">
-                  <LogIn className="w-5 h-5" />
-                </Button>
-              )}
-            </div>
           </div>
           
           <div className="relative flex-1 w-full max-w-xl group">
@@ -340,21 +264,6 @@ export default function Home() {
                 className="absolute right-2 top-1.5 h-9 w-9 text-blue-600 hover:bg-blue-50 transition-colors"
               >
                 <ShieldCheck className="w-5 h-5" />
-              </Button>
-            )}
-          </div>
-
-          <div className="hidden md:flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => setIsOrdersHistoryOpen(true)} className="rounded-2xl h-12 w-12 bg-white shadow-sm hover:shadow-md">
-              <History className="w-6 h-6 text-green-600" />
-            </Button>
-            {user ? (
-              <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="rounded-2xl h-12 w-12 text-slate-400 hover:text-red-500">
-                <LogOut className="w-6 h-6" />
-              </Button>
-            ) : (
-              <Button onClick={() => setIsAuthDialogOpen(true)} className="rounded-2xl h-12 px-6 font-black uppercase text-xs bg-green-500 text-white hover:bg-green-600 shadow-lg shadow-green-100">
-                Login
               </Button>
             )}
           </div>
@@ -437,8 +346,7 @@ export default function Home() {
               </div>
             </div>
             <Button onClick={() => {
-              if (!profile?.phoneNumber) setIsPhoneDialogOpen(true);
-              else setIsPaymentDialogOpen(true);
+              setIsPhoneDialogOpen(true);
             }} className="bg-white text-green-700 hover:bg-slate-50 h-14 px-8 rounded-2xl font-black uppercase text-sm flex items-center gap-2 border-none active:scale-95 transition-all">
               CHECKOUT <ChevronRight className="w-5 h-5" />
             </Button>
@@ -447,66 +355,6 @@ export default function Home() {
       )}
 
       <Toaster />
-
-      <Dialog open={isOrdersHistoryOpen} onOpenChange={setIsOrdersHistoryOpen}>
-        <DialogContent className="rounded-[2.5rem] p-8 max-w-lg border-none shadow-2xl">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase flex items-center gap-3">
-              <History className="w-6 h-6 text-green-600" /> Bazaar History
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-5 max-h-[500px] overflow-y-auto pr-3 custom-scrollbar">
-            {userOrders && userOrders.length > 0 ? (
-              userOrders.map((order: any) => (
-                <div key={order.id} className="p-5 bg-slate-50 rounded-3xl border border-slate-100 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">ID: #{order.id.slice(-6)}</p>
-                      <p className="text-[11px] font-bold text-slate-500 uppercase">{new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <Badge className={cn(
-                      "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
-                      order.status === 'pending' ? "bg-yellow-400 text-black" :
-                      order.status === 'confirmed' ? "bg-blue-500 text-white" :
-                      order.status === 'delivered' ? "bg-green-500 text-white" :
-                      "bg-red-500 text-white"
-                    )}>
-                      {order.status}
-                    </Badge>
-                  </div>
-                  <div className="space-y-2">
-                    {order.items?.map((item: any, i: number) => (
-                      <p key={i} className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">
-                        • {item.name} <span className="text-slate-400 text-[10px]">({item.quantity} {item.unit})</span>
-                      </p>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center pt-4 border-t border-dashed border-slate-200">
-                    <span className="text-base font-black text-slate-900">₹{order.totalAmount}</span>
-                    <div className="flex gap-2">
-                      {order.status === 'pending' && (
-                        <Button onClick={() => handleCancelOrder(order.id)} size="sm" variant="outline" className="h-10 rounded-xl text-red-600 border-red-100 text-[10px] font-black uppercase px-5">
-                          Cancel
-                        </Button>
-                      )}
-                      {(order.status === 'delivered' || order.status === 'cancelled') && (
-                        <Button onClick={() => handleDeleteOrder(order.id)} size="sm" variant="ghost" className="h-10 rounded-xl text-slate-400 text-[10px] font-black uppercase px-5">
-                          Remove
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="py-20 text-center space-y-4">
-                <ShoppingBag className="w-20 h-20 text-slate-100 mx-auto" />
-                <p className="text-[11px] font-black text-slate-300 uppercase tracking-widest">No history yet</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-md border-none shadow-2xl">
@@ -609,33 +457,6 @@ export default function Home() {
               onChange={(e) => setVerificationCode(e.target.value)} 
             />
             <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 text-white font-black uppercase text-sm border-none shadow-xl shadow-blue-100">Unlock Hub</Button>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
-          <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl font-black uppercase text-slate-900">{isSignUp ? "Join Bazaar" : "Welcome Back"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleAuth} className="space-y-6">
-            <div className="space-y-4">
-              <Input type="email" placeholder="Email" value={authEmail} onChange={(e) => setAuthEmail(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
-              <Input type="password" placeholder="Password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="h-14 rounded-2xl border-slate-100 bg-slate-50 font-bold px-5" required />
-            </div>
-            <div className="space-y-3">
-              <Button type="submit" className="w-full h-14 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 hover:bg-green-600 transition-all active:scale-95">
-                {isSignUp ? "Create Account" : "Login"}
-              </Button>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="w-full text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50"
-              >
-                {isSignUp ? "Already have an account? Login" : "New to Bazaar? Sign Up"}
-              </Button>
-            </div>
           </form>
         </DialogContent>
       </Dialog>
