@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -112,6 +113,18 @@ export default function Home() {
   const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
   const { data: announcement } = useDoc(announcementRef);
 
+  // Trigger global notification when a new announcement is pushed
+  useEffect(() => {
+    if (announcement?.active && announcement?.message) {
+      toast({
+        title: "NEW INFORMATION",
+        description: announcement.message,
+        className: "bg-yellow-400 text-black font-black border-4 border-black animate-bounce",
+        duration: 8000
+      });
+    }
+  }, [announcement?.message, announcement?.active]);
+
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
@@ -130,7 +143,7 @@ export default function Home() {
       setIsAdmin(true);
       setIsVerificationDialogOpen(false);
       setVerificationCode('');
-      toast({ title: "Admin Access Granted" });
+      toast({ title: "Admin Access Granted", className: "bg-blue-600 text-white font-black" });
     } else {
       toast({ title: "Invalid Code", variant: "destructive" });
     }

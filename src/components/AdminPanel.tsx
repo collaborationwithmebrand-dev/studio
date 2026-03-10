@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -111,7 +112,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       active: isAnnouncementActive,
       updatedAt: new Date().toISOString()
     }, { merge: true });
-    toast({ title: "Broadcast Updated" });
+    toast({ 
+      title: "Broadcast Sent Successfully!", 
+      description: "Every active user will now see your message.",
+      className: "bg-blue-600 text-white font-black" 
+    });
   };
 
   const handleAdd = async () => {
@@ -128,17 +133,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       createdAt: new Date().toISOString()
     });
     setName(''); setPrice(''); setImageUrl(''); setDescription('');
-    toast({ title: "Product Added Successfully!" });
+    toast({ title: "Product Added Successfully!", className: "bg-blue-600 text-white font-black" });
   };
 
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus });
-    toast({ title: `Order ${newStatus}` });
+    toast({ title: `Order ${newStatus.toUpperCase()}`, className: "bg-blue-600 text-white font-black" });
   };
 
   const handleDeleteProduct = (productId: string) => {
     deleteDocumentNonBlocking(doc(firestore, 'products', productId));
-    toast({ title: "Product Removed" });
+    toast({ title: "Product Removed", variant: "destructive" });
   };
 
   const handleAiDescription = async () => {
@@ -150,7 +155,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         keywords: [category, section, unit]
       });
       setDescription(result.description);
-      toast({ title: "AI Generated Description" });
+      toast({ title: "AI Generated Description", className: "bg-blue-600 text-white font-black" });
     } catch (e) {
       toast({ title: "AI Failed", variant: "destructive" });
     } finally {
