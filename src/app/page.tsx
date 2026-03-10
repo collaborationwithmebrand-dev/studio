@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -75,6 +74,7 @@ export default function Home() {
   const [verificationCode, setVerificationCode] = useState('');
   const [smsVerifyCode, setSmsVerifyCode] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
+  const [otpSender, setOtpSender] = useState('');
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
@@ -85,7 +85,6 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
-  const SENDER_PHONE = '9693959033';
 
   useEffect(() => {
     if (!user) return;
@@ -151,13 +150,14 @@ export default function Home() {
     try {
       const result = await generateOtp({ phoneNumber });
       setGeneratedOtp(result.code);
+      setOtpSender(result.sender);
       
       setIsPhoneDialogOpen(false);
       setIsSmsVerifyDialogOpen(true);
       
       toast({ 
         title: `Verification Code Generated`, 
-        description: `SMS sent from ${SENDER_PHONE} to ${phoneNumber}. Code: ${result.code}`,
+        description: `${result.sender} to ${phoneNumber}. Code: ${result.code}`,
         duration: 10000 
       });
     } catch (err) {

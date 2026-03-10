@@ -43,7 +43,7 @@ const generateOtpFlow = ai.defineFlow(
     
     return {
       code,
-      sender: '9693959033',
+      sender: 'bounsibazaar.com code',
       message: `OTP successfully generated for ${input.phoneNumber}. Real SMS delivery simulated for prototype.`,
     };
   }
