@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -141,8 +142,12 @@ export default function Home() {
       toast({ title: "Valid 10-Digit Phone Required", variant: "destructive" });
       return;
     }
-    if (isForSomeoneElse && (!recipientPhone || recipientPhone.length < 10 || !deliveryAddress)) {
-      toast({ title: "Details Missing", description: "Fill 10-digit recipient number and address", variant: "destructive" });
+    if (!deliveryAddress) {
+      toast({ title: "Address Required", description: "Please enter a delivery address", variant: "destructive" });
+      return;
+    }
+    if (isForSomeoneElse && (!recipientPhone || recipientPhone.length < 10)) {
+      toast({ title: "Recipient Details Missing", description: "Fill 10-digit recipient number", variant: "destructive" });
       return;
     }
 
@@ -264,12 +269,15 @@ export default function Home() {
     const sendOrder = (locationData: string) => {
       let message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
       
+      message += `*Delivery Address:* ${deliveryAddress}\n`;
+      
       if (isForSomeoneElse) {
-        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n*Address:* ${deliveryAddress}\n\n`;
+        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n\n`;
       } else {
-        message += `*Location:* ${locationData}\n*Phone:* ${phoneNumber}\n\n`;
+        message += `*Phone:* ${phoneNumber}\n\n`;
       }
       
+      message += `*Map Location:* ${locationData}\n\n`;
       message += `_Fast Delivery (30 min)!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
@@ -277,7 +285,7 @@ export default function Home() {
         phoneNumber: phoneNumber,
         senderPhone: isForSomeoneElse ? phoneNumber : null,
         recipientPhone: isForSomeoneElse ? recipientPhone : null,
-        deliveryAddress: isForSomeoneElse ? deliveryAddress : null,
+        deliveryAddress: deliveryAddress,
         isForSomeoneElse: isForSomeoneElse,
         items: Object.values(cart),
         totalAmount: finalPrice,
@@ -292,14 +300,15 @@ export default function Home() {
       toast({ title: "Order Placed Successfully!" });
     };
 
-    if (isForSomeoneElse) {
-      sendOrder(deliveryAddress);
-    } else {
-      navigator.geolocation.getCurrentPosition((pos) => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
         const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
         sendOrder(locLink);
-      });
-    }
+      },
+      () => {
+        sendOrder("Not provided");
+      }
+    );
   };
 
   if (isUserLoading) {
@@ -607,14 +616,14 @@ export default function Home() {
             <DialogTitle className="text-2xl font-black uppercase text-slate-900">Order Details</DialogTitle>
           </DialogHeader>
           
-          <div className="flex items-center justify-center gap-3 mb-8 bg-slate-50 p-4 rounded-2xl">
+          <div className="flex items-center justify-center gap-3 mb-6 bg-slate-50 p-4 rounded-2xl">
             <UserCircle className={cn("w-5 h-5", !isForSomeoneElse ? "text-green-500" : "text-slate-300")} />
             <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} />
             <Gift className={cn("w-5 h-5", isForSomeoneElse ? "text-pink-500" : "text-slate-300")} />
             <span className="text-[10px] font-black uppercase text-slate-400">Order for Someone Else?</span>
           </div>
 
-          <form onSubmit={handleSendOtp} className="space-y-6">
+          <form onSubmit={handleSendOtp} className="space-y-5">
             <div className="space-y-2 text-left">
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
               <Input 
@@ -626,14 +635,24 @@ export default function Home() {
                   const val = e.target.value.replace(/\D/g, '');
                   if (val.length <= 10) setPhoneNumber(val);
                 }} 
-                className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-white tracking-widest" 
+                className="h-14 text-center text-xl font-black rounded-2xl border-slate-100 bg-white tracking-widest" 
+              />
+            </div>
+
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Full Delivery Address</Label>
+              <Textarea 
+                placeholder="Street, House No, Landmark, City..." 
+                value={deliveryAddress} 
+                onChange={(e) => setDeliveryAddress(e.target.value)} 
+                className="rounded-2xl border-slate-100 bg-white font-medium h-24 p-4 text-sm" 
               />
             </div>
 
             {isForSomeoneElse && (
               <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Recipient Phone (For Delivery)</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Recipient Contact Number</Label>
                   <Input 
                     type="tel" 
                     placeholder="" 
@@ -646,20 +665,11 @@ export default function Home() {
                     className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-white" 
                   />
                 </div>
-                <div className="space-y-2 text-left">
-                  <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Delivery Address</Label>
-                  <Textarea 
-                    placeholder="Street, Landmark, City..." 
-                    value={deliveryAddress} 
-                    onChange={(e) => setDeliveryAddress(e.target.value)} 
-                    className="rounded-2xl border-slate-100 bg-white font-medium h-24 p-4" 
-                  />
-                </div>
               </div>
             )}
 
             <Button type="submit" disabled={isOtpLoading} className="w-full h-16 rounded-2xl bg-green-500 text-white font-black uppercase text-sm border-none shadow-xl shadow-green-100 active:scale-95 transition-all">
-              {isOtpLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Proceed to Verify"}
+              {isOtpLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Verify & Proceed"}
             </Button>
           </form>
         </DialogContent>
