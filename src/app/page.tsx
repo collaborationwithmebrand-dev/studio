@@ -603,7 +603,7 @@ export default function Home() {
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Your Contact Number</Label>
               <Input 
                 type="tel" 
-                placeholder="9876543210" 
+                placeholder="" 
                 value={phoneNumber} 
                 onChange={(e) => setPhoneNumber(e.target.value)} 
                 className="h-16 text-center text-xl font-black rounded-2xl border-slate-100 bg-slate-50 tracking-widest" 
@@ -616,7 +616,7 @@ export default function Home() {
                   <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Recipient Phone (For Delivery)</Label>
                   <Input 
                     type="tel" 
-                    placeholder="9123456780" 
+                    placeholder="" 
                     value={recipientPhone} 
                     onChange={(e) => setRecipientPhone(e.target.value)} 
                     className="h-14 text-center font-bold rounded-2xl border-slate-100 bg-slate-50" 
