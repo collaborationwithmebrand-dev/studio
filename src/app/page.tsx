@@ -1,8 +1,7 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,13 +15,17 @@ import {
   useDoc, 
   useFirestore, 
   useMemoFirebase,
-  setDocumentNonBlocking,
   addDocumentNonBlocking,
+  useUser,
+  useAuth,
+  initiateEmailSignIn,
+  initiateEmailSignUp
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { signOut } from 'firebase/auth';
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -47,6 +50,8 @@ interface CartItem {
 
 export default function Home() {
   const firestore = useFirestore();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -62,6 +67,10 @@ export default function Home() {
   const [verificationCode, setVerificationCode] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('checking');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -111,14 +120,17 @@ export default function Home() {
     }
   };
 
-  const handlePhoneSubmit = (e: React.FormEvent) => {
+  const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast({ title: "Invalid Phone Number", variant: "destructive" });
+    if (!email || !password) {
+      toast({ title: "Email and Password required", variant: "destructive" });
       return;
     }
-    setIsPhoneDialogOpen(false);
-    setIsPaymentDialogOpen(true);
+    if (isSignUp) {
+      initiateEmailSignUp(auth, email, password);
+    } else {
+      initiateEmailSignIn(auth, email, password);
+    }
   };
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -186,6 +198,7 @@ export default function Home() {
   }, [cart]);
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
+    if (!user) return;
     const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? 40 : 0);
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
@@ -194,6 +207,7 @@ export default function Home() {
       const message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n*Location:* ${locLink}\n*Phone:* ${phoneNumber}\n\n_Fast Delivery (30 min)!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
+        userId: user.uid,
         phoneNumber: phoneNumber,
         items: Object.values(cart),
         totalAmount: finalPrice,
@@ -209,7 +223,7 @@ export default function Home() {
     });
   };
 
-  if (locationStatus === 'checking') {
+  if (locationStatus === 'checking' || isUserLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-4">
         <Loader2 className="w-10 h-10 animate-spin text-green-500" />
@@ -229,6 +243,60 @@ export default function Home() {
     );
   }
 
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
+        <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-xl space-y-8 text-center">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-black text-slate-900 uppercase italic tracking-tighter">Bounsi Bazaar</h1>
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Entry Portal</p>
+          </div>
+          
+          <form onSubmit={handleAuthSubmit} className="space-y-4">
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Email Address</Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
+                <Input 
+                  type="email" 
+                  placeholder="name@example.com" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-slate-50 font-bold"
+                />
+              </div>
+            </div>
+            <div className="space-y-2 text-left">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-2">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-4 text-slate-300 w-4 h-4" />
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="h-12 pl-12 rounded-2xl border-slate-100 bg-slate-50 font-bold"
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full h-14 rounded-2xl bg-black text-white font-black uppercase text-sm shadow-xl active:scale-95 transition-all">
+              {isSignUp ? <><UserPlus className="w-4 h-4 mr-2" /> Create Account</> : <><LogIn className="w-4 h-4 mr-2" /> Login to Shop</>}
+            </Button>
+          </form>
+
+          <div className="pt-4 border-t border-slate-100">
+            <button 
+              onClick={() => setIsSignUp(!isSignUp)} 
+              className="text-[10px] font-black uppercase text-slate-400 hover:text-black transition-colors"
+            >
+              {isSignUp ? "Already have an account? Login" : "New to Bazaar? Create Account"}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("min-h-screen relative pb-40 transition-colors duration-500", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
@@ -242,10 +310,18 @@ export default function Home() {
           </div>
         )}
         <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center justify-between w-full md:w-auto">
+          <div className="flex items-center justify-between w-full md:w-auto gap-4">
             <h1 className={cn("text-2xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r", currentThemeConfig.gradient)}>
               {currentThemeConfig.title}
             </h1>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => signOut(auth)}
+              className="md:hidden text-slate-400 hover:text-red-500"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
           
           <div className="relative flex-1 w-full max-w-xl group">
@@ -267,6 +343,14 @@ export default function Home() {
               </Button>
             )}
           </div>
+
+          <Button 
+            variant="ghost" 
+            onClick={() => signOut(auth)}
+            className="hidden md:flex text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors gap-2"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </Button>
         </div>
       </nav>
 
@@ -345,9 +429,7 @@ export default function Home() {
                 <p className="text-xl font-black leading-tight">₹{cartTotal}</p>
               </div>
             </div>
-            <Button onClick={() => {
-              setIsPhoneDialogOpen(true);
-            }} className="bg-white text-green-700 hover:bg-slate-50 h-14 px-8 rounded-2xl font-black uppercase text-sm flex items-center gap-2 border-none active:scale-95 transition-all">
+            <Button onClick={() => setIsPhoneDialogOpen(true)} className="bg-white text-green-700 hover:bg-slate-50 h-14 px-8 rounded-2xl font-black uppercase text-sm flex items-center gap-2 border-none active:scale-95 transition-all">
               CHECKOUT <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
@@ -433,7 +515,7 @@ export default function Home() {
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-10 max-w-sm text-center border-none shadow-2xl">
           <DialogHeader className="mb-6"><DialogTitle className="text-2xl font-black uppercase text-slate-900">Contact Number</DialogTitle></DialogHeader>
-          <form onSubmit={handlePhoneSubmit} className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); setIsPhoneDialogOpen(false); setIsPaymentDialogOpen(true); }} className="space-y-6">
             <Input 
               type="tel" 
               placeholder="9876543210" 
