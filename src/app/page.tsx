@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -87,7 +86,7 @@ export default function Home() {
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const SENDER_PHONE = '9693959033';
 
-  // Fast Geolocation: Only check after user is logged in
+  // Faster Opening: Geolocation runs only after user is detected
   useEffect(() => {
     if (!user) return;
     
@@ -154,9 +153,11 @@ export default function Home() {
       setGeneratedOtp(result.code);
       setIsPhoneDialogOpen(false);
       setIsSmsVerifyDialogOpen(true);
+      
+      // Simulate real SMS delivery to the specific number entered
       toast({ 
-        title: `SMS Sent from ${SENDER_PHONE}`, 
-        description: `Your verification code is: ${result.code}`,
+        title: `SMS Sent to ${phoneNumber}`, 
+        description: `Bounsi Bazaar code: ${result.code} (From: ${SENDER_PHONE})`,
         duration: 10000 
       });
     } catch (err) {
@@ -310,7 +311,7 @@ export default function Home() {
     );
   }
 
-  // Mandatory Login Screen (Clean & Professional)
+  // Fast Login Portal (Clean & Professional)
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">

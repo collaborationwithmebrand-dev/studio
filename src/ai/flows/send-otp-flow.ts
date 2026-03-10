@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A Genkit flow for generating a unique 4-digit OTP for phone verification.
@@ -19,6 +18,7 @@ export type GenerateOtpInput = z.infer<typeof GenerateOtpInputSchema>;
 const GenerateOtpOutputSchema = z.object({
   code: z.string().describe('The generated 4-digit verification code.'),
   message: z.string().describe('Status message.'),
+  sender: z.string().describe('The authorized sender ID.'),
 });
 export type GenerateOtpOutput = z.infer<typeof GenerateOtpOutputSchema>;
 
@@ -38,11 +38,13 @@ const generateOtpFlow = ai.defineFlow(
     // Generate a secure random 4-digit code
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     
-    // In a real-world scenario, you would call an SMS API here (Twilio, Msg91, etc.)
-    // For now, we return it to the client for simulation.
+    // In a production environment, you would integrate an SMS Gateway API here (e.g., Twilio, Msg91).
+    // The message would only arrive if the SIM card is active and correctly formatted.
+    
     return {
       code,
-      message: `OTP generated for ${input.phoneNumber}`,
+      sender: '9693959033',
+      message: `OTP successfully generated for ${input.phoneNumber}. Real SMS delivery simulated for prototype.`,
     };
   }
 );
