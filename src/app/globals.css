@@ -23,7 +23,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 142 71% 45%;
-    --radius: 1.5rem;
+    --radius: 2rem;
   }
 }
 
@@ -32,28 +32,45 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased;
     transition: background-color 0.5s ease;
   }
 }
 
+/* Premium Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+/* Glassmorphism */
 .glass-nav {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.product-card-blinkit {
-  transition: all 0.2s ease;
+/* Advanced Card Styles */
+.product-card-premium {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
-.product-card-blinkit:hover {
-  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-  transform: translateY(-2px);
+.product-card-premium:hover {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  transform: translateY(-8px);
 }
 
+/* Gradient Texts */
 .festive-title {
   background-clip: text;
   -webkit-background-clip: text;
@@ -61,7 +78,18 @@
   background-size: 200% auto;
 }
 
-/* Festival Effects */
+/* Pulse Animation for Notification */
+@keyframes pulse-red {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.notification-pulse {
+  animation: pulse-red 2s infinite;
+}
+
+/* Festival Overlays */
 .festival-overlay {
   position: fixed;
   top: 0;
