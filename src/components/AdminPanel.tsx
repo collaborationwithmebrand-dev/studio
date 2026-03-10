@@ -42,6 +42,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [helpline, setHelpline] = useState('');
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
+  const [manualRevenue, setManualRevenue] = useState('');
   
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
@@ -64,10 +65,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const { data: orders } = useCollection(ordersQuery);
 
   const stats = useMemo(() => {
-    if (!orders) return { orders: 0, earnings: 0 };
+    if (!orders) return { orders: 0 };
     return {
-      orders: orders.length,
-      earnings: orders.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0)
+      orders: orders.length
     };
   }, [orders]);
 
@@ -77,6 +77,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setHelpline(settings.helpLineNumber || '');
       setUpiId(settings.upiId || '');
       setUpiQrUrl(settings.upiQrUrl || '');
+      setManualRevenue(settings.manualRevenue?.toString() || '0');
     }
   }, [settings]);
 
@@ -100,6 +101,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       helpLineNumber: helpline,
       upiId: upiId,
       upiQrUrl: upiQrUrl,
+      manualRevenue: parseFloat(manualRevenue) || 0,
       lastUpdated: new Date().toISOString()
     }, { merge: true });
     toast({ title: "Settings Saved" });
@@ -139,6 +141,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus });
     toast({ title: `Order ${newStatus.toUpperCase()}`, className: "bg-blue-600 text-white font-black" });
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    deleteDocumentNonBlocking(doc(firestore, 'orders', orderId));
+    toast({ title: "Order Deleted", variant: "destructive" });
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -183,8 +190,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-blue-600 text-white">
           <CardContent className="p-10 flex flex-col items-center justify-center text-center">
             <DollarSign className="w-8 h-8 mb-3 opacity-80 text-blue-100" />
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Total Revenue</p>
-            <p className="text-4xl font-black text-white">₹{stats.earnings}</p>
+            <p className="text-[10px] font-black uppercase tracking-widest opacity-60 text-blue-100">Manual Revenue Display</p>
+            <p className="text-4xl font-black text-white">₹{settings?.manualRevenue || 0}</p>
           </CardContent>
         </Card>
       </div>
@@ -320,15 +327,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                         <p className="text-[10px] font-bold text-blue-400">{new Date(order.createdAt).toLocaleString()}</p>
                       </div>
                     </div>
-                    <Badge className={cn(
-                      "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
-                      order.status === 'pending' ? "bg-yellow-400 text-black" :
-                      order.status === 'confirmed' ? "bg-blue-600 text-white" :
-                      order.status === 'delivered' ? "bg-green-600 text-white" :
-                      "bg-red-500 text-white"
-                    )}>
-                      {order.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-2">
+                      <Badge className={cn(
+                        "text-[9px] font-black uppercase rounded-lg border-none shadow-sm px-3 py-1",
+                        order.status === 'pending' ? "bg-yellow-400 text-black" :
+                        order.status === 'confirmed' ? "bg-blue-600 text-white" :
+                        order.status === 'delivered' ? "bg-green-600 text-white" :
+                        "bg-red-500 text-white"
+                      )}>
+                        {order.status}
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleDeleteOrder(order.id)}
+                        className="h-8 w-8 text-slate-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                   <div className="space-y-2 bg-white/50 p-4 rounded-2xl border border-blue-50">
                     {order.items?.map((item: any, i: number) => (
@@ -401,8 +418,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             </Card>
 
             <Card className="rounded-[2.5rem] border-none shadow-lg bg-white">
-              <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-base flex items-center gap-3"><Wallet className="w-6 h-6" /> Payment & Contact</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="text-blue-600 font-black uppercase text-base flex items-center gap-3"><Wallet className="w-6 h-6" /> Payment & Financials</CardTitle></CardHeader>
               <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-blue-600 font-black uppercase text-[10px] ml-2">Manual Revenue Value (₹)</Label>
+                  <Input 
+                    type="number" 
+                    value={manualRevenue} 
+                    onChange={(e) => setManualRevenue(e.target.value)} 
+                    className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-black h-12 px-5" 
+                    placeholder="Enter total earnings manually"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] ml-2">WhatsApp Orders</Label><Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-bold h-12 px-5" /></div>
                   <div className="space-y-2"><Label className="text-blue-600 font-black uppercase text-[10px] ml-2">Store Helpline</Label><Input value={helpline} onChange={(e) => setHelpline(e.target.value)} className="rounded-2xl bg-blue-50/50 border-none text-blue-900 font-bold h-12 px-5" /></div>

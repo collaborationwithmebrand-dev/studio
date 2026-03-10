@@ -37,6 +37,7 @@
       "type": "object",
       "properties": {
         "id": { "type": "string" },
+        "manualRevenue": { "type": "number", "description": "Admin-defined total earnings display." },
         "totalOrders": { "type": "number" },
         "totalEarnings": { "type": "number" },
         "activeThemeName": { "type": "string" },
