@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, PhoneCall, MapPin, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MapPinned, MessageSquareCode } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -86,7 +87,6 @@ export default function Home() {
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const SENDER_PHONE = '9693959033';
 
-  // Faster Opening: Geolocation runs only after user is detected
   useEffect(() => {
     if (!user) return;
     
@@ -152,16 +152,12 @@ export default function Home() {
       const result = await generateOtp({ phoneNumber });
       setGeneratedOtp(result.code);
       
-      // WhatsApp OTP Simulation: Open WhatsApp to send the code to the customer
-      const waMessage = encodeURIComponent(`Bounsi Bazaar Verification Code: ${result.code}\n(Authorized Sender: ${SENDER_PHONE})`);
-      window.open(`https://wa.me/${phoneNumber}?text=${waMessage}`, '_blank');
-      
       setIsPhoneDialogOpen(false);
       setIsSmsVerifyDialogOpen(true);
       
       toast({ 
-        title: `WhatsApp Verification Sent`, 
-        description: `Check WhatsApp on ${phoneNumber} for code: ${result.code}`,
+        title: `Verification Code Generated`, 
+        description: `SMS sent from ${SENDER_PHONE} to ${phoneNumber}. Your code is: ${result.code}`,
         duration: 10000 
       });
     } catch (err) {
@@ -315,7 +311,6 @@ export default function Home() {
     );
   }
 
-  // Fast Login Portal (Clean & Professional)
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
@@ -382,7 +377,7 @@ export default function Home() {
   if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-6">
-        <MapPin className="w-16 h-16 text-red-500" />
+        <LayoutGrid className="w-16 h-16 text-red-500" />
         <h1 className="text-3xl font-black text-slate-900 uppercase">Service Not Available</h1>
         <p className="text-slate-500 max-w-xs font-medium">We deliver within 9km of Bounsi (813104). Please enable location to browse.</p>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-bold">RETRY</Button>
