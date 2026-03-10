@@ -463,14 +463,6 @@ export default function Home() {
                 {currentThemeConfig.title}
               </h1>
               <div className="flex items-center gap-3">
-                <div className="relative group">
-                   <div className="p-2.5 bg-slate-50 rounded-xl md:rounded-2xl transition-colors cursor-pointer">
-                     <Bell className="w-5 h-5 text-slate-600" />
-                   </div>
-                   {(announcement?.active || userOrders?.some(o => o.status === 'cancelled')) && (
-                     <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full notification-pulse" />
-                   )}
-                </div>
                 <Button variant="ghost" size="icon" onClick={() => signOut(auth)} className="md:hidden text-slate-400 hover:text-red-500 h-10 w-10">
                   <LogOut className="w-5 h-5" />
                 </Button>
