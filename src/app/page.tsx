@@ -33,6 +33,7 @@ import { generateOtp } from '@/ai/flows/send-otp-flow';
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
 const MAX_DISTANCE_KM = 9;
+const MIN_ORDER_AMOUNT = 100;
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -376,10 +377,6 @@ export default function Home() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" className="relative p-2 text-slate-400 hover:text-primary">
-                  <Bell className="w-6 h-6" />
-                  {announcement?.active && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse" />}
-                </Button>
                 {isActuallyAdmin && (
                   <Button 
                     onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
@@ -473,9 +470,25 @@ export default function Home() {
               <div>
                 <p className="text-[9px] md:text-[11px] font-black uppercase leading-tight opacity-70 tracking-widest">{cartCount} ITEM{cartCount > 1 ? 'S' : ''}</p>
                 <p className="text-xl md:text-3xl font-black leading-tight tracking-tighter italic">₹{cartTotal}</p>
+                {cartTotal < MIN_ORDER_AMOUNT && (
+                  <p className="text-[7px] md:text-[8px] font-bold text-yellow-300 uppercase animate-pulse">Min ₹{MIN_ORDER_AMOUNT} Required</p>
+                )}
               </div>
             </div>
-            <Button onClick={() => setIsPhoneDialogOpen(true)} className="bg-white text-green-700 hover:bg-slate-50 h-12 md:h-16 px-6 md:px-10 rounded-2xl md:rounded-[1.5rem] font-black uppercase text-xs md:text-sm flex items-center gap-2 active:scale-95 transition-all">
+            <Button 
+              onClick={() => {
+                if (cartTotal < MIN_ORDER_AMOUNT) {
+                  toast({ 
+                    title: "Minimum Order ₹100", 
+                    description: `Add ₹${MIN_ORDER_AMOUNT - cartTotal} more to your cart to proceed.`,
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                setIsPhoneDialogOpen(true);
+              }} 
+              className="bg-white text-green-700 hover:bg-slate-50 h-12 md:h-16 px-6 md:px-10 rounded-2xl md:rounded-[1.5rem] font-black uppercase text-xs md:text-sm flex items-center gap-2 active:scale-95 transition-all"
+            >
               PROCEED <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
@@ -592,7 +605,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-3xl p-6 md:p-12 max-w-md text-center bg-white border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-6 md:p-12 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
           <Button variant="ghost" onClick={() => setIsPhoneDialogOpen(false)} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-full text-slate-400">
             <ArrowLeft className="w-5 h-5" />
           </Button>
