@@ -84,7 +84,7 @@ export default function Home() {
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const GIFT_CHARGE = 20;
 
-  // Seamless anonymous entry
+  // Seamless anonymous entry - removes mandatory login
   useEffect(() => {
     if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);

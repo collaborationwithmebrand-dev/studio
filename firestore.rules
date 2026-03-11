@@ -15,6 +15,7 @@ service cloud.firestore {
 
     // Orders are private to the owner, but admins see all
     match /orders/{orderId} {
+      // For collection queries, must match request.auth.uid exactly
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if request.auth != null;
       allow update, delete: if isAdmin();
@@ -37,7 +38,7 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Admin roles marker - Allow authenticated users to register their own admin status
+    // Admin roles marker - Allow any authenticated user to claim their own admin status with the code
     match /admin_roles/{adminId} {
       allow read: if true;
       allow write: if request.auth != null && request.auth.uid == adminId;

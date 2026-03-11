@@ -91,7 +91,7 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["anonymous"]
   },
   "firestore": {
     "/products/{productId}": {
