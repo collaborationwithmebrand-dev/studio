@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -16,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 interface AdminPanelProps {
   currentTheme: FestivalTheme;
@@ -42,6 +44,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [helpline, setHelpline] = useState('');
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
+  const [manualRevenue, setManualRevenue] = useState<string>('0');
   
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
@@ -56,7 +59,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const { data: products } = useCollection(productsQuery);
 
   const ordersQuery = useMemoFirebase(() => {
-    // Double check isAdmin before querying
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
@@ -68,6 +70,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setHelpline(settings.helpLineNumber || '');
       setUpiId(settings.upiId || '');
       setUpiQrUrl(settings.upiQrUrl || '');
+      setManualRevenue(settings.manualRevenue?.toString() || '0');
     }
   }, [settings]);
 
@@ -91,6 +94,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       helpLineNumber: helpline,
       upiId: upiId,
       upiQrUrl: upiQrUrl,
+      manualRevenue: parseFloat(manualRevenue) || 0,
       lastUpdated: new Date().toISOString()
     }, { merge: true });
     toast({ title: "Settings Updated", className: "bg-blue-600 text-white" });
@@ -166,6 +170,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="rounded-[2rem] p-6 bg-blue-600 text-white border-none shadow-xl">
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Manual Revenue Tracking</p>
+          <h3 className="text-4xl font-black italic tracking-tighter">₹{manualRevenue}</h3>
+        </Card>
+        <Card className="rounded-[2rem] p-6 bg-white border-none shadow-xl border-slate-50">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Total Orders</p>
+          <h3 className="text-4xl font-black italic tracking-tighter text-slate-900">{orders?.length || 0}</h3>
+        </Card>
+        <Card className="rounded-[2rem] p-6 bg-white border-none shadow-xl border-slate-50">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Inventory Items</p>
+          <h3 className="text-4xl font-black italic tracking-tighter text-slate-900">{products?.length || 0}</h3>
+        </Card>
+      </div>
+
       <Tabs defaultValue="orders" className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-blue-50 rounded-2xl h-16 p-1 mb-10">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-xs data-[state=active]:bg-blue-600 data-[state=active]:text-white transition-all">Orders</TabsTrigger>
@@ -177,31 +196,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <TabsContent value="orders" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {orders?.map((order: any) => (
-              <Card key={order.id} className="rounded-3xl border-none bg-blue-50/30 p-6 space-y-4 hover:shadow-xl transition-all">
+              <Card key={order.id} className="rounded-3xl border-none bg-blue-50/30 p-6 space-y-4 hover:shadow-xl transition-all border border-blue-50/50">
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-blue-400 uppercase">#{order.id.slice(-6)}</p>
                     <p className="text-xl font-black text-blue-900">{order.phoneNumber}</p>
-                    <Badge variant="outline" className="text-[9px] font-black uppercase border-blue-200 text-blue-500">
+                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase", 
+                      order.status === 'confirmed' ? "border-blue-400 text-blue-600" : 
+                      order.status === 'delivered' ? "border-green-400 text-green-600" :
+                      order.status === 'cancelled' ? "border-red-400 text-red-600" :
+                      "border-slate-200 text-slate-400"
+                    )}>
                       {order.status}
                     </Badge>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="text-blue-200 hover:text-red-500">
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
                 <div className="space-y-2">
                   <p className="text-[11px] font-bold text-slate-600 leading-tight"><span className="text-blue-400">ADDR:</span> {order.deliveryAddress}</p>
                   <p className="text-xl font-black text-blue-600 italic">₹{order.totalAmount}</p>
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} size="sm" className="flex-1 bg-blue-600 text-white font-black text-[10px] uppercase">
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} size="sm" className="flex-1 min-w-[100px] bg-blue-600 text-white font-black text-[10px] h-10 uppercase">
                     <CheckCircle2 className="w-3 h-3 mr-2" /> Confirm
                   </Button>
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} size="sm" className="flex-1 bg-green-600 text-white font-black text-[10px] uppercase">
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} size="sm" className="flex-1 min-w-[100px] bg-green-600 text-white font-black text-[10px] h-10 uppercase">
                     <Truck className="w-3 h-3 mr-2" /> Deliver
                   </Button>
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} size="sm" variant="outline" className="flex-1 border-red-100 text-red-500 font-black text-[10px] uppercase">
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} size="sm" variant="outline" className="flex-1 min-w-[100px] border-red-100 text-red-500 font-black text-[10px] h-10 uppercase">
                     <XCircle className="w-3 h-3 mr-2" /> Cancel
                   </Button>
                 </div>
@@ -212,41 +236,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
         <TabsContent value="inventory" className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="rounded-3xl p-6 bg-white shadow-xl border-none">
+            <Card className="rounded-[2.5rem] p-6 md:p-8 bg-white shadow-xl border-none">
               <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><PlusCircle /> New Product</CardTitle></CardHeader>
               <CardContent className="px-0 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Title" className="rounded-xl bg-blue-50 border-none h-14" />
-                  <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (₹)" className="rounded-xl bg-blue-50 border-none h-14" />
-                  <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="Section (e.g. Snacks)" className="rounded-xl bg-blue-50 border-none h-14" />
-                  <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL" className="rounded-xl bg-blue-50 border-none h-14" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Title" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                  <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (₹)" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                  <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="Section (e.g. Snacks)" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                  <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label className="text-[10px] font-black uppercase text-blue-400">Description</Label>
-                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-8 text-[10px] font-black text-blue-600">AI ASSIST</Button>
+                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-8 text-[10px] font-black text-blue-600 hover:bg-blue-50">AI ASSIST</Button>
                   </div>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl bg-blue-50 border-none h-32" />
+                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl bg-blue-50 border-none h-32 font-medium" />
                 </div>
-                <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 gap-2">
+                <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
-                    <div key={u} className={cn("p-3 rounded-xl border-2 text-center cursor-pointer font-black text-[10px] transition-all", unit === u ? "bg-blue-600 text-white border-blue-600" : "bg-white border-blue-50")}>
+                    <div key={u} className={cn("p-4 rounded-xl border-2 text-center cursor-pointer font-black text-[10px] transition-all", unit === u ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white border-blue-50")}>
                       <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
-                      <Label htmlFor={`u-${u}`} className="cursor-pointer uppercase">{u}</Label>
+                      <Label htmlFor={`u-${u}`} className="cursor-pointer uppercase block">{u}</Label>
                     </div>
                   ))}
                 </RadioGroup>
-                <Button onClick={handleAdd} className="w-full h-16 rounded-xl bg-blue-600 text-white font-black uppercase shadow-xl hover:scale-[1.02] transition-all">Publish Item</Button>
+                <Button onClick={handleAdd} className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase shadow-xl hover:scale-[1.01] transition-all">Publish Item</Button>
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl p-6 bg-white shadow-xl border-none">
+            <Card className="rounded-[2.5rem] p-6 md:p-8 bg-white shadow-xl border-none">
               <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><Database /> Catalog</CardTitle></CardHeader>
               <CardContent className="px-0 space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {products?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-4 bg-blue-50/20 rounded-2xl border border-blue-50">
                     <div className="flex items-center gap-4">
-                      <img src={p.imageUrl} className="w-12 h-12 rounded-xl object-cover" />
+                      <img src={p.imageUrl} className="w-14 h-14 rounded-xl object-cover shadow-sm" />
                       <div>
                         <p className="text-blue-900 font-black text-xs uppercase truncate max-w-[150px]">{p.name}</p>
                         <p className="text-blue-400 font-black text-[9px] uppercase tracking-widest">₹{p.price} / {p.unit}</p>
@@ -263,37 +287,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         </TabsContent>
 
         <TabsContent value="broadcast" className="space-y-8">
-          <Card className="rounded-3xl p-8 bg-white shadow-xl border-none">
+          <Card className="rounded-[2.5rem] p-8 bg-white shadow-xl border-none">
             <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><Megaphone /> Global Announcement</CardTitle></CardHeader>
             <CardContent className="px-0 space-y-6">
               <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="Type information for all customers..." className="rounded-2xl bg-blue-50 border-none h-40 text-blue-900 font-black uppercase" />
-              <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-2xl">
+              <div className="flex items-center gap-4 p-5 bg-blue-50 rounded-2xl">
                 <Switch id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} />
-                <Label htmlFor="c-broadcast" className="font-black text-blue-900 uppercase text-xs">Live Status</Label>
+                <Label htmlFor="c-broadcast" className="font-black text-blue-900 uppercase text-xs">Live Broadcast Status</Label>
               </div>
-              <Button onClick={handleUpdateAnnouncement} className="w-full h-20 rounded-2xl bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg">Push to Everyone</Button>
+              <Button onClick={handleUpdateAnnouncement} className="w-full h-20 rounded-2xl bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg hover:scale-[1.01] transition-all">Push to Everyone</Button>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="rounded-3xl p-6 bg-white shadow-xl border-none">
-              <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><Palette /> Themes</CardTitle></CardHeader>
+            <Card className="rounded-[2.5rem] p-6 md:p-8 bg-white shadow-xl border-none">
+              <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><Palette /> Visual Themes</CardTitle></CardHeader>
               <CardContent className="px-0 grid grid-cols-2 gap-3">
                 {(Object.keys(THEME_DATA) as FestivalTheme[]).map(t => (
-                  <Button key={t} onClick={() => handleUpdateTheme(t)} variant={currentTheme === t ? "default" : "outline"} className={cn("rounded-2xl font-black text-[10px] uppercase h-16 transition-all", currentTheme === t ? "bg-blue-600 text-white" : "border-blue-50 text-blue-400")}>{t}</Button>
+                  <Button key={t} onClick={() => handleUpdateTheme(t)} variant={currentTheme === t ? "default" : "outline"} className={cn("rounded-2xl font-black text-[10px] uppercase h-16 transition-all", currentTheme === t ? "bg-blue-600 text-white shadow-lg" : "border-blue-50 text-blue-400 hover:bg-blue-50")}>{t}</Button>
                 ))}
               </CardContent>
             </Card>
 
-            <Card className="rounded-3xl p-6 bg-white shadow-xl border-none">
+            <Card className="rounded-[2.5rem] p-6 md:p-8 bg-white shadow-xl border-none">
               <CardHeader className="px-0"><CardTitle className="text-blue-600 font-black uppercase flex items-center gap-3"><Wallet /> Store Config</CardTitle></CardHeader>
               <CardContent className="px-0 space-y-4">
-                <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp (Delivery Hub)" className="rounded-xl bg-blue-50 border-none h-14" />
-                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="UPI ID" className="rounded-xl bg-blue-50 border-none h-14" />
-                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="UPI QR URL" className="rounded-xl bg-blue-50 border-none h-14" />
-                <Button onClick={handleUpdateSettings} className="w-full h-16 rounded-xl bg-blue-600 text-white font-black uppercase italic shadow-xl">Sync Configurations</Button>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-black uppercase text-blue-400 ml-3">Manual Revenue (₹)</Label>
+                  <Input value={manualRevenue} onChange={(e) => setManualRevenue(e.target.value)} placeholder="Display Revenue Value" className="rounded-xl bg-blue-50 border-none h-14 font-black text-blue-900" />
+                </div>
+                <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="WhatsApp (Delivery Hub)" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} placeholder="UPI ID" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                <Input value={upiQrUrl} onChange={(e) => setUpiQrUrl(e.target.value)} placeholder="UPI QR URL" className="rounded-xl bg-blue-50 border-none h-14 font-bold" />
+                <Button onClick={handleUpdateSettings} className="w-full h-16 rounded-xl bg-blue-600 text-white font-black uppercase italic shadow-xl hover:scale-[1.01] transition-all">Sync Configurations</Button>
               </CardContent>
             </Card>
           </div>
