@@ -28,7 +28,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Call hooks at top level to avoid violation
+  // Call hooks at top level to ensure no React violations
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -38,6 +38,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
+  // Security check for the orders collection query
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));

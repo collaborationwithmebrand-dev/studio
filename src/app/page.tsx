@@ -33,7 +33,6 @@ import { generateOtp } from '@/ai/flows/send-otp-flow';
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
 const MAX_DISTANCE_KM = 9;
-const MIN_ORDER_AMOUNT = 100;
 
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371;
@@ -81,7 +80,7 @@ export default function Home() {
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
-  const GIFT_CHARGE = 20;
+  const SOMEONE_ELSES_CHARGE = 20;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -268,9 +267,22 @@ export default function Home() {
     return Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
+  // Dynamic Price Calculation
+  const orderBreakdown = useMemo(() => {
+    const deliveryCharge = 25;
+    const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
+    const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
+    
+    // Auto-adjust to 100 via Tax/GST
+    const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
+    const finalPrice = initialTotal + taxAndGst;
+
+    return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice };
+  }, [cartTotal, packagingType]);
+
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
-    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Special' ? GIFT_CHARGE : 0);
+    const { finalPrice } = orderBreakdown;
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     const sendOrder = (locationData: string) => {
@@ -533,23 +545,10 @@ export default function Home() {
               <div>
                 <p className="text-[9px] md:text-[11px] font-black uppercase leading-tight opacity-50 tracking-[0.2em] mb-0.5">{cartCount} ITEM{cartCount > 1 ? 'S' : ''}</p>
                 <p className="text-xl md:text-3xl font-black leading-tight tracking-tighter italic text-green-400">₹{cartTotal}</p>
-                {cartTotal < MIN_ORDER_AMOUNT && (
-                  <p className="text-[7px] md:text-[9px] font-bold text-yellow-300 uppercase animate-pulse mt-0.5 tracking-wider">ADD ₹{MIN_ORDER_AMOUNT - cartTotal} MORE FOR MINIMUM ORDER</p>
-                )}
               </div>
             </div>
             <Button 
-              onClick={() => {
-                if (cartTotal < MIN_ORDER_AMOUNT) {
-                  toast({ 
-                    title: "Minimum Order ₹100", 
-                    description: `Add ₹${MIN_ORDER_AMOUNT - cartTotal} more to your basket to proceed.`,
-                    variant: "destructive"
-                  });
-                  return;
-                }
-                setIsPhoneDialogOpen(true);
-              }} 
+              onClick={() => setIsPhoneDialogOpen(true)} 
               className="bg-primary text-white hover:brightness-110 h-12 md:h-16 px-6 md:px-10 rounded-[1.2rem] md:rounded-[1.5rem] font-black uppercase text-[11px] md:text-[14px] flex items-center gap-2 active:scale-95 transition-all border-none shadow-2xl shadow-primary/30"
             >
               PROCEED <ChevronRight className="w-5 h-5" />
@@ -601,7 +600,7 @@ export default function Home() {
                 <button onClick={() => setPackagingType('Special')} className={cn("p-4 md:p-6 rounded-[1.5rem] border-2 text-left transition-all duration-500", packagingType === 'Special' ? "border-pink-500 bg-pink-50 shadow-xl" : "border-slate-50 hover:border-slate-100")}>
                   <Gift className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Special' ? "text-pink-500" : "text-slate-200")} />
                   <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Someone Else's Premium</p>
-                  <p className="text-[8px] md:text-[9px] font-bold text-pink-500 uppercase mt-1">+₹{GIFT_CHARGE}</p>
+                  <p className="text-[8px] md:text-[9px] font-bold text-pink-500 uppercase mt-1">+₹{SOMEONE_ELSES_CHARGE}</p>
                 </button>
               </div>
             </div>
@@ -624,13 +623,19 @@ export default function Home() {
                 </div>
                 <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   <span>Priority Delivery</span>
-                  <span className="text-slate-300">₹{cartTotal < 100 ? 125 : 25}</span>
+                  <span className="text-slate-300">₹{orderBreakdown.deliveryCharge}</span>
                 </div>
+                {orderBreakdown.taxAndGst > 0 && (
+                  <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest animate-pulse">
+                    <span>Taxes &amp; GST (Min Order adj.)</span>
+                    <span>₹{orderBreakdown.taxAndGst}</span>
+                  </div>
+                )}
               </div>
               
               <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                 <span className="text-xl font-black uppercase italic tracking-tighter leading-none">Grand Total</span>
-                <span className="text-3xl md:text-5xl font-black text-primary italic leading-none">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Special' ? GIFT_CHARGE : 0)}</span>
+                <span className="text-3xl md:text-5xl font-black text-primary italic leading-none">₹{orderBreakdown.finalPrice}</span>
               </div>
             </div>
 
@@ -735,7 +740,7 @@ export default function Home() {
               <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.4em] mb-8">Enter code from bounsibazaar.com</p>
               <form onSubmit={handleSmsVerifyCode} className="space-y-8">
                 <Input maxLength={4} placeholder="••••" className="text-center text-4xl h-16 md:h-24 font-black rounded-[1.5rem] border-2 border-slate-50 bg-slate-50/50 tracking-[0.5em] focus:border-primary transition-all shadow-inner text-primary" value={smsVerifyCode} onChange={(e) => setSmsVerifyCode(e.target.value)} />
-                <Button type="submit" className="w-full h-16 md:h-20 rounded-[1.5rem] bg-slate-950 text-white font-black uppercase text-xs md:text-sm border-none shadow-xl active:scale-95 transition-all">AUTHENTICATE & PAY</Button>
+                <Button type="submit" className="w-full h-16 md:h-20 rounded-[1.5rem] bg-slate-950 text-white font-black uppercase text-xs md:text-sm border-none shadow-xl active:scale-95 transition-all">AUTHENTICATE &amp; PAY</Button>
               </form>
             </div>
             <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 shadow-inner group">
