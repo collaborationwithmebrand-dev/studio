@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Bell, PhoneCall } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Bell, PhoneCall, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -117,7 +117,6 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
-  // Admin status check from Firestore
   const adminRoleRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'admin_roles', user.uid);
@@ -125,7 +124,6 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
 
-  // Search bar listener for admin secret key
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
       setIsVerificationDialogOpen(true);
@@ -382,7 +380,6 @@ export default function Home() {
                   <Bell className="w-6 h-6" />
                   {announcement?.active && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse" />}
                 </Button>
-                {/* Admin button only visible for verified admins */}
                 {isActuallyAdmin && (
                   <Button 
                     onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
@@ -397,7 +394,6 @@ export default function Home() {
         </nav>
       </header>
 
-      {/* Admin Panel is strictly guarded by isActuallyAdmin */}
       {isActuallyAdmin && isAdminPanelVisible && (
         <div className="bg-white/70 backdrop-blur-3xl py-8 md:py-12 border-b border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <AdminPanel currentTheme={currentTheme} isAdmin={isActuallyAdmin} />
@@ -488,7 +484,6 @@ export default function Home() {
 
       <Toaster />
 
-      {/* Verification Dialog for Secret Hub Key */}
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-3xl p-8 md:p-12 max-w-xs text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-6">
@@ -510,10 +505,12 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      {/* Checkout Dialogs */}
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
         <DialogContent className="rounded-3xl md:rounded-[2.5rem] p-6 md:p-10 max-w-xl bg-white border-none">
-          <DialogHeader className="mb-6">
+          <Button variant="ghost" onClick={() => { setIsPaymentDialogOpen(false); setIsSmsVerifyDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-full text-slate-400 hover:bg-slate-50">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <DialogHeader className="mb-6 mt-4">
             <DialogTitle className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic">Checkout Summary</DialogTitle>
           </DialogHeader>
 
@@ -579,7 +576,10 @@ export default function Home() {
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
         <DialogContent className="rounded-3xl p-8 max-w-sm text-center bg-white border-none shadow-2xl">
-          <h3 className="text-xl md:text-2xl font-black uppercase italic mb-6 tracking-tighter">Scan to Pay</h3>
+          <Button variant="ghost" onClick={() => { setIsQrDialogOpen(false); setIsPaymentDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-full text-slate-400">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h3 className="text-xl md:text-2xl font-black uppercase italic mb-6 mt-4 tracking-tighter">Scan to Pay</h3>
           <div className="p-6 bg-slate-50 rounded-3xl border-2 border-white shadow-inner mb-6">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain" /> : <div className="w-full aspect-square flex items-center justify-center bg-white rounded-2xl"><QrCode className="w-16 h-16 text-slate-200" /></div>}
           </div>
@@ -593,7 +593,10 @@ export default function Home() {
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
         <DialogContent className="rounded-3xl p-6 md:p-12 max-w-md text-center bg-white border-none shadow-2xl">
-          <DialogHeader className="mb-6">
+          <Button variant="ghost" onClick={() => setIsPhoneDialogOpen(false)} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-full text-slate-400">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <DialogHeader className="mb-6 mt-4">
             <DialogTitle className="text-2xl md:text-3xl font-black uppercase italic text-slate-900 tracking-tighter">Delivery Info</DialogTitle>
           </DialogHeader>
           
@@ -638,7 +641,10 @@ export default function Home() {
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
         <DialogContent className="rounded-3xl p-8 md:p-12 max-sm:w-full text-center bg-white border-none shadow-2xl">
-          <DialogHeader className="mb-8">
+          <Button variant="ghost" onClick={() => { setIsSmsVerifyDialogOpen(false); setIsPhoneDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-full text-slate-400">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <DialogHeader className="mb-8 mt-4">
             <DialogTitle className="text-xl md:text-2xl font-black uppercase italic text-slate-900 flex items-center justify-center gap-3 tracking-tighter">
               <MessageSquareCode className="w-6 h-6 md:w-8 md:h-8 text-green-500" /> OTP Verification
             </DialogTitle>
