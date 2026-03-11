@@ -38,7 +38,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  // Security check for the orders collection query
+  // Security check for the orders collection query - prevent permission error by only querying when isAdmin is true
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
@@ -65,7 +65,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
   
-  const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', 'XXXL', '32', '34', '36', '38'];
+  const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
 
   useEffect(() => {
     if (settings) {
@@ -129,7 +129,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       isPinned,
       createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl(''); setDescription(''); setCategory(''); setIsPinned(false);
+    setName(''); setPrice(''); setImageUrl(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs');
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -302,15 +302,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 </div>
                 
                 <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase text-blue-300 ml-3 tracking-[0.2em]">Unit / Variant Size</Label>
-                  <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-4 lg:grid-cols-6 gap-2">
-                    {UNIT_OPTIONS.map(u => (
-                      <div key={u} className={cn("p-4 rounded-xl border-2 text-center cursor-pointer font-black text-[10px] transition-all", unit === u ? "bg-blue-600 text-white border-blue-600 shadow-lg scale-105" : "bg-white border-slate-50 hover:border-blue-100")}>
-                        <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
-                        <Label htmlFor={`u-${u}`} className="cursor-pointer uppercase block leading-none">{u}</Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
+                  <Label className="text-[10px] font-black uppercase text-blue-300 ml-3 tracking-[0.2em]">Unit / Variant (e.g. 500gm, 1kg, XL)</Label>
+                  <div className="space-y-3">
+                    <Input 
+                      value={unit} 
+                      onChange={(e) => setUnit(e.target.value)} 
+                      placeholder="e.g. 500 gm" 
+                      className="rounded-xl bg-slate-50 border-none h-14 font-bold" 
+                    />
+                    <div className="flex flex-wrap gap-2">
+                      {UNIT_OPTIONS.map(u => (
+                        <Button 
+                          key={u} 
+                          type="button"
+                          onClick={() => setUnit(prev => {
+                            const trimmed = prev.trim();
+                            if (!trimmed) return u;
+                            if (trimmed.endsWith(u)) return trimmed;
+                            return `${trimmed} ${u}`;
+                          })}
+                          variant="outline" 
+                          className="h-8 px-3 rounded-lg text-[9px] font-black uppercase border-blue-100 text-blue-400 hover:bg-blue-50"
+                        >
+                          + {u}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
