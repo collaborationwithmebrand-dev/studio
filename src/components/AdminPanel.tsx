@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,8 +32,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('Grocery');
-  const [unit, setUnit] = useState('kg');
+  const [category, setCategory] = useState('General');
+  const [unit, setUnit] = useState('Pcs');
   const [section, setSection] = useState('Daily Essentials');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
@@ -62,6 +62,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
+
+  const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', 'XXXL', '32', '34', '36', '38'];
 
   useEffect(() => {
     if (settings) {
@@ -171,7 +173,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <Card className="rounded-[2rem] p-6 bg-blue-600 text-white border-none shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Manual Revenue Tracking</p>
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-70 mb-2">Manual Revenue tracking</p>
           <h3 className="text-4xl font-black italic tracking-tighter">₹{manualRevenue}</h3>
         </Card>
         <Card className="rounded-[2rem] p-6 bg-white border-none shadow-xl border-slate-50">
@@ -289,14 +291,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   </div>
                   <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl bg-blue-50 border-none h-32 font-medium" />
                 </div>
-                <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                  {['gm', 'kg', 'Liter', 'Pcs'].map(u => (
-                    <div key={u} className={cn("p-4 rounded-xl border-2 text-center cursor-pointer font-black text-[10px] transition-all", unit === u ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white border-blue-50")}>
-                      <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
-                      <Label htmlFor={`u-${u}`} className="cursor-pointer uppercase block">{u}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
+                <div className="space-y-4">
+                  <Label className="text-[10px] font-black uppercase text-blue-400 ml-3">Unit / Size</Label>
+                  <RadioGroup value={unit} onValueChange={setUnit} className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    {UNIT_OPTIONS.map(u => (
+                      <div key={u} className={cn("p-4 rounded-xl border-2 text-center cursor-pointer font-black text-[10px] transition-all", unit === u ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-white border-blue-50")}>
+                        <RadioGroupItem value={u} id={`u-${u}`} className="hidden" />
+                        <Label htmlFor={`u-${u}`} className="cursor-pointer uppercase block">{u}</Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                </div>
                 <Button onClick={handleAdd} className="w-full h-16 rounded-2xl bg-blue-600 text-white font-black uppercase shadow-xl hover:scale-[1.01] transition-all">Publish Item</Button>
               </CardContent>
             </Card>

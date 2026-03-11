@@ -10,7 +10,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "price": { "type": "number" },
-        "unit": { "type": "string", "enum": ["gm", "Liter", "kg", "Pcs"] },
+        "unit": { "type": "string", "enum": ["gm", "Liter", "kg", "Pcs", "L", "XL", "XXL", "XXXL", "32", "34", "36", "38"] },
         "section": { "type": "string" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string", "format": "uri" },
