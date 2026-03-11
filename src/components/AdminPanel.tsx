@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -28,7 +28,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Guard the component: Do not render anything if not an admin
   if (!isAdmin) return null;
 
   const [name, setName] = useState('');
@@ -198,35 +197,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             {orders?.map((order: any) => (
               <Card key={order.id} className="rounded-3xl border-none bg-blue-50/30 p-6 space-y-4 hover:shadow-xl transition-all border border-blue-50/50">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="text-[10px] font-black text-blue-400 uppercase">#{order.id.slice(-6)}</p>
-                    <p className="text-xl font-black text-blue-900">{order.phoneNumber}</p>
-                    <Badge variant="outline" className={cn("text-[9px] font-black uppercase", 
-                      order.status === 'confirmed' ? "border-blue-400 text-blue-600" : 
-                      order.status === 'delivered' ? "border-green-400 text-green-600" :
-                      order.status === 'cancelled' ? "border-red-400 text-red-600" :
-                      "border-slate-200 text-slate-400"
-                    )}>
-                      {order.status}
-                    </Badge>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-600 text-white rounded-xl shadow-md">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xl font-black text-blue-900">{order.phoneNumber}</p>
+                        <Badge variant="outline" className={cn("text-[9px] font-black uppercase", 
+                          order.status === 'confirmed' ? "border-blue-400 text-blue-600" : 
+                          order.status === 'delivered' ? "border-green-400 text-green-600" :
+                          order.status === 'cancelled' ? "border-red-400 text-red-600" :
+                          "border-slate-200 text-slate-400"
+                        )}>
+                          {order.status}
+                        </Badge>
+                      </div>
+                      <a href={`tel:${order.phoneNumber}`} className="p-3 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors">
+                        <PhoneCall className="w-5 h-5" />
+                      </a>
+                    </div>
                   </div>
                   <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="text-blue-200 hover:text-red-500">
                     <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-[11px] font-bold text-slate-600 leading-tight"><span className="text-blue-400">ADDR:</span> {order.deliveryAddress}</p>
-                  <p className="text-xl font-black text-blue-600 italic">₹{order.totalAmount}</p>
+
+                <div className="bg-white rounded-2xl p-4 space-y-3 border border-blue-50 shadow-inner">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                      <MapPin className="w-3 h-3" /> Delivery Location
+                    </div>
+                    <p className="text-sm font-bold text-slate-700 italic leading-relaxed">"{order.deliveryAddress}"</p>
+                  </div>
+
+                  {order.isForSomeoneElse && (
+                    <div className="pt-3 border-t border-blue-50 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[9px] font-black text-pink-500 uppercase">
+                          <Gift className="w-3 h-3" /> Recipient
+                        </div>
+                        <p className="text-xs font-black text-slate-900">{order.recipientPhone}</p>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-[9px] font-black text-blue-400 uppercase">
+                          <User className="w-3 h-3" /> Sender
+                        </div>
+                        <p className="text-xs font-black text-slate-900">{order.senderPhone}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                <div className="flex justify-between items-center">
+                  <p className="text-2xl font-black text-blue-600 italic">₹{order.totalAmount}</p>
+                  <p className="text-[9px] font-black text-slate-300 uppercase">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} size="sm" className="flex-1 min-w-[100px] bg-blue-600 text-white font-black text-[10px] h-10 uppercase">
-                    <CheckCircle2 className="w-3 h-3 mr-2" /> Confirm
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} size="sm" className="flex-1 min-w-[100px] bg-blue-600 text-white font-black text-[10px] h-12 uppercase rounded-xl">
+                    <CheckCircle2 className="w-4 h-4 mr-2" /> Confirm
                   </Button>
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} size="sm" className="flex-1 min-w-[100px] bg-green-600 text-white font-black text-[10px] h-10 uppercase">
-                    <Truck className="w-3 h-3 mr-2" /> Deliver
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} size="sm" className="flex-1 min-w-[100px] bg-green-600 text-white font-black text-[10px] h-12 uppercase rounded-xl">
+                    <Truck className="w-4 h-4 mr-2" /> Deliver
                   </Button>
-                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} size="sm" variant="outline" className="flex-1 min-w-[100px] border-red-100 text-red-500 font-black text-[10px] h-10 uppercase">
-                    <XCircle className="w-3 h-3 mr-2" /> Cancel
+                  <Button onClick={() => handleUpdateOrderStatus(order.id, 'cancelled')} size="sm" variant="outline" className="flex-1 min-w-[100px] border-red-100 text-red-500 font-black text-[10px] h-12 uppercase rounded-xl">
+                    <XCircle className="w-4 h-4 mr-2" /> Cancel
                   </Button>
                 </div>
               </Card>
