@@ -18,9 +18,8 @@ service cloud.firestore {
       // For collection queries, must match request.auth.uid exactly
       allow read: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if request.auth != null;
-      // Allow user to cancel their own order if it's still pending
-      allow update: if (request.auth != null && resource.data.userId == request.auth.uid && request.resource.data.status == 'cancelled' && resource.data.status == 'pending') || isAdmin();
-      allow delete: if isAdmin();
+      // Only admins can update order status (e.g., confirm, deliver, cancel)
+      allow update, delete: if isAdmin();
     }
 
     // Store settings (Helpline, WhatsApp, Announcement) are public for customers
