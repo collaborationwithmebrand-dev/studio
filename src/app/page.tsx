@@ -281,7 +281,7 @@ export default function Home() {
       } else {
         message += `*Phone:* ${phoneNumber}\n\n`;
       }
-      message += `*Map Location:* ${locationData}\n\n`;
+      message += `*Map Location:* ${locationStatus === 'allowed' ? locationData : "Location not allowed"}\n\n`;
       message += `_Fast Delivery Guaranteed!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
@@ -304,13 +304,17 @@ export default function Home() {
       toast({ title: "Order Placed Successfully!", className: "bg-green-600 text-white" });
     };
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-        sendOrder(locLink);
-      },
-      () => sendOrder("Location not allowed")
-    );
+    if (locationStatus === 'allowed') {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+          sendOrder(locLink);
+        },
+        () => sendOrder("Location not allowed")
+      );
+    } else {
+      sendOrder("Location not allowed");
+    }
   };
 
   const isCheckoutInProgress = isPhoneDialogOpen || isSmsVerifyDialogOpen || isPaymentDialogOpen || isQrDialogOpen;
@@ -349,7 +353,7 @@ export default function Home() {
   }
 
   return (
-    <div className={cn("min-h-screen relative pb-40 transition-all duration-1000 ease-in-out", currentThemeConfig.bg)}>
+    <div className={cn("min-h-screen relative pb-4 transition-all duration-1000 ease-in-out", currentThemeConfig.bg)}>
       <FestiveEffects theme={currentTheme} />
       
       <header className="relative z-[60]">
@@ -403,7 +407,6 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8 md:py-16">
-        {/* Delivery Mode Filter Bar */}
         <div className="max-w-xl mx-auto mb-8 md:mb-16">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
             <button 
@@ -440,55 +443,57 @@ export default function Home() {
                 <Badge variant="outline" className="rounded-full px-4 py-1.5 border-slate-200 text-slate-400 font-black text-[9px] uppercase tracking-[0.2em] bg-white/50 backdrop-blur-sm">{items.length} ITEMS</Badge>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
                 {items.map((p: any) => {
                   const cartItem = cart[p.id];
                   return (
-                    <div key={p.id} className="group product-card-premium rounded-[2rem] p-3 md:p-5 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative">
-                      <div className="relative aspect-square mb-3 md:mb-6 rounded-[1.5rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
+                    <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-4 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
+                      <div className="relative aspect-square mb-2 md:mb-4 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         
-                        <div className="absolute bottom-2 left-2 flex flex-col gap-1">
+                        <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-1">
                           {p.deliveryMode === 'standard' ? (
-                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 py-1 px-2">
-                              <Clock className="w-2.5 h-2.5" /> 2 DAYS
+                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
+                              <Clock className="w-2 h-2" /> 2 DAYS
                             </Badge>
                           ) : (
-                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 py-1 px-2">
-                              <Zap className="w-2.5 h-2.5" /> 25 MINS
+                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
+                              <Zap className="w-2 h-2" /> 25 MINS
                             </Badge>
                           )}
                         </div>
 
                         {p.isPinned && (
-                          <div className="absolute top-2 left-2 md:top-3 md:left-3 bg-yellow-400 text-black px-2 py-1 rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1.5 shadow-xl border border-white/20">
-                            <Pin className="w-3 h-3 fill-black" /> BEST
+                          <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 shadow-xl border border-white/20">
+                            <Pin className="w-2.5 h-2.5 fill-black" /> BEST
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 space-y-2">
-                        <h3 className="font-bold text-[13px] md:text-base text-slate-800 line-clamp-2 uppercase min-h-[2.5rem] md:min-h-[3.5rem] leading-tight tracking-tight">{p.name}</h3>
-                        <Badge className="bg-slate-100 text-slate-500 border-none rounded-lg text-[8px] md:text-[10px] font-black uppercase px-2 py-0.5">
-                          {p.unit}
-                        </Badge>
+                      <div className="flex-1 space-y-1.5">
+                        <h3 className="font-bold text-[11px] md:text-[14px] text-slate-800 line-clamp-2 uppercase min-h-[2rem] md:min-h-[2.5rem] leading-tight tracking-tight">{p.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[7px] md:text-[9px] font-black uppercase px-1.5 py-0">
+                            {p.unit}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="mt-4 md:mt-8 flex flex-col gap-3">
+                      <div className="mt-2 md:mt-4 flex flex-col gap-2">
                         <div className="flex flex-col">
-                          <span className="text-[8px] md:text-[10px] font-black text-slate-300 uppercase leading-none mb-1 tracking-wider">Price</span>
-                          <span className="text-lg md:text-xl font-black text-slate-900 leading-none italic">₹{p.price}</span>
+                          <span className="text-[7px] md:text-[9px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-wider">Price</span>
+                          <span className="text-sm md:text-lg font-black text-slate-900 leading-none italic">₹{p.price}</span>
                         </div>
                         {cartItem ? (
-                          <div className="flex items-center gap-2 bg-primary rounded-xl p-1.5 flex-1 justify-between shadow-xl border border-white/20">
-                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-8 w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Minus className="w-3.5 h-3.5" />
+                          <div className="flex items-center gap-1.5 bg-primary rounded-xl p-1 flex-1 justify-between shadow-lg border border-white/20">
+                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                              <Minus className="w-2.5 h-2.5" />
                             </Button>
-                            <span className="text-white font-black text-base">{cartItem.quantity}</span>
-                            <Button onClick={() => addToCart(p)} size="icon" className="h-8 w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Plus className="w-3.5 h-3.5" />
+                            <span className="text-white font-black text-sm md:text-base">{cartItem.quantity}</span>
+                            <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                              <Plus className="w-2.5 h-2.5" />
                             </Button>
                           </div>
                         ) : (
-                          <Button onClick={() => addToCart(p)} className="rounded-xl h-12 md:h-14 px-4 md:px-6 font-black text-[10px] md:text-xs bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
+                          <Button onClick={() => addToCart(p)} className="rounded-xl h-10 md:h-12 px-3 md:px-4 font-black text-[9px] md:text-[11px] bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
                             ADD TO BASKET
                           </Button>
                         )}
@@ -503,17 +508,17 @@ export default function Home() {
       </main>
 
       {cartCount > 0 && !isCheckoutInProgress && (
-        <div className="fixed bottom-8 md:bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-2xl z-[70] animate-in slide-in-from-bottom-20 duration-700">
-          <div className="bg-slate-900/90 text-white rounded-[3rem] p-5 md:p-8 flex items-center justify-between shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-white/10 backdrop-blur-2xl">
-            <div className="flex items-center gap-5 md:gap-8">
-              <div className="bg-primary p-4 md:p-6 rounded-[1.5rem] shadow-2xl shadow-primary/20">
-                <ShoppingCart className="w-7 h-7 md:w-9 md:h-9 text-white" />
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl z-[70] animate-in slide-in-from-bottom-20 duration-700">
+          <div className="bg-slate-900/95 text-white rounded-[2.5rem] p-4 md:p-6 flex items-center justify-between shadow-[0_30px_100px_rgba(0,0,0,0.5)] border border-white/10 backdrop-blur-2xl">
+            <div className="flex items-center gap-4 md:gap-6">
+              <div className="bg-primary p-3 md:p-5 rounded-[1.2rem] shadow-2xl shadow-primary/20">
+                <ShoppingCart className="w-6 h-6 md:w-8 md:h-8 text-white" />
               </div>
               <div>
-                <p className="text-[10px] md:text-[12px] font-black uppercase leading-tight opacity-50 tracking-[0.3em] mb-1">{cartCount} ITEM{cartCount > 1 ? 'S' : ''}</p>
-                <p className="text-2xl md:text-4xl font-black leading-tight tracking-tighter italic text-green-400">₹{cartTotal}</p>
+                <p className="text-[9px] md:text-[11px] font-black uppercase leading-tight opacity-50 tracking-[0.2em] mb-0.5">{cartCount} ITEM{cartCount > 1 ? 'S' : ''}</p>
+                <p className="text-xl md:text-3xl font-black leading-tight tracking-tighter italic text-green-400">₹{cartTotal}</p>
                 {cartTotal < MIN_ORDER_AMOUNT && (
-                  <p className="text-[8px] md:text-[10px] font-bold text-yellow-300 uppercase animate-pulse mt-1 tracking-widest">ADD ₹{MIN_ORDER_AMOUNT - cartTotal} MORE FOR MINIMUM ORDER</p>
+                  <p className="text-[7px] md:text-[9px] font-bold text-yellow-300 uppercase animate-pulse mt-0.5 tracking-wider">ADD ₹{MIN_ORDER_AMOUNT - cartTotal} MORE FOR MINIMUM ORDER</p>
                 )}
               </div>
             </div>
@@ -529,9 +534,9 @@ export default function Home() {
                 }
                 setIsPhoneDialogOpen(true);
               }} 
-              className="bg-primary text-white hover:brightness-110 h-14 md:h-20 px-8 md:px-14 rounded-[1.5rem] md:rounded-[2rem] font-black uppercase text-xs md:text-base flex items-center gap-3 active:scale-95 transition-all border-none shadow-2xl shadow-primary/30"
+              className="bg-primary text-white hover:brightness-110 h-12 md:h-16 px-6 md:px-10 rounded-[1.2rem] md:rounded-[1.5rem] font-black uppercase text-[11px] md:text-[14px] flex items-center gap-2 active:scale-95 transition-all border-none shadow-2xl shadow-primary/30"
             >
-              PROCEED <ChevronRight className="w-6 h-6" />
+              PROCEED <ChevronRight className="w-5 h-5" />
             </Button>
           </div>
         </div>
@@ -540,92 +545,85 @@ export default function Home() {
       <Toaster />
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10 md:p-16 max-w-md text-center bg-white border-none shadow-[0_50px_100px_rgba(0,0,0,0.1)]">
-          <DialogHeader className="mb-10">
+        <DialogContent className="rounded-[2.5rem] p-8 md:p-12 max-w-md text-center bg-white border-none shadow-2xl">
+          <DialogHeader className="mb-8">
             <DialogTitle className="text-2xl md:text-3xl font-black uppercase italic text-blue-600 tracking-tighter leading-none">Admin Hub Unlock</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleVerifyCode} className="space-y-10">
-            <div className="space-y-4">
-              <Label className="text-[11px] font-black uppercase text-slate-300 tracking-[0.4em]">Verification Key</Label>
+          <form onSubmit={handleVerifyCode} className="space-y-8">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-300 tracking-[0.3em]">Verification Key</Label>
               <Input 
                 type="password"
                 maxLength={4} 
-                className="text-center text-5xl h-20 md:h-28 font-black rounded-3xl border-4 border-slate-50 bg-slate-50/50 tracking-[0.6em] text-blue-600 focus:border-blue-500 shadow-inner transition-all" 
+                className="text-center text-4xl h-16 md:h-20 font-black rounded-2xl border-2 border-slate-50 bg-slate-50/50 tracking-[0.4em] text-blue-600 focus:border-blue-500 shadow-inner transition-all" 
                 value={verificationCode} 
                 onChange={(e) => setVerificationCode(e.target.value)} 
               />
             </div>
-            <Button type="submit" className="w-full h-16 md:h-20 rounded-3xl bg-blue-600 text-white font-black uppercase text-sm md:text-lg border-none shadow-2xl hover:bg-blue-700 active:scale-95 transition-all">Authenticate Tools</Button>
+            <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-blue-600 text-white font-black uppercase text-xs md:text-sm border-none shadow-xl hover:bg-blue-700 active:scale-95 transition-all">Authenticate Tools</Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-[3.5rem] p-8 md:p-14 max-w-2xl bg-white border-none shadow-2xl overflow-hidden">
-          <Button variant="ghost" onClick={() => { setIsPaymentDialogOpen(false); setIsSmsVerifyDialogOpen(true); }} className="absolute left-6 top-6 h-12 w-12 p-0 rounded-2xl text-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-all">
-            <ArrowLeft className="w-6 h-6" />
+        <DialogContent className="rounded-[2.5rem] p-6 md:p-10 max-w-2xl bg-white border-none shadow-2xl overflow-hidden">
+          <Button variant="ghost" onClick={() => { setIsPaymentDialogOpen(false); setIsSmsVerifyDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-xl text-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-all">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <DialogHeader className="mb-10 mt-6">
-            <DialogTitle className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">Order Summary</DialogTitle>
+          <DialogHeader className="mb-8 mt-4">
+            <DialogTitle className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">Order Summary</DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-10">
-            <div className="space-y-6">
-              <Label className="text-[11px] font-black uppercase text-slate-400 ml-6 tracking-[0.4em]">Packaging Style</Label>
-              <div className="grid grid-cols-2 gap-6">
-                <button onClick={() => setPackagingType('Normal')} className={cn("p-6 md:p-10 rounded-[2.5rem] border-4 text-left transition-all duration-500", packagingType === 'Normal' ? "border-primary bg-primary/5 shadow-2xl" : "border-slate-50 hover:border-slate-100")}>
-                  <Package className={cn("w-8 h-8 md:w-12 md:h-12 mb-5", packagingType === 'Normal' ? "text-primary" : "text-slate-200")} />
-                  <p className="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight">Standard</p>
-                  <p className="text-[9px] md:text-[11px] font-bold text-slate-400 uppercase mt-2">Bazaar Box</p>
+          <div className="space-y-8">
+            <div className="space-y-4">
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-[0.3em]">Packaging Style</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <button onClick={() => setPackagingType('Normal')} className={cn("p-4 md:p-6 rounded-[1.5rem] border-2 text-left transition-all duration-500", packagingType === 'Normal' ? "border-primary bg-primary/5 shadow-xl" : "border-slate-50 hover:border-slate-100")}>
+                  <Package className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Normal' ? "text-primary" : "text-slate-200")} />
+                  <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Standard</p>
                 </button>
-                <button onClick={() => setPackagingType('Gift')} className={cn("p-6 md:p-10 rounded-[2.5rem] border-4 text-left transition-all duration-500", packagingType === 'Gift' ? "border-pink-500 bg-pink-50 shadow-2xl" : "border-slate-50 hover:border-slate-100")}>
-                  <Gift className={cn("w-8 h-8 md:w-12 md:h-12 mb-5", packagingType === 'Gift' ? "text-pink-500" : "text-slate-200")} />
-                  <p className="text-xs md:text-sm font-black uppercase text-slate-900 leading-tight">Premium Gift</p>
-                  <p className="text-[9px] md:text-[11px] font-bold text-pink-500 uppercase mt-2">+₹{GIFT_CHARGE}</p>
+                <button onClick={() => setPackagingType('Gift')} className={cn("p-4 md:p-6 rounded-[1.5rem] border-2 text-left transition-all duration-500", packagingType === 'Gift' ? "border-pink-500 bg-pink-50 shadow-xl" : "border-slate-50 hover:border-slate-100")}>
+                  <Gift className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Gift' ? "text-pink-500" : "text-slate-200")} />
+                  <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Premium Gift</p>
+                  <p className="text-[8px] md:text-[9px] font-bold text-pink-500 uppercase mt-1">+₹{GIFT_CHARGE}</p>
                 </button>
               </div>
             </div>
 
-            <div className="bg-slate-950 rounded-[3rem] p-8 md:p-12 space-y-6 text-white shadow-2xl">
-              <div className="space-y-4 pb-6 border-b border-white/5 max-h-[200px] overflow-y-auto custom-scrollbar pr-4">
-                <Label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em]">Itemized Receipt</Label>
+            <div className="bg-slate-950 rounded-[2rem] p-6 md:p-8 space-y-6 text-white shadow-2xl">
+              <div className="space-y-3 pb-4 border-b border-white/10 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                <Label className="text-[9px] font-black uppercase text-slate-500 tracking-[0.2em]">Itemized Receipt</Label>
                 {Object.values(cart).map((item) => (
-                  <div key={item.id} className="flex justify-between items-center text-xs md:text-sm">
-                    <span className="font-black uppercase truncate max-w-[200px] text-slate-200">{item.quantity}x {item.name}</span>
+                  <div key={item.id} className="flex justify-between items-center text-[11px] md:text-sm">
+                    <span className="font-bold uppercase truncate max-w-[150px] text-slate-200">{item.quantity}x {item.name}</span>
                     <span className="font-black italic text-slate-400">₹{item.price * item.quantity}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="space-y-3">
-                <div className="flex justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
+              <div className="space-y-2">
+                <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   <span>Cart Subtotal</span>
                   <span className="text-slate-300">₹{cartTotal}</span>
                 </div>
-                <div className="flex justify-between text-[11px] font-black text-slate-500 uppercase tracking-widest">
+                <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
                   <span>Priority Delivery</span>
                   <span className="text-slate-300">₹{cartTotal < 100 ? 125 : 25}</span>
                 </div>
-                {packagingType === 'Gift' && (
-                  <div className="flex justify-between text-[11px] font-black text-pink-400 uppercase tracking-widest">
-                    <span>Gift Wrap Charge</span>
-                    <span>₹{GIFT_CHARGE}</span>
-                  </div>
-                )}
               </div>
               
-              <div className="pt-8 border-t border-white/10 flex justify-between items-center">
-                <span className="text-2xl font-black uppercase italic tracking-tighter leading-none">Grand Total</span>
-                <span className="text-4xl md:text-6xl font-black text-primary italic leading-none shadow-primary/20">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
+              <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+                <span className="text-xl font-black uppercase italic tracking-tighter leading-none">Grand Total</span>
+                <span className="text-3xl md:text-5xl font-black text-primary italic leading-none">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
               </div>
             </div>
 
-            <div className="pt-4 flex flex-col md:flex-row gap-6">
-              <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-20 md:h-24 flex-1 rounded-[2rem] bg-primary text-white font-black text-sm md:text-lg uppercase shadow-2xl border-none hover:brightness-110 active:scale-95 transition-all">
-                <Smartphone className="w-6 h-6 md:w-8 md:h-8 mr-4" /> UPI SECURE
+            <div className="pt-2 flex flex-col md:flex-row gap-4">
+              <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-14 md:h-20 flex-1 rounded-[1.2rem] bg-primary text-white font-black text-xs md:text-sm uppercase shadow-2xl border-none hover:brightness-110 active:scale-95 transition-all">
+                <Smartphone className="w-5 h-5 mr-3" /> UPI SECURE
               </Button>
-              <Button onClick={() => finalizeOrder('COD')} variant="outline" className="h-20 md:h-24 flex-1 rounded-[2rem] border-4 border-slate-50 text-slate-500 font-black text-sm md:text-lg uppercase hover:bg-slate-50 active:scale-95 transition-all">
-                <Banknote className="w-6 h-6 md:w-8 md:h-8 mr-4" /> PAY ON DELIVERY
+              <Button onClick={() => finalizeOrder('COD')} variant="outline" className="h-14 md:h-20 flex-1 rounded-[1.2rem] border-2 border-slate-50 text-slate-500 font-black text-xs md:text-sm uppercase hover:bg-slate-50 active:scale-95 transition-all">
+                <Banknote className="w-5 h-5 mr-3" /> PAY ON DELIVERY
               </Button>
             </div>
           </div>
@@ -633,101 +631,100 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-[3rem] p-10 max-w-md text-center bg-white border-none shadow-2xl">
-          <Button variant="ghost" onClick={() => { setIsQrDialogOpen(false); setIsPaymentDialogOpen(true); }} className="absolute left-6 top-6 h-12 w-12 p-0 rounded-2xl text-slate-300">
-            <ArrowLeft className="w-6 h-6" />
+        <DialogContent className="rounded-[2.5rem] p-8 max-w-md text-center bg-white border-none shadow-2xl">
+          <Button variant="ghost" onClick={() => { setIsQrDialogOpen(false); setIsPaymentDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-xl text-slate-300">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h3 className="text-2xl md:text-4xl font-black uppercase italic mb-10 mt-8 tracking-tighter leading-none">Scan to Pay</h3>
-          <div className="p-8 bg-slate-50 rounded-[3rem] border-4 border-white shadow-inner mb-10 relative group">
-            <div className="absolute inset-0 shimmer opacity-10 pointer-events-none" />
-            {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain rounded-2xl" /> : <div className="w-full aspect-square flex items-center justify-center bg-white rounded-[2rem]"><QrCode className="w-20 h-20 text-slate-100" /></div>}
+          <h3 className="text-xl md:text-3xl font-black uppercase italic mb-8 mt-6 tracking-tighter leading-none">Scan to Pay</h3>
+          <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-white shadow-inner mb-8">
+            {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain rounded-xl" /> : <div className="w-full aspect-square flex items-center justify-center bg-white rounded-xl"><QrCode className="w-16 h-16 text-slate-100" /></div>}
           </div>
-          <div className="bg-primary/5 p-5 rounded-2xl mb-12 border border-primary/10">
-            <p className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-2">Merchant UPI ID</p>
-            <p className="text-lg font-black text-slate-900 tracking-tight">{settings?.upiId || "NOT_SET@UPI"}</p>
+          <div className="bg-primary/5 p-4 rounded-xl mb-8 border border-primary/10">
+            <p className="text-[9px] font-black text-primary uppercase tracking-[0.3em] mb-1">Merchant UPI ID</p>
+            <p className="text-sm font-black text-slate-900 tracking-tight">{settings?.upiId || "NOT_SET@UPI"}</p>
           </div>
-          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-20 rounded-3xl bg-slate-950 text-white font-black uppercase text-sm md:text-lg border-none active:scale-95 transition-all shadow-[0_20px_60px_rgba(0,0,0,0.3)]">CONFIRM PAYMENT</Button>
+          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-16 rounded-2xl bg-slate-950 text-white font-black uppercase text-xs md:text-sm border-none active:scale-95 transition-all shadow-xl">CONFIRM PAYMENT</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-[3.5rem] p-10 md:p-16 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
-          <Button variant="ghost" onClick={() => setIsPhoneDialogOpen(false)} className="absolute left-6 top-6 h-12 w-12 p-0 rounded-2xl text-slate-300">
-            <ArrowLeft className="w-6 h-6" />
+        <DialogContent className="rounded-[2.5rem] p-8 md:p-12 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
+          <Button variant="ghost" onClick={() => setIsPhoneDialogOpen(false)} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-xl text-slate-300">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <DialogHeader className="mb-12 mt-6">
-            <DialogTitle className="text-3xl md:text-5xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">Delivery Details</DialogTitle>
+          <DialogHeader className="mb-10 mt-4">
+            <DialogTitle className="text-2xl md:text-4xl font-black uppercase italic text-slate-900 tracking-tighter leading-none">Delivery Details</DialogTitle>
           </DialogHeader>
           
-          <div className="flex items-center justify-center gap-6 md:gap-10 mb-12 bg-slate-50 p-6 md:p-10 rounded-[2.5rem] border border-slate-100">
-            <div className="flex flex-col items-center gap-3">
-              <div className={cn("p-4 rounded-2xl transition-all duration-500 shadow-xl", !isForSomeoneElse ? "bg-primary text-white scale-110" : "bg-white text-slate-200")}>
-                <UserCircle className="w-7 h-7" />
+          <div className="flex items-center justify-center gap-6 mb-10 bg-slate-50 p-6 rounded-[1.5rem] border border-slate-100">
+            <div className="flex flex-col items-center gap-2">
+              <div className={cn("p-3 rounded-xl transition-all duration-500 shadow-lg", !isForSomeoneElse ? "bg-primary text-white scale-110" : "bg-white text-slate-200")}>
+                <UserCircle className="w-6 h-6" />
               </div>
-              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Self</span>
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Self</span>
             </div>
-            <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} className="scale-150 data-[state=checked]:bg-pink-500" />
-            <div className="flex flex-col items-center gap-3">
-              <div className={cn("p-4 rounded-2xl transition-all duration-500 shadow-xl", isForSomeoneElse ? "bg-pink-500 text-white scale-110" : "bg-white text-slate-200")}>
-                <Gift className="w-7 h-7" />
+            <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} className="scale-125 data-[state=checked]:bg-pink-500" />
+            <div className="flex flex-col items-center gap-2">
+              <div className={cn("p-3 rounded-xl transition-all duration-500 shadow-lg", isForSomeoneElse ? "bg-pink-500 text-white scale-110" : "bg-white text-slate-200")}>
+                <Gift className="w-6 h-6" />
               </div>
-              <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Gift</span>
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Gift</span>
             </div>
           </div>
 
-          <form onSubmit={handleSendOtp} className="space-y-8 md:space-y-12 text-left">
-            <div className="space-y-4">
-              <Label className="text-[11px] font-black uppercase text-slate-300 ml-6 tracking-[0.3em]">Mobile Number</Label>
+          <form onSubmit={handleSendOtp} className="space-y-6 md:space-y-8 text-left">
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-300 ml-4 tracking-[0.2em]">Mobile Number</Label>
               <Input 
                 type="tel" 
                 placeholder="00000 00000" 
                 maxLength={10} 
                 value={phoneNumber} 
                 onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setPhoneNumber(val); }} 
-                className="h-20 md:h-28 text-center text-3xl md:text-5xl font-black rounded-[2rem] border-4 border-slate-50 bg-slate-50/50 tracking-[0.3em] focus:border-primary transition-all shadow-inner" 
+                className="h-16 md:h-20 text-center text-2xl md:text-4xl font-black rounded-[1.2rem] border-2 border-slate-50 bg-slate-50/50 tracking-[0.2em] focus:border-primary transition-all shadow-inner" 
               />
             </div>
 
-            <div className="space-y-4">
-              <Label className="text-[11px] font-black uppercase text-slate-300 ml-6 tracking-[0.3em]">Drop Location</Label>
-              <Textarea placeholder="Building, Street, Landmark..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="rounded-[2rem] border-4 border-slate-50 bg-slate-50/50 font-bold h-32 md:h-44 p-6 md:p-10 text-sm md:text-xl focus:border-primary transition-all shadow-inner placeholder:text-slate-200" />
+            <div className="space-y-3">
+              <Label className="text-[10px] font-black uppercase text-slate-300 ml-4 tracking-[0.2em]">Drop Location</Label>
+              <Textarea placeholder="Building, Street, Landmark..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="rounded-[1.2rem] border-2 border-slate-50 bg-slate-50/50 font-bold h-24 md:h-32 p-4 md:p-6 text-sm md:text-lg focus:border-primary transition-all shadow-inner placeholder:text-slate-200" />
             </div>
 
             {isForSomeoneElse && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                <Label className="text-[11px] font-black uppercase text-pink-300 ml-6 tracking-[0.3em]">Recipient's Phone</Label>
-                <Input type="tel" placeholder="10 Digit Number" maxLength={10} value={recipientPhone} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setRecipientPhone(val); }} className="h-20 md:h-24 text-center text-2xl md:text-3xl font-black rounded-[2rem] border-4 border-pink-50 bg-pink-50/30 tracking-[0.2em] focus:border-pink-500 shadow-inner" />
+              <div className="space-y-3 animate-in fade-in slide-in-from-top-4 duration-500">
+                <Label className="text-[10px] font-black uppercase text-pink-300 ml-4 tracking-[0.2em]">Recipient's Phone</Label>
+                <Input type="tel" placeholder="10 Digit Number" maxLength={10} value={recipientPhone} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setRecipientPhone(val); }} className="h-14 md:h-16 text-center text-xl md:text-2xl font-black rounded-[1.2rem] border-2 border-pink-50 bg-pink-50/30 tracking-[0.1em] focus:border-pink-500 shadow-inner" />
               </div>
             )}
 
-            <Button type="submit" disabled={isOtpLoading} className="w-full h-20 md:h-28 rounded-[2.5rem] bg-slate-950 text-white font-black uppercase text-sm md:text-2xl border-none shadow-[0_30px_60px_rgba(0,0,0,0.3)] active:scale-95 transition-all">
-              {isOtpLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : "VERIFY IDENTITY"}
+            <Button type="submit" disabled={isOtpLoading} className="w-full h-16 md:h-20 rounded-[1.5rem] bg-slate-950 text-white font-black uppercase text-xs md:text-sm border-none shadow-xl active:scale-95 transition-all">
+              {isOtpLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : "VERIFY IDENTITY"}
             </Button>
           </form>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
-        <DialogContent className="rounded-[3.5rem] p-10 md:p-20 max-sm:w-full text-center bg-white border-none shadow-2xl">
-          <Button variant="ghost" onClick={() => { setIsSmsVerifyDialogOpen(false); setIsPhoneDialogOpen(true); }} className="absolute left-6 top-6 h-12 w-12 p-0 rounded-2xl text-slate-300">
-            <ArrowLeft className="w-6 h-6" />
+        <DialogContent className="rounded-[2.5rem] p-10 md:p-14 max-sm:w-full text-center bg-white border-none shadow-2xl">
+          <Button variant="ghost" onClick={() => { setIsSmsVerifyDialogOpen(false); setIsPhoneDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-xl text-slate-300">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
-          <DialogHeader className="mb-12 mt-6">
-            <DialogTitle className="text-3xl md:text-5xl font-black uppercase italic text-slate-950 flex items-center justify-center gap-5 tracking-tighter leading-none">
-              <MessageSquareCode className="w-8 h-8 md:w-14 md:h-14 text-primary" /> OTP Verification
+          <DialogHeader className="mb-8 mt-4">
+            <DialogTitle className="text-2xl md:text-4xl font-black uppercase italic text-slate-950 flex items-center justify-center gap-4 tracking-tighter leading-none">
+              <MessageSquareCode className="w-6 h-6 md:w-10 md:h-10 text-primary" /> OTP Verification
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-12">
+          <div className="space-y-8">
             <div className="space-y-6">
-              <p className="text-[10px] font-black uppercase text-slate-300 tracking-[0.5em] mb-10">Enter code from bounsibazaar.com</p>
-              <form onSubmit={handleSmsVerifyCode} className="space-y-12">
-                <Input maxLength={4} placeholder="••••" className="text-center text-6xl h-24 md:h-32 font-black rounded-[2.5rem] border-4 border-slate-50 bg-slate-50/50 tracking-[0.6em] focus:border-primary transition-all shadow-inner text-primary" value={smsVerifyCode} onChange={(e) => setSmsVerifyCode(e.target.value)} />
-                <Button type="submit" className="w-full h-20 md:h-28 rounded-[2.5rem] bg-slate-950 text-white font-black uppercase text-sm md:text-2xl border-none shadow-2xl active:scale-95 transition-all">AUTHENTICATE & PAY</Button>
+              <p className="text-[9px] font-black uppercase text-slate-300 tracking-[0.4em] mb-8">Enter code from bounsibazaar.com</p>
+              <form onSubmit={handleSmsVerifyCode} className="space-y-8">
+                <Input maxLength={4} placeholder="••••" className="text-center text-4xl h-16 md:h-24 font-black rounded-[1.5rem] border-2 border-slate-50 bg-slate-50/50 tracking-[0.5em] focus:border-primary transition-all shadow-inner text-primary" value={smsVerifyCode} onChange={(e) => setSmsVerifyCode(e.target.value)} />
+                <Button type="submit" className="w-full h-16 md:h-20 rounded-[1.5rem] bg-slate-950 text-white font-black uppercase text-xs md:text-sm border-none shadow-xl active:scale-95 transition-all">AUTHENTICATE & PAY</Button>
               </form>
             </div>
-            <div className="p-8 bg-slate-50 rounded-[2rem] border border-slate-100 shadow-inner group">
-              <p className="text-[9px] font-bold text-slate-300 uppercase tracking-[0.3em] mb-4">Verification SMS Context</p>
-              <p className="text-2xl md:text-4xl font-black text-primary tracking-[0.4em] italic group-hover:scale-110 transition-transform duration-500">{generatedOtp}</p>
+            <div className="p-6 bg-slate-50 rounded-[1.5rem] border border-slate-100 shadow-inner group">
+              <p className="text-[8px] font-bold text-slate-300 uppercase tracking-[0.2em] mb-2">Verification SMS Context</p>
+              <p className="text-xl md:text-3xl font-black text-primary tracking-[0.3em] italic">{generatedOtp}</p>
             </div>
           </div>
         </DialogContent>
@@ -735,3 +732,4 @@ export default function Home() {
     </div>
   );
 }
+
