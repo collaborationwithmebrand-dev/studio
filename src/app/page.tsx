@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, LogOut, Mail, Lock, UserPlus, LogIn, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell, MapPin, CheckCircle2, XCircle } from 'lucide-react';
+import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell, MapPin, CheckCircle2, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,6 @@ import { collection, doc, query, where, orderBy, limit } from 'firebase/firestor
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { signOut } from 'firebase/auth';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
@@ -85,7 +84,7 @@ export default function Home() {
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const GIFT_CHARGE = 20;
 
-  // Auto-sign in anonymously if not logged in
+  // Seamless anonymous entry
   useEffect(() => {
     if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);
@@ -122,6 +121,7 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
+  // Robust Admin check
   const adminRoleRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'admin_roles', user.uid);
@@ -132,13 +132,14 @@ export default function Home() {
   useEffect(() => {
     if (isActuallyAdmin) {
       toast({ 
-        title: "Admin Access Active", 
-        description: "Dashboard features are now enabled.",
+        title: "Admin Control Active", 
+        description: "Secure dashboard tools are enabled.",
         className: "bg-blue-600 text-white font-black" 
       });
     }
   }, [isActuallyAdmin, toast]);
 
+  // Order status listeners for customers
   const userOrdersQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
@@ -162,7 +163,7 @@ export default function Home() {
     userOrders.forEach(order => {
       if (order.status === 'cancelled' && !notifiedOrders.current.has(order.id)) {
         toast({
-          title: "Order Cancelled",
+          title: "Order Update",
           description: "Your order has been cancelled or is not available. 🍥",
           variant: "destructive",
           duration: 10000
@@ -191,8 +192,9 @@ export default function Home() {
         }, { merge: true });
         
         toast({ 
-          title: "Promoting to Admin...", 
-          description: "One moment while we confirm permissions.",
+          title: "Elevating Permissions...", 
+          description: "Updating secure admin markers.",
+          className: "bg-blue-600 text-white font-black"
         });
       }
     } else {
@@ -224,12 +226,12 @@ export default function Home() {
       setIsSmsVerifyDialogOpen(true);
       
       toast({ 
-        title: `Verification Code Sent`, 
-        description: `Sender: bounsibazaar.com code. Recipient: ${phoneNumber}. Code: ${result.code}`,
+        title: `Verification Sent`, 
+        description: `Sender: bounsibazaar.com code. Code: ${result.code}`,
         duration: 10000 
       });
     } catch (err) {
-      toast({ title: "Failed to generate OTP", variant: "destructive" });
+      toast({ title: "Failed to generate verification", variant: "destructive" });
     } finally {
       setIsOtpLoading(false);
     }
@@ -241,7 +243,7 @@ export default function Home() {
       setIsSmsVerifyDialogOpen(false);
       setIsPaymentDialogOpen(true);
       setSmsVerifyCode('');
-      toast({ title: "Identity Verified" });
+      toast({ title: "Identity Verified", className: "bg-green-600 text-white" });
     } else {
       toast({ title: "Invalid OTP", variant: "destructive" });
     }
@@ -344,7 +346,7 @@ export default function Home() {
       setIsQrDialogOpen(false);
       setIsPaymentDialogOpen(false);
       setCart({});
-      toast({ title: "Order Placed Successfully!" });
+      toast({ title: "Order Placed Successfully!", className: "bg-green-600 text-white" });
     };
 
     navigator.geolocation.getCurrentPosition(
@@ -352,7 +354,7 @@ export default function Home() {
         const locLink = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
         sendOrder(locLink);
       },
-      () => sendOrder("Not provided")
+      () => sendOrder("Location not allowed")
     );
   };
 
@@ -680,4 +682,3 @@ export default function Home() {
     </div>
   );
 }
-
