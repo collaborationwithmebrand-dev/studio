@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -517,21 +518,6 @@ export default function Home() {
           </DialogHeader>
 
           <div className="space-y-6">
-            <div className="max-h-[200px] overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-              {Object.values(cart).map((item) => (
-                <div key={item.id} className="flex items-center justify-between bg-slate-50 p-3 md:p-4 rounded-2xl border border-slate-100">
-                  <div className="flex items-center gap-4">
-                    <img src={item.imageUrl} className="w-12 h-12 md:w-16 md:h-16 rounded-xl object-cover shadow-sm" />
-                    <div>
-                      <p className="text-[10px] md:text-xs font-black uppercase text-slate-800 line-clamp-1">{item.name}</p>
-                      <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.quantity} x {item.unit}</p>
-                    </div>
-                  </div>
-                  <span className="text-base md:text-lg font-black text-slate-900 italic">₹{item.price * item.quantity}</span>
-                </div>
-              ))}
-            </div>
-
             <div className="space-y-4">
               <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Delivery Experience</Label>
               <div className="grid grid-cols-2 gap-4">
@@ -548,7 +534,17 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="bg-slate-900 rounded-3xl p-6 md:p-8 space-y-3 text-white">
+            <div className="bg-slate-900 rounded-3xl p-6 md:p-8 space-y-4 text-white">
+              <div className="space-y-3 pb-4 border-b border-white/10 max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                <Label className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Items & Prices</Label>
+                {Object.values(cart).map((item) => (
+                  <div key={item.id} className="flex justify-between items-center text-[10px] md:text-[12px]">
+                    <span className="font-black uppercase truncate max-w-[150px]">{item.quantity}x {item.name}</span>
+                    <span className="font-black italic">₹{item.price * item.quantity}</span>
+                  </div>
+                ))}
+              </div>
+
               <div className="flex justify-between text-[9px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest">
                 <span>Subtotal</span>
                 <span>₹{cartTotal}</span>
@@ -557,6 +553,12 @@ export default function Home() {
                 <span>Fast Delivery</span>
                 <span>₹{cartTotal < 100 ? 125 : 25}</span>
               </div>
+              {packagingType === 'Gift' && (
+                <div className="flex justify-between text-[9px] md:text-[11px] font-black text-pink-400 uppercase tracking-widest">
+                  <span>Gift Charge</span>
+                  <span>₹{GIFT_CHARGE}</span>
+                </div>
+              )}
               <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                 <span className="text-lg md:text-xl font-black uppercase italic tracking-tighter">Grand Total</span>
                 <span className="text-3xl md:text-4xl font-black text-green-400 italic">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
@@ -635,7 +637,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 md:p-12 max-w-sm text-center bg-white border-none shadow-2xl">
+        <DialogContent className="rounded-3xl p-8 md:p-12 max-sm:w-full text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-xl md:text-2xl font-black uppercase italic text-slate-900 flex items-center justify-center gap-3 tracking-tighter">
               <MessageSquareCode className="w-6 h-6 md:w-8 md:h-8 text-green-500" /> OTP Verification
