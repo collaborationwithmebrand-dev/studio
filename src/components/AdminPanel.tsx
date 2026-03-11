@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -11,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -36,6 +37,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [section, setSection] = useState('Daily Essentials');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
+  const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
@@ -120,6 +122,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       category, 
       imageUrl, 
       description,
+      deliveryMode,
       createdAt: new Date().toISOString()
     });
     setName(''); setPrice(''); setImageUrl(''); setDescription('');
@@ -297,6 +300,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image Link" className="rounded-2xl bg-slate-50 border-none h-16 font-bold focus:ring-2 focus:ring-blue-100 transition-all" />
                   </div>
                 </div>
+                
+                <div className="space-y-6">
+                  <Label className="text-[11px] font-black uppercase text-blue-600 ml-4 tracking-[0.3em]">Delivery Mode</Label>
+                  <RadioGroup value={deliveryMode} onValueChange={(val: any) => setDeliveryMode(val)} className="grid grid-cols-2 gap-6">
+                    <div className={cn("p-6 rounded-[2rem] border-4 cursor-pointer transition-all duration-500", deliveryMode === 'instant' ? "bg-blue-600 text-white border-blue-600 shadow-xl" : "bg-slate-50 border-transparent")}>
+                      <RadioGroupItem value="instant" id="d-instant" className="hidden" />
+                      <Label htmlFor="d-instant" className="cursor-pointer flex items-center justify-center gap-3 font-black uppercase text-xs italic">
+                        <Zap className="w-5 h-5" /> 25 Min Mode
+                      </Label>
+                    </div>
+                    <div className={cn("p-6 rounded-[2rem] border-4 cursor-pointer transition-all duration-500", deliveryMode === 'standard' ? "bg-blue-600 text-white border-blue-600 shadow-xl" : "bg-slate-50 border-transparent")}>
+                      <RadioGroupItem value="standard" id="d-standard" className="hidden" />
+                      <Label htmlFor="d-standard" className="cursor-pointer flex items-center justify-center gap-3 font-black uppercase text-xs italic">
+                        <Clock className="w-5 h-5" /> 2 Day Mode
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
                 <div className="space-y-3">
                   <div className="flex justify-between items-center mb-1">
                     <Label className="text-[11px] font-black uppercase text-blue-400 ml-4 tracking-widest">Story / Description</Label>
@@ -332,6 +354,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       <div>
                         <p className="text-blue-900 font-black text-sm uppercase truncate max-w-[180px] leading-tight mb-1">{p.name}</p>
                         <p className="text-blue-400 font-black text-[10px] uppercase tracking-widest italic">₹{p.price} / {p.unit}</p>
+                        <Badge variant="outline" className="mt-1 text-[8px] border-blue-100 text-blue-400 font-black">
+                          {p.deliveryMode === 'standard' ? '2 Day Delivery' : '25 Min Delivery'}
+                        </Badge>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-12 w-12 rounded-2xl text-slate-200 hover:text-red-600 transition-all">

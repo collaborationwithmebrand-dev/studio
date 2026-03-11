@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -278,7 +279,7 @@ export default function Home() {
         message += `*Phone:* ${phoneNumber}\n\n`;
       }
       message += `*Map Location:* ${locationData}\n\n`;
-      message += `_Fast Delivery (30 min)!_ ⚡`;
+      message += `_Fast Delivery Guaranteed!_ ⚡`;
       
       addDocumentNonBlocking(collection(firestore, 'orders'), {
         userId: user.uid,
@@ -414,9 +415,23 @@ export default function Home() {
                 {items.map((p: any) => {
                   const cartItem = cart[p.id];
                   return (
-                    <div key={p.id} className="group product-card-premium rounded-[2.5rem] p-4 md:p-6 flex flex-col h-full animate-in fade-in duration-700 scale-in-95">
+                    <div key={p.id} className="group product-card-premium rounded-[2.5rem] p-4 md:p-6 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative">
                       <div className="relative aspect-square mb-4 md:mb-8 rounded-[2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                        
+                        {/* Delivery Badge */}
+                        <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
+                          {p.deliveryMode === 'standard' ? (
+                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1 py-1.5 px-3">
+                              <Clock className="w-3 h-3" /> 2 DAY MODE
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1 py-1.5 px-3">
+                              <Zap className="w-3 h-3" /> 25 MIN MODE
+                            </Badge>
+                          )}
+                        </div>
+
                         {p.isPinned && (
                           <div className="absolute top-3 left-3 md:top-5 md:left-5 bg-yellow-400 text-black px-3 py-1.5 rounded-2xl text-[9px] md:text-[11px] font-black flex items-center gap-2 shadow-2xl border-2 border-white/20">
                             <Pin className="w-3.5 h-3.5 fill-black" /> BEST

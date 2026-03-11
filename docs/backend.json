@@ -15,6 +15,7 @@
         "category": { "type": "string" },
         "imageUrl": { "type": "string", "format": "uri" },
         "description": { "type": "string" },
+        "deliveryMode": { "type": "string", "enum": ["instant", "standard"], "description": "Delivery speed: instant (25m) or standard (2d)" },
         "isCodAvailable": { "type": "boolean" },
         "isUpiAvailable": { "type": "boolean" },
         "isPinned": { "type": "boolean" },
