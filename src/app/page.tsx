@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter, Star, Tag } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter, Star, Tag, History, XCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +18,12 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking,
   setDocumentNonBlocking,
+  updateDocumentNonBlocking,
   useUser,
   useAuth,
   initiateAnonymousSignIn
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where, orderBy } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -65,6 +66,7 @@ export default function Home() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isSmsVerifyDialogOpen, setIsSmsVerifyDialogOpen] = useState(false);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
   
   const [phoneNumber, setPhoneNumber] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
@@ -125,6 +127,12 @@ export default function Home() {
   }, [user, firestore]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
+
+  const userOrdersQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'orders'), where('userId', '==', user.uid), orderBy('createdAt', 'desc'));
+  }, [user, firestore]);
+  const { data: userOrders } = useCollection(userOrdersQuery);
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -200,6 +208,11 @@ export default function Home() {
     } else {
       toast({ title: "Invalid OTP", variant: "destructive" });
     }
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: 'cancelled' });
+    toast({ title: "Order Cancelled", description: "Your order has been retracted." });
   };
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
@@ -373,6 +386,11 @@ export default function Home() {
               <h1 className={cn("text-2xl md:text-4xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r drop-shadow-2xl transition-all duration-500", currentThemeConfig.gradient)}>
                 {currentThemeConfig.title}
               </h1>
+              <div className="flex items-center gap-2 md:hidden">
+                <Button variant="ghost" size="icon" onClick={() => setIsHistoryDialogOpen(true)} className="h-10 w-10 rounded-xl bg-slate-50 text-slate-400">
+                  <UserCircle className="w-6 h-6" />
+                </Button>
+              </div>
             </div>
             
             <div className="relative flex-1 w-full max-w-2xl flex items-center gap-3">
@@ -385,7 +403,10 @@ export default function Home() {
                   className="w-full h-12 pl-11 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all" 
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2">
+                <Button onClick={() => setIsHistoryDialogOpen(true)} variant="ghost" className="h-12 px-6 rounded-2xl bg-slate-50 text-slate-500 font-black uppercase text-[10px] tracking-widest gap-2">
+                  <UserCircle className="w-5 h-5" /> MY ORDERS
+                </Button>
                 {isActuallyAdmin && (
                   <Button 
                     onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
@@ -395,6 +416,14 @@ export default function Home() {
                   </Button>
                 )}
               </div>
+              {isActuallyAdmin && !isAdminPanelVisible && (
+                <Button 
+                  onClick={() => setIsAdminPanelVisible(true)}
+                  className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 border-none shadow-xl md:hidden"
+                >
+                  <ShieldCheck className="w-6 h-6" />
+                </Button>
+              )}
             </div>
           </div>
         </nav>
@@ -551,6 +580,69 @@ export default function Home() {
       )}
 
       <Toaster />
+
+      <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+        <DialogContent className="rounded-[2.5rem] p-6 md:p-10 max-w-3xl bg-white border-none shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader className="mb-8">
+            <DialogTitle className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-slate-900 italic leading-none flex items-center gap-4">
+              <History className="w-6 h-6 md:w-10 md:h-10 text-primary" /> My Order History
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {!userOrders || userOrders.length === 0 ? (
+              <div className="py-20 text-center space-y-4">
+                <Package className="w-16 h-16 text-slate-100 mx-auto" />
+                <p className="text-sm font-black text-slate-300 uppercase tracking-widest">No orders found yet</p>
+              </div>
+            ) : (
+              userOrders.map((order: any) => (
+                <div key={order.id} className="glass-card rounded-[2rem] p-6 md:p-8 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 border border-slate-50">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Order ID: #{order.id.slice(-6)}</p>
+                      <p className="text-[10px] font-bold text-slate-400">{new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                    </div>
+                    <Badge className={cn("rounded-lg px-3 py-1 font-black uppercase text-[9px] tracking-widest", 
+                      order.status === 'pending' ? "bg-yellow-100 text-yellow-700" :
+                      order.status === 'confirmed' ? "bg-blue-100 text-blue-700" :
+                      order.status === 'delivered' ? "bg-green-100 text-green-700" :
+                      "bg-slate-100 text-slate-500"
+                    )}>
+                      {order.status}
+                    </Badge>
+                  </div>
+
+                  <div className="bg-slate-50/50 rounded-2xl p-4 space-y-2 border border-slate-100">
+                    {order.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="flex justify-between items-center text-xs md:text-sm font-bold">
+                        <span className="text-slate-600 uppercase truncate max-w-[200px]">{item.quantity}x {item.name}</span>
+                        <span className="text-slate-400 italic font-black">₹{item.price * item.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-col">
+                      <span className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Grand Total</span>
+                      <span className="text-2xl font-black text-slate-900 italic tracking-tighter">₹{order.totalAmount}</span>
+                    </div>
+                    {order.status === 'pending' && (
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => handleCancelOrder(order.id)}
+                        className="h-12 px-6 rounded-xl bg-red-50 text-red-500 font-black text-[10px] uppercase tracking-widest gap-2 hover:bg-red-100 transition-all"
+                      >
+                        <XCircle className="w-4 h-4" /> CANCEL ORDER
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 md:p-12 max-w-md text-center bg-white border-none shadow-2xl">
