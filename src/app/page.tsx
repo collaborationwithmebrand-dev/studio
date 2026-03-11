@@ -77,14 +77,10 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
 
-  const notifiedOrders = useRef<Set<string>>(new Set());
-  const initialLoadDone = useRef(false);
-
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const GIFT_CHARGE = 20;
 
-  // Seamless anonymous entry - removes mandatory login
   useEffect(() => {
     if (!isUserLoading && !user) {
       initiateAnonymousSignIn(auth);
@@ -121,7 +117,6 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
-  // Robust Admin check
   const adminRoleRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'admin_roles', user.uid);
@@ -138,40 +133,6 @@ export default function Home() {
       });
     }
   }, [isActuallyAdmin, toast]);
-
-  // Order status listeners for customers
-  const userOrdersQuery = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return query(
-      collection(firestore, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(5)
-    );
-  }, [user, firestore]);
-  const { data: userOrders } = useCollection(userOrdersQuery);
-
-  useEffect(() => {
-    if (!userOrders) return;
-
-    if (!initialLoadDone.current) {
-      userOrders.forEach(o => notifiedOrders.current.add(o.id));
-      initialLoadDone.current = true;
-      return;
-    }
-
-    userOrders.forEach(order => {
-      if (order.status === 'cancelled' && !notifiedOrders.current.has(order.id)) {
-        toast({
-          title: "Order Update",
-          description: "Your order has been cancelled or is not available. 🍥",
-          variant: "destructive",
-          duration: 10000
-        });
-        notifiedOrders.current.add(order.id);
-      }
-    });
-  }, [userOrders, toast]);
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -424,14 +385,20 @@ export default function Home() {
                   className="w-full h-12 pl-11 rounded-xl bg-white border-none shadow-sm text-sm font-bold placeholder:text-slate-400" 
                 />
               </div>
-              {isActuallyAdmin && (
-                <Button 
-                  onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                  className={cn("h-12 w-12 rounded-xl shadow-md border-none", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
-                >
-                  <ShieldCheck className="w-6 h-6" />
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" className="relative p-2 text-slate-400 hover:text-primary">
+                  <Bell className="w-6 h-6" />
+                  {announcement?.active && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse" />}
                 </Button>
-              )}
+                {isActuallyAdmin && (
+                  <Button 
+                    onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
+                    className={cn("h-12 w-12 rounded-xl shadow-md border-none", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
+                  >
+                    <ShieldCheck className="w-6 h-6" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </nav>
