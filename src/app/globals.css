@@ -33,71 +33,68 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
-    transition: background-color 0.5s ease;
+    transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
     -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* Premium Glassmorphism */
+.glass-nav {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+/* Ultra-Premium Product Card */
+.product-card-premium {
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+}
+
+@media (min-width: 768px) {
+  .product-card-premium:hover {
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.12);
+    transform: translateY(-12px) scale(1.03);
+  }
+}
+
+/* Stunning Festive Titles */
+.festive-title {
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 300% auto;
+  animation: textShine 5s ease-in-out infinite alternate;
+}
+
+@keyframes textShine {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
 /* Premium Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(0,0,0,0.05);
-  border-radius: 10px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 20px;
 }
 
-/* Glassmorphism Navigation */
-.glass-nav {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-}
-
-/* Premium Product Card */
-.product-card-premium {
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.01);
-}
-
-@media (min-width: 768px) {
-  .product-card-premium:hover {
-    box-shadow: 0 30px 60px rgba(0,0,0,0.06);
-    transform: translateY(-10px) scale(1.02);
-  }
-}
-
-/* Gradient Texts */
-.festive-title {
-  background-clip: text;
-  -webkit-background-clip: text;
-  color: transparent;
-  background-size: 200% auto;
-}
-
-/* Mobile-Friendly Dialogs */
-[data-radix-portal] > div {
-  padding: 1rem;
-}
-
-/* Notification Pulse */
-@keyframes pulse-custom {
-  0% { transform: scale(0.9); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 1; }
-  100% { transform: scale(0.9); opacity: 0.8; }
-}
-
-.notification-pulse {
-  animation: pulse-custom 1.5s infinite ease-in-out;
-}
-
-/* Festival Overlays */
+/* Smooth Festival Overlays */
 .festival-overlay {
   position: fixed;
   top: 0;
@@ -107,13 +104,25 @@
   pointer-events: none;
   z-index: 40;
   overflow: hidden;
+  opacity: 0.6;
 }
 
-/* Shimmer Effect for Loading States */
+/* Notification Pulse */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+.notification-ring {
+  animation: pulse-ring 2s infinite;
+}
+
+/* Shimmer Loading */
 .shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 2s infinite;
 }
 
 @keyframes shimmer {
