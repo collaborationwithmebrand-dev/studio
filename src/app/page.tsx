@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -404,91 +404,91 @@ export default function Home() {
 
       <main className="container mx-auto px-4 py-8 md:py-16">
         {/* Delivery Mode Filter Bar */}
-        <div className="max-w-xl mx-auto mb-12 md:mb-20">
-          <div className="glass-card rounded-full p-2 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
+        <div className="max-w-xl mx-auto mb-8 md:mb-16">
+          <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
             <button 
               onClick={() => setDeliveryFilter('all')}
-              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
+              className={cn("flex-1 h-10 md:h-12 rounded-full text-[9px] md:text-xs font-black uppercase transition-all duration-500 relative z-10", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
             >
               EVERYTHING
             </button>
             <button 
               onClick={() => setDeliveryFilter('instant')}
-              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}
+              className={cn("flex-1 h-10 md:h-12 rounded-full text-[9px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}
             >
-              <Zap className="w-4 h-4" /> 25 MINS
+              <Zap className="w-3.5 h-3.5" /> 25 MIN
             </button>
             <button 
               onClick={() => setDeliveryFilter('standard')}
-              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
+              className={cn("flex-1 h-10 md:h-12 rounded-full text-[9px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
             >
-              <Clock className="w-4 h-4" /> 2 DAYS
+              <Clock className="w-3.5 h-3.5" /> 2 DAYS
             </button>
           </div>
         </div>
 
-        <div className="space-y-16 md:space-y-32">
+        <div className="space-y-12 md:space-y-24">
           {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
-            <section key={section} className="space-y-8 md:space-y-12">
+            <section key={section} className="space-y-6 md:space-y-10">
               <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-4">
-                  <div className="p-4 bg-white rounded-2xl shadow-xl border border-slate-100">
-                    <LayoutGrid className="w-6 h-6 text-primary" />
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white rounded-xl shadow-lg border border-slate-100">
+                    <LayoutGrid className="w-5 h-5 text-primary" />
                   </div>
-                  <h2 className="text-2xl md:text-4xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{section}</h2>
+                  <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{section}</h2>
                 </div>
-                <Badge variant="outline" className="rounded-full px-6 py-2 border-slate-200 text-slate-400 font-black text-[10px] uppercase tracking-[0.2em] bg-white/50 backdrop-blur-sm">{items.length} ITEMS</Badge>
+                <Badge variant="outline" className="rounded-full px-4 py-1.5 border-slate-200 text-slate-400 font-black text-[9px] uppercase tracking-[0.2em] bg-white/50 backdrop-blur-sm">{items.length} ITEMS</Badge>
               </div>
               
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5 md:gap-10">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-8">
                 {items.map((p: any) => {
                   const cartItem = cart[p.id];
                   return (
-                    <div key={p.id} className="group product-card-premium rounded-[2.5rem] p-4 md:p-6 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative">
-                      <div className="relative aspect-square mb-4 md:mb-8 rounded-[2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
+                    <div key={p.id} className="group product-card-premium rounded-[2rem] p-3 md:p-5 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative">
+                      <div className="relative aspect-square mb-3 md:mb-6 rounded-[1.5rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         
-                        <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
+                        <div className="absolute bottom-2 left-2 flex flex-col gap-1">
                           {p.deliveryMode === 'standard' ? (
-                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1 py-1.5 px-3">
-                              <Clock className="w-3 h-3" /> 2 DAY MODE
+                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 py-1 px-2">
+                              <Clock className="w-2.5 h-2.5" /> 2 DAYS
                             </Badge>
                           ) : (
-                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1 py-1.5 px-3">
-                              <Zap className="w-3 h-3" /> 25 MIN MODE
+                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 py-1 px-2">
+                              <Zap className="w-2.5 h-2.5" /> 25 MINS
                             </Badge>
                           )}
                         </div>
 
                         {p.isPinned && (
-                          <div className="absolute top-3 left-3 md:top-5 md:left-5 bg-yellow-400 text-black px-3 py-1.5 rounded-2xl text-[9px] md:text-[11px] font-black flex items-center gap-2 shadow-2xl border-2 border-white/20">
-                            <Pin className="w-3.5 h-3.5 fill-black" /> BEST
+                          <div className="absolute top-2 left-2 md:top-3 md:left-3 bg-yellow-400 text-black px-2 py-1 rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1.5 shadow-xl border border-white/20">
+                            <Pin className="w-3 h-3 fill-black" /> BEST
                           </div>
                         )}
                       </div>
-                      <div className="flex-1 space-y-3">
-                        <h3 className="font-bold text-sm md:text-lg text-slate-800 line-clamp-2 uppercase min-h-[3rem] md:min-h-[4rem] leading-tight tracking-tight">{p.name}</h3>
-                        <Badge className="bg-slate-100 text-slate-500 border-none rounded-xl text-[9px] md:text-[11px] font-black uppercase px-3 py-1">
+                      <div className="flex-1 space-y-2">
+                        <h3 className="font-bold text-[13px] md:text-base text-slate-800 line-clamp-2 uppercase min-h-[2.5rem] md:min-h-[3.5rem] leading-tight tracking-tight">{p.name}</h3>
+                        <Badge className="bg-slate-100 text-slate-500 border-none rounded-lg text-[8px] md:text-[10px] font-black uppercase px-2 py-0.5">
                           {p.unit}
                         </Badge>
                       </div>
-                      <div className="mt-6 md:mt-10 flex flex-col gap-4">
+                      <div className="mt-4 md:mt-8 flex flex-col gap-3">
                         <div className="flex flex-col">
-                          <span className="text-[9px] md:text-[11px] font-black text-slate-300 uppercase leading-none mb-1.5 tracking-wider">Net Price</span>
-                          <span className="text-xl md:text-2xl font-black text-slate-900 leading-none italic">₹{p.price}</span>
+                          <span className="text-[8px] md:text-[10px] font-black text-slate-300 uppercase leading-none mb-1 tracking-wider">Price</span>
+                          <span className="text-lg md:text-xl font-black text-slate-900 leading-none italic">₹{p.price}</span>
                         </div>
                         {cartItem ? (
-                          <div className="flex items-center gap-3 bg-primary rounded-2xl p-1.5 flex-1 justify-between shadow-2xl border border-white/20">
-                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-10 w-10 bg-black/10 text-white rounded-xl active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Minus className="w-4 h-4" />
+                          <div className="flex items-center gap-2 bg-primary rounded-xl p-1.5 flex-1 justify-between shadow-xl border border-white/20">
+                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-8 w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                              <Minus className="w-3.5 h-3.5" />
                             </Button>
-                            <span className="text-white font-black text-lg">{cartItem.quantity}</span>
-                            <Button onClick={() => addToCart(p)} size="icon" className="h-10 w-10 bg-black/10 text-white rounded-xl active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Plus className="w-4 h-4" />
+                            <span className="text-white font-black text-base">{cartItem.quantity}</span>
+                            <Button onClick={() => addToCart(p)} size="icon" className="h-8 w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                              <Plus className="w-3.5 h-3.5" />
                             </Button>
                           </div>
                         ) : (
-                          <Button onClick={() => addToCart(p)} className="rounded-2xl h-14 md:h-16 px-6 md:px-10 font-black text-xs md:text-sm bg-primary text-white hover:brightness-110 uppercase shadow-2xl active:scale-95 transition-all border-none tracking-widest">
+                          <Button onClick={() => addToCart(p)} className="rounded-xl h-12 md:h-14 px-4 md:px-6 font-black text-[10px] md:text-xs bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
                             ADD TO BASKET
                           </Button>
                         )}
