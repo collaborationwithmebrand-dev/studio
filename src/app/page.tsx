@@ -1,8 +1,7 @@
-
 "use client"
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, ShieldCheck, ShoppingBag, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, Bell, MapPin, CheckCircle2, XCircle } from 'lucide-react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, Bell, PhoneCall } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +21,7 @@ import {
   useAuth,
   initiateAnonymousSignIn
 } from '@/firebase';
-import { collection, doc, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -117,6 +116,7 @@ export default function Home() {
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
   const currentThemeConfig = THEME_DATA[currentTheme];
 
+  // Admin status check from Firestore
   const adminRoleRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return doc(firestore, 'admin_roles', user.uid);
@@ -124,16 +124,7 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
 
-  useEffect(() => {
-    if (isActuallyAdmin) {
-      toast({ 
-        title: "Admin Control Active", 
-        description: "Secure dashboard tools are enabled.",
-        className: "bg-blue-600 text-white font-black" 
-      });
-    }
-  }, [isActuallyAdmin, toast]);
-
+  // Search bar listener for admin secret key
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
       setIsVerificationDialogOpen(true);
@@ -153,8 +144,8 @@ export default function Home() {
         }, { merge: true });
         
         toast({ 
-          title: "Elevating Permissions...", 
-          description: "Updating secure admin markers.",
+          title: "Promoting to Admin", 
+          description: "Unlocking secure dashboard tools...",
           className: "bg-blue-600 text-white font-black"
         });
       }
@@ -379,7 +370,7 @@ export default function Home() {
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
                 <Input 
-                  placeholder="Order fruits, snacks, essentials..." 
+                  placeholder="Search products..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
                   className="w-full h-12 pl-11 rounded-xl bg-white border-none shadow-sm text-sm font-bold placeholder:text-slate-400" 
@@ -390,10 +381,11 @@ export default function Home() {
                   <Bell className="w-6 h-6" />
                   {announcement?.active && <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white notification-pulse" />}
                 </Button>
+                {/* Admin button only visible for verified admins */}
                 {isActuallyAdmin && (
                   <Button 
                     onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                    className={cn("h-12 w-12 rounded-xl shadow-md border-none", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
+                    className={cn("h-12 w-12 rounded-xl shadow-md border-none transition-all", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
                   >
                     <ShieldCheck className="w-6 h-6" />
                   </Button>
@@ -404,6 +396,7 @@ export default function Home() {
         </nav>
       </header>
 
+      {/* Admin Panel is strictly guarded by isActuallyAdmin */}
       {isActuallyAdmin && isAdminPanelVisible && (
         <div className="bg-white/70 backdrop-blur-3xl py-8 md:py-12 border-b border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500">
           <AdminPanel currentTheme={currentTheme} isAdmin={isActuallyAdmin} />
@@ -494,10 +487,33 @@ export default function Home() {
 
       <Toaster />
 
-      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-        <DialogContent className="rounded-3xl md:rounded-[2.5rem] p-6 md:p-10 max-w-xl bg-white">
+      {/* Verification Dialog for Secret Hub Key */}
+      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
+        <DialogContent className="rounded-3xl p-8 md:p-12 max-w-xs text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic">Select Payment</DialogTitle>
+            <DialogTitle className="text-xl md:text-2xl font-black uppercase italic text-blue-600 tracking-tighter">Admin Hub Activation</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleVerifyCode} className="space-y-8">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase text-blue-300 tracking-widest">Verification Key</Label>
+              <Input 
+                type="password"
+                maxLength={4} 
+                className="text-center text-4xl h-16 md:h-20 font-black rounded-2xl border-2 border-blue-50 bg-white tracking-[0.5em] text-blue-600 focus:border-blue-500 shadow-inner" 
+                value={verificationCode} 
+                onChange={(e) => setVerificationCode(e.target.value)} 
+              />
+            </div>
+            <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-blue-600 text-white font-black uppercase text-xs md:text-sm border-none shadow-lg active:scale-95 transition-all">Unlock Tools</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Checkout Dialogs */}
+      <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+        <DialogContent className="rounded-3xl md:rounded-[2.5rem] p-6 md:p-10 max-w-xl bg-white border-none">
+          <DialogHeader className="mb-6">
+            <DialogTitle className="text-2xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic">Checkout Summary</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
@@ -517,17 +533,17 @@ export default function Home() {
             </div>
 
             <div className="space-y-4">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Package Experience</Label>
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4 tracking-widest">Delivery Experience</Label>
               <div className="grid grid-cols-2 gap-4">
                 <button onClick={() => setPackagingType('Normal')} className={cn("p-4 md:p-6 rounded-2xl border-2 text-left transition-all", packagingType === 'Normal' ? "border-green-500 bg-green-50" : "border-slate-100")}>
                   <Package className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Normal' ? "text-green-500" : "text-slate-200")} />
-                  <p className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight">Standard Delivery</p>
-                  <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase mt-1">Included (Free)</p>
+                  <p className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight">Standard</p>
+                  <p className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase mt-1">Included</p>
                 </button>
                 <button onClick={() => setPackagingType('Gift')} className={cn("p-4 md:p-6 rounded-2xl border-2 text-left transition-all", packagingType === 'Gift' ? "border-pink-500 bg-pink-50" : "border-slate-100")}>
                   <Gift className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Gift' ? "text-pink-500" : "text-slate-200")} />
-                  <p className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight">Premium Gift Wrap</p>
-                  <p className="text-[8px] md:text-[10px] font-bold text-pink-500 uppercase mt-1">+₹{GIFT_CHARGE} Fee</p>
+                  <p className="text-[10px] md:text-[12px] font-black uppercase text-slate-900 leading-tight">Gift Wrap</p>
+                  <p className="text-[8px] md:text-[10px] font-bold text-pink-500 uppercase mt-1">+₹{GIFT_CHARGE}</p>
                 </button>
               </div>
             </div>
@@ -538,18 +554,18 @@ export default function Home() {
                 <span>₹{cartTotal}</span>
               </div>
               <div className="flex justify-between text-[9px] md:text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                <span>Shipping</span>
+                <span>Fast Delivery</span>
                 <span>₹{cartTotal < 100 ? 125 : 25}</span>
               </div>
               <div className="pt-4 border-t border-white/10 flex justify-between items-center">
-                <span className="text-lg md:text-xl font-black uppercase italic tracking-tighter">Amount Due</span>
+                <span className="text-lg md:text-xl font-black uppercase italic tracking-tighter">Grand Total</span>
                 <span className="text-3xl md:text-4xl font-black text-green-400 italic">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
               </div>
             </div>
 
             <div className="pt-2 flex flex-col gap-3">
               <Button onClick={() => { if(settings?.upiQrUrl) setIsQrDialogOpen(true); else finalizeOrder('UPI'); }} className="h-16 md:h-20 rounded-2xl bg-green-500 text-white font-black text-sm md:text-base uppercase shadow-lg border-none active:scale-95 transition-all">
-                <Smartphone className="w-5 h-5 md:w-6 md:h-6 mr-3" /> Pay with UPI App
+                <Smartphone className="w-5 h-5 md:w-6 md:h-6 mr-3" /> UPI Payment
               </Button>
               <Button onClick={() => finalizeOrder('COD')} variant="outline" className="h-16 md:h-20 rounded-2xl border-2 border-slate-100 text-slate-600 font-black text-sm md:text-base uppercase active:scale-95 transition-all">
                 <Banknote className="w-5 h-5 md:w-6 md:h-6 mr-3" /> Cash on Delivery
@@ -560,7 +576,7 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 max-w-sm text-center bg-white">
+        <DialogContent className="rounded-3xl p-8 max-w-sm text-center bg-white border-none shadow-2xl">
           <h3 className="text-xl md:text-2xl font-black uppercase italic mb-6 tracking-tighter">Scan to Pay</h3>
           <div className="p-6 bg-slate-50 rounded-3xl border-2 border-white shadow-inner mb-6">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain" /> : <div className="w-full aspect-square flex items-center justify-center bg-white rounded-2xl"><QrCode className="w-16 h-16 text-slate-200" /></div>}
@@ -569,38 +585,45 @@ export default function Home() {
             <p className="text-[9px] font-black text-green-600 uppercase tracking-widest mb-1">UPI ID</p>
             <p className="text-sm font-black text-slate-900">{settings?.upiId || "NOT_SET@UPI"}</p>
           </div>
-          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-16 rounded-2xl bg-black text-white font-black uppercase text-sm border-none active:scale-95 transition-all shadow-xl">I've Made Payment</Button>
+          <Button onClick={() => finalizeOrder('UPI')} className="w-full h-16 rounded-2xl bg-black text-white font-black uppercase text-sm border-none active:scale-95 transition-all shadow-xl">Payment Done</Button>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPhoneDialogOpen} onOpenChange={setIsPhoneDialogOpen}>
-        <DialogContent className="rounded-3xl p-6 md:p-12 max-w-md text-center bg-white">
+        <DialogContent className="rounded-3xl p-6 md:p-12 max-w-md text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-6">
-            <DialogTitle className="text-2xl md:text-3xl font-black uppercase italic text-slate-900 tracking-tighter">Delivery Details</DialogTitle>
+            <DialogTitle className="text-2xl md:text-3xl font-black uppercase italic text-slate-900 tracking-tighter">Delivery Info</DialogTitle>
           </DialogHeader>
           
           <div className="flex items-center justify-center gap-4 md:gap-6 mb-8 bg-slate-50 p-4 md:p-6 rounded-2xl">
             <UserCircle className={cn("w-6 h-6 transition-colors", !isForSomeoneElse ? "text-green-500" : "text-slate-300")} />
             <Switch checked={isForSomeoneElse} onCheckedChange={setIsForSomeoneElse} />
             <Gift className={cn("w-6 h-6 transition-colors", isForSomeoneElse ? "text-pink-500" : "text-slate-300")} />
-            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Gift?</span>
+            <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Gifting?</span>
           </div>
 
           <form onSubmit={handleSendOtp} className="space-y-6 md:space-y-8 text-left">
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Your 10-Digit Mobile</Label>
-              <Input type="tel" placeholder="" maxLength={10} value={phoneNumber} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setPhoneNumber(val); }} className="h-16 md:h-20 text-center text-2xl md:text-3xl font-black rounded-2xl border-2 border-slate-100 bg-white tracking-[0.2em] focus:border-green-500" />
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Phone Number</Label>
+              <Input 
+                type="tel" 
+                placeholder="10 Digits" 
+                maxLength={10} 
+                value={phoneNumber} 
+                onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setPhoneNumber(val); }} 
+                className="h-16 md:h-20 text-center text-2xl md:text-3xl font-black rounded-2xl border-2 border-slate-100 bg-white tracking-[0.2em] focus:border-green-500" 
+              />
             </div>
 
             <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Full Delivery Address</Label>
-              <Textarea placeholder="Building, Area, Landmark..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="rounded-2xl border-2 border-slate-100 bg-white font-bold h-24 md:h-32 p-4 md:p-6 text-sm md:text-base focus:border-green-500" />
+              <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Address</Label>
+              <Textarea placeholder="Enter full address..." value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="rounded-2xl border-2 border-slate-100 bg-white font-bold h-24 md:h-32 p-4 md:p-6 text-sm md:text-base focus:border-green-500" />
             </div>
 
             {isForSomeoneElse && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Recipient Mobile</Label>
-                <Input type="tel" placeholder="" maxLength={10} value={recipientPhone} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setRecipientPhone(val); }} className="h-14 md:h-16 text-center text-lg md:text-xl font-black rounded-2xl border-2 border-pink-100 bg-white tracking-widest focus:border-pink-500" />
+                <Label className="text-[10px] font-black uppercase text-slate-400 ml-4">Recipient's Phone</Label>
+                <Input type="tel" placeholder="10 Digits" maxLength={10} value={recipientPhone} onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); if (val.length <= 10) setRecipientPhone(val); }} className="h-14 md:h-16 text-center text-lg md:text-xl font-black rounded-2xl border-2 border-pink-100 bg-white tracking-widest focus:border-pink-500" />
               </div>
             )}
 
@@ -612,10 +635,10 @@ export default function Home() {
       </Dialog>
 
       <Dialog open={isSmsVerifyDialogOpen} onOpenChange={setIsSmsVerifyDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 md:p-12 max-w-sm text-center bg-white">
+        <DialogContent className="rounded-3xl p-8 md:p-12 max-w-sm text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-8">
             <DialogTitle className="text-xl md:text-2xl font-black uppercase italic text-slate-900 flex items-center justify-center gap-3 tracking-tighter">
-              <MessageSquareCode className="w-6 h-6 md:w-8 md:h-8 text-green-500" /> Identity Check
+              <MessageSquareCode className="w-6 h-6 md:w-8 md:h-8 text-green-500" /> OTP Verification
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-8">
@@ -623,27 +646,14 @@ export default function Home() {
               <p className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Enter code from bounsibazaar.com</p>
               <form onSubmit={handleSmsVerifyCode} className="space-y-8">
                 <Input maxLength={4} placeholder="••••" className="text-center text-4xl h-16 md:h-20 font-black rounded-2xl border-2 border-slate-50 bg-white tracking-[0.5em] focus:border-green-500" value={smsVerifyCode} onChange={(e) => setSmsVerifyCode(e.target.value)} />
-                <Button type="submit" className="w-full h-16 md:h-20 rounded-2xl bg-green-500 text-white font-black uppercase text-sm md:text-base border-none shadow-xl active:scale-95 transition-all">Verify & Order</Button>
+                <Button type="submit" className="w-full h-16 md:h-20 rounded-2xl bg-green-500 text-white font-black uppercase text-sm md:text-base border-none shadow-xl active:scale-95 transition-all">Verify & Pay</Button>
               </form>
             </div>
             <div className="p-4 bg-slate-50 rounded-xl">
-              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-2">DEMO OTP</p>
+              <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mb-2">DEMO CODE</p>
               <p className="text-base md:text-lg font-black text-green-600 tracking-[0.4em]">{generatedOtp}</p>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
-        <DialogContent className="rounded-3xl p-8 md:p-12 max-w-xs text-center bg-white">
-          <DialogHeader className="mb-6"><DialogTitle className="text-xl md:text-2xl font-black uppercase italic text-blue-600 tracking-tighter">Admin Portal</DialogTitle></DialogHeader>
-          <form onSubmit={handleVerifyCode} className="space-y-8">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase text-blue-300 tracking-widest">Secret Hub Key</Label>
-              <Input maxLength={4} className="text-center text-4xl h-16 md:h-20 font-black rounded-2xl border-2 border-blue-50 bg-white tracking-[0.5em] text-blue-600 focus:border-blue-500 shadow-inner" value={verificationCode} onChange={(e) => setVerificationCode(e.target.value)} />
-            </div>
-            <Button type="submit" className="w-full h-14 md:h-16 rounded-2xl bg-blue-600 text-white font-black uppercase text-xs md:text-sm border-none shadow-lg active:scale-95 transition-all">Unlock Dashboard</Button>
-          </form>
         </DialogContent>
       </Dialog>
     </div>
