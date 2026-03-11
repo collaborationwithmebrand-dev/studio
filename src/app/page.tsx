@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -76,6 +77,7 @@ export default function Home() {
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -208,11 +210,13 @@ export default function Home() {
     const filtered = products
       .filter(p => {
         const term = searchQuery.toLowerCase();
-        return (
+        const matchesSearch = (
           p.name.toLowerCase().includes(term) || 
           (p.section && p.section.toLowerCase().includes(term)) ||
           (p.category && p.category.toLowerCase().includes(term))
         );
+        const matchesFilter = deliveryFilter === 'all' || p.deliveryMode === deliveryFilter;
+        return matchesSearch && matchesFilter;
       })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
     
@@ -222,7 +226,7 @@ export default function Home() {
       acc[s].push(p);
       return acc;
     }, {});
-  }, [products, searchQuery]);
+  }, [products, searchQuery, deliveryFilter]);
 
   const addToCart = (product: any) => {
     setCart(prev => {
@@ -309,7 +313,6 @@ export default function Home() {
     );
   };
 
-  // Condition to hide the floating "Proceed" cart bar when checkout dialogs are open
   const isCheckoutInProgress = isPhoneDialogOpen || isSmsVerifyDialogOpen || isPaymentDialogOpen || isQrDialogOpen;
 
   if (isUserLoading || !user) {
@@ -399,7 +402,31 @@ export default function Home() {
         </div>
       )}
 
-      <main className="container mx-auto px-4 py-12 md:py-20">
+      <main className="container mx-auto px-4 py-8 md:py-16">
+        {/* Delivery Mode Filter Bar */}
+        <div className="max-w-xl mx-auto mb-12 md:mb-20">
+          <div className="glass-card rounded-full p-2 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
+            <button 
+              onClick={() => setDeliveryFilter('all')}
+              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
+            >
+              EVERYTHING
+            </button>
+            <button 
+              onClick={() => setDeliveryFilter('instant')}
+              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}
+            >
+              <Zap className="w-4 h-4" /> 25 MINS
+            </button>
+            <button 
+              onClick={() => setDeliveryFilter('standard')}
+              className={cn("flex-1 h-12 md:h-14 rounded-full text-[10px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
+            >
+              <Clock className="w-4 h-4" /> 2 DAYS
+            </button>
+          </div>
+        </div>
+
         <div className="space-y-16 md:space-y-32">
           {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
             <section key={section} className="space-y-8 md:space-y-12">
@@ -421,7 +448,6 @@ export default function Home() {
                       <div className="relative aspect-square mb-4 md:mb-8 rounded-[2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                         <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                         
-                        {/* Delivery Badge */}
                         <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
                           {p.deliveryMode === 'standard' ? (
                             <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-xl text-[8px] md:text-[10px] font-black flex items-center gap-1 py-1.5 px-3">
@@ -439,12 +465,11 @@ export default function Home() {
                             <Pin className="w-3.5 h-3.5 fill-black" /> BEST
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                       </div>
                       <div className="flex-1 space-y-3">
                         <h3 className="font-bold text-sm md:text-lg text-slate-800 line-clamp-2 uppercase min-h-[3rem] md:min-h-[4rem] leading-tight tracking-tight">{p.name}</h3>
                         <Badge className="bg-slate-100 text-slate-500 border-none rounded-xl text-[9px] md:text-[11px] font-black uppercase px-3 py-1">
-                          {p.unit === 'kg' || p.unit === 'Liter' ? `1 ${p.unit}` : p.unit}
+                          {p.unit}
                         </Badge>
                       </div>
                       <div className="mt-6 md:mt-10 flex flex-col gap-4">
@@ -477,7 +502,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Cart bar is hidden when any checkout dialog is open */}
       {cartCount > 0 && !isCheckoutInProgress && (
         <div className="fixed bottom-8 md:bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-2xl z-[70] animate-in slide-in-from-bottom-20 duration-700">
           <div className="bg-slate-900/90 text-white rounded-[3rem] p-5 md:p-8 flex items-center justify-between shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-white/10 backdrop-blur-2xl">
