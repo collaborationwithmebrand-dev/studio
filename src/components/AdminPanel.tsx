@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -32,7 +32,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('General');
+  const [category, setCategory] = useState('');
   const [unit, setUnit] = useState('Pcs');
   const [section, setSection] = useState('Daily Essentials');
   const [imageUrl, setImageUrl] = useState('');
@@ -120,14 +120,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       price: parseFloat(price), 
       unit, 
       section, 
-      category, 
+      category: category || "General", 
       imageUrl, 
       description,
       deliveryMode,
       isPinned,
       createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl(''); setDescription(''); setIsPinned(false);
+    setName(''); setPrice(''); setImageUrl(''); setDescription(''); setCategory(''); setIsPinned(false);
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -275,12 +275,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Product Name</Label>
-                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Title" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Premium T-Shirt" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Listing Price (₹)</Label>
                     <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Section</Label>
+                    <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Men's Fashion" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category (Admin Control)</Label>
+                    <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. T-Shirts / Plants" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Image URL</Label>
+                  <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                 </div>
                 
                 <div className="space-y-4">
@@ -346,7 +362,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       </div>
                       <div>
                         <p className="text-blue-900 font-black text-xs uppercase truncate max-w-[140px] leading-tight">{p.name}</p>
-                        <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{p.price} / {p.unit}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{p.price} / {p.unit}</p>
+                          <Badge variant="outline" className="text-[7px] font-black uppercase py-0 px-1 border-blue-100 text-blue-300">{p.category}</Badge>
+                        </div>
                       </div>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all">

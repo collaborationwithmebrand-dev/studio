@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter, Star } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Filter, Star, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -468,6 +468,14 @@ export default function Home() {
                             <Pin className="w-2.5 h-2.5 fill-black" /> BEST
                           </div>
                         )}
+                        
+                        {p.category && (
+                          <div className="absolute top-1.5 right-1.5">
+                            <Badge className="bg-white/80 backdrop-blur-md text-slate-900 border-none rounded-lg text-[6px] md:text-[8px] font-black py-0.5 px-1.5 uppercase flex items-center gap-1">
+                              <Tag className="w-2 h-2" /> {p.category}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 space-y-1.5">
                         <h3 className="font-bold text-[11px] md:text-[14px] text-slate-800 line-clamp-2 uppercase min-h-[2rem] md:min-h-[2.5rem] leading-tight tracking-tight">{p.name}</h3>
@@ -732,4 +740,3 @@ export default function Home() {
     </div>
   );
 }
-
