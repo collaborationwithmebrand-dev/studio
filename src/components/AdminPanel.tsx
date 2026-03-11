@@ -28,7 +28,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  if (!isAdmin) return null;
+  // Call hooks at top level to avoid violation
+  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
+  const { data: settings } = useDoc(settingsRef);
+
+  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
+  const { data: announcement } = useDoc(announcementRef);
+
+  const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
+  const { data: products } = useCollection(productsQuery);
+
+  const ordersQuery = useMemoFirebase(() => {
+    if (!isAdmin || !firestore) return null;
+    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
+  }, [firestore, isAdmin]);
+  const { data: orders } = useCollection(ordersQuery);
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
@@ -50,21 +64,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
   
-  const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
-  const { data: settings } = useDoc(settingsRef);
-
-  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
-  const { data: announcement } = useDoc(announcementRef);
-
-  const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
-  const { data: products } = useCollection(productsQuery);
-
-  const ordersQuery = useMemoFirebase(() => {
-    if (!isAdmin || !firestore) return null;
-    return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
-  }, [firestore, isAdmin]);
-  const { data: orders } = useCollection(ordersQuery);
-
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', 'XXXL', '32', '34', '36', '38'];
 
   useEffect(() => {
@@ -83,6 +82,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setIsAnnouncementActive(announcement.active || false);
     }
   }, [announcement]);
+
+  if (!isAdmin) return null;
 
   const handleUpdateTheme = (newTheme: FestivalTheme) => {
     const themeRef = doc(firestore, 'publicDisplaySettings', 'theme');
@@ -244,7 +245,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <div className="pt-3 border-t border-blue-100/50 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-[8px] font-black text-pink-500 uppercase tracking-widest">
-                          <Gift className="w-3 h-3" /> Recipient
+                          <Gift className="w-3 h-3" /> Someone Else's
                         </div>
                         <p className="text-xs font-black text-slate-900">{order.recipientPhone}</p>
                       </div>

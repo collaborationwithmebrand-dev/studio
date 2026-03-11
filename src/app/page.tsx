@@ -70,7 +70,7 @@ export default function Home() {
   const [recipientPhone, setRecipientPhone] = useState('');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [isForSomeoneElse, setIsForSomeoneElse] = useState(false);
-  const [packagingType, setPackagingType] = useState<'Normal' | 'Gift'>('Normal');
+  const [packagingType, setPackagingType] = useState<'Normal' | 'Special'>('Normal');
   const [verificationCode, setVerificationCode] = useState('');
   const [smsVerifyCode, setSmsVerifyCode] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
@@ -270,14 +270,14 @@ export default function Home() {
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
-    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0);
+    const finalPrice = cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Special' ? GIFT_CHARGE : 0);
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     const sendOrder = (locationData: string) => {
       let message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
       message += `*Delivery Address:* ${deliveryAddress}\n`;
       if (isForSomeoneElse) {
-        message += `*ORDER FOR SOMEONE ELSE*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n\n`;
+        message += `*SOMEONE ELSE'S ORDER*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n\n`;
       } else {
         message += `*Phone:* ${phoneNumber}\n\n`;
       }
@@ -598,9 +598,9 @@ export default function Home() {
                   <Package className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Normal' ? "text-primary" : "text-slate-200")} />
                   <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Standard</p>
                 </button>
-                <button onClick={() => setPackagingType('Gift')} className={cn("p-4 md:p-6 rounded-[1.5rem] border-2 text-left transition-all duration-500", packagingType === 'Gift' ? "border-pink-500 bg-pink-50 shadow-xl" : "border-slate-50 hover:border-slate-100")}>
-                  <Gift className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Gift' ? "text-pink-500" : "text-slate-200")} />
-                  <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Premium Gift</p>
+                <button onClick={() => setPackagingType('Special')} className={cn("p-4 md:p-6 rounded-[1.5rem] border-2 text-left transition-all duration-500", packagingType === 'Special' ? "border-pink-500 bg-pink-50 shadow-xl" : "border-slate-50 hover:border-slate-100")}>
+                  <Gift className={cn("w-6 h-6 md:w-8 md:h-8 mb-3", packagingType === 'Special' ? "text-pink-500" : "text-slate-200")} />
+                  <p className="text-[10px] md:text-xs font-black uppercase text-slate-900 leading-tight">Someone Else's Premium</p>
                   <p className="text-[8px] md:text-[9px] font-bold text-pink-500 uppercase mt-1">+₹{GIFT_CHARGE}</p>
                 </button>
               </div>
@@ -630,7 +630,7 @@ export default function Home() {
               
               <div className="pt-4 border-t border-white/10 flex justify-between items-center">
                 <span className="text-xl font-black uppercase italic tracking-tighter leading-none">Grand Total</span>
-                <span className="text-3xl md:text-5xl font-black text-primary italic leading-none">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Gift' ? GIFT_CHARGE : 0)}</span>
+                <span className="text-3xl md:text-5xl font-black text-primary italic leading-none">₹{cartTotal + (cartTotal < 100 ? 125 : 25) + (packagingType === 'Special' ? GIFT_CHARGE : 0)}</span>
               </div>
             </div>
 
@@ -684,7 +684,7 @@ export default function Home() {
               <div className={cn("p-3 rounded-xl transition-all duration-500 shadow-lg", isForSomeoneElse ? "bg-pink-500 text-white scale-110" : "bg-white text-slate-200")}>
                 <Gift className="w-6 h-6" />
               </div>
-              <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Gift</span>
+              <span className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Someone Else's</span>
             </div>
           </div>
 
