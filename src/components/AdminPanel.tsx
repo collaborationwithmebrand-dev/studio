@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -393,7 +392,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             <CardContent className="px-0 space-y-10">
               <div className="space-y-4">
                 <Label className="text-[11px] font-black uppercase text-slate-300 ml-6 tracking-[0.4em]">Broadcast Message</Label>
-                <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="What's happening in Bounsi?..." className="rounded-[2rem] bg-slate-50 border-none h-48 text-blue-950 font-black uppercase p-10 text-lg shadow-inner focus:ring-2 focus:ring-blue-100 transition-all" />
+                <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="Type information for all customers..." className="rounded-[2rem] bg-slate-50 border-none h-48 text-blue-950 font-black uppercase p-10 text-lg shadow-inner focus:ring-2 focus:ring-blue-100 transition-all" />
               </div>
               <div className="flex items-center gap-6 p-8 bg-blue-50/50 rounded-[2rem] border border-blue-50 shadow-inner">
                 <Switch id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="scale-150 data-[state=checked]:bg-blue-600" />

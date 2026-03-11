@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -310,6 +309,9 @@ export default function Home() {
     );
   };
 
+  // Condition to hide the floating "Proceed" cart bar when checkout dialogs are open
+  const isCheckoutInProgress = isPhoneDialogOpen || isSmsVerifyDialogOpen || isPaymentDialogOpen || isQrDialogOpen;
+
   if (isUserLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -475,7 +477,8 @@ export default function Home() {
         </div>
       </main>
 
-      {cartCount > 0 && (
+      {/* Cart bar is hidden when any checkout dialog is open */}
+      {cartCount > 0 && !isCheckoutInProgress && (
         <div className="fixed bottom-8 md:bottom-16 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-2xl z-[70] animate-in slide-in-from-bottom-20 duration-700">
           <div className="bg-slate-900/90 text-white rounded-[3rem] p-5 md:p-8 flex items-center justify-between shadow-[0_30px_100px_rgba(0,0,0,0.4)] border border-white/10 backdrop-blur-2xl">
             <div className="flex items-center gap-5 md:gap-8">
