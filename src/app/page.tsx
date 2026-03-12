@@ -274,7 +274,7 @@ export default function Home() {
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
     const sendOrder = (locationData: string) => {
-      let message = `*BOUNSI BAZAAR ORDER*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
+      let message = `*ORDER DETAILS*\n\n*Items:*\n${itemsList}\n\n*Total:* ₹${finalPrice}\n*Payment:* ${method}\n*Packaging:* ${packagingType}\n\n`;
       message += `*Delivery Address:* ${deliveryAddress}\n`;
       if (isForSomeoneElse) {
         message += `*SOMEONE ELSE'S ORDER*\n*Sender:* ${phoneNumber}\n*Recipient:* ${recipientPhone}\n\n`;
@@ -497,7 +497,7 @@ export default function Home() {
           <div className="container mx-auto flex items-center justify-center gap-3">
             <Megaphone className="w-4 h-4 md:w-5 md:h-5 animate-bounce shrink-0" />
             <p className="text-[10px] md:text-sm font-black uppercase tracking-tight italic">
-              {settings?.freeDeliveryMessage || "Bounsi Bazaar Live 🔺🍥🍤🌴💐"}
+              {settings?.freeDeliveryMessage || "FREE DELIVERY ON ALL ORDERS 🔺🍥🍤🌴💐"}
               {announcement?.active && ` — ${announcement.message}`}
             </p>
           </div>
@@ -510,9 +510,6 @@ export default function Home() {
                 <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
                   {settings?.estimatedDeliveryTime || "17-25 min"}
                 </h1>
-                <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest">
-                  <MapPin className="w-3.5 h-3.5" /> HOME - <span className="text-slate-900">Bounsi, Banka (813104)</span>
-                </div>
               </div>
               <div className="flex items-center gap-3">
                 {isActuallyAdmin && (
@@ -533,7 +530,7 @@ export default function Home() {
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-4 text-slate-400 w-5 h-5" />
                 <Input 
-                  placeholder="Search for board games, snacks..." 
+                  placeholder="Search for snacks, essentials..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
                   className="w-full h-14 pl-12 rounded-2xl bg-white border-none shadow-inner text-base font-bold" 
