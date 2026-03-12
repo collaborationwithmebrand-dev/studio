@@ -76,7 +76,7 @@ export default function Home() {
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
-  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant'>('all');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -214,7 +214,10 @@ export default function Home() {
           (p.section && p.section.toLowerCase().includes(term)) ||
           (p.category && p.category.toLowerCase().includes(term))
         );
-        const matchesFilter = deliveryFilter === 'all' || p.deliveryMode === 'instant';
+        const matchesFilter = 
+          deliveryFilter === 'all' || 
+          (deliveryFilter === 'instant' && p.deliveryMode === 'instant') ||
+          (deliveryFilter === 'standard' && p.deliveryMode === 'standard');
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
@@ -260,7 +263,6 @@ export default function Home() {
     return Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  // Automatic ₹100 Total Adjustment Logic
   const orderBreakdown = useMemo(() => {
     const deliveryCharge = 25;
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
@@ -419,7 +421,7 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8 md:py-16">
-        <div className="max-w-xs mx-auto mb-8 md:mb-16">
+        <div className="max-w-md mx-auto mb-8 md:mb-16">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
             <button 
               onClick={() => setDeliveryFilter('all')}
@@ -433,6 +435,12 @@ export default function Home() {
             >
               <Zap className="w-3.5 h-3.5" /> 25 MIN
             </button>
+            <button 
+              onClick={() => setDeliveryFilter('standard')}
+              className={cn("flex-1 h-10 md:h-12 rounded-full text-[9px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-700 text-white shadow-xl" : "text-slate-400")}
+            >
+              <Clock className="w-3.5 h-3.5" /> 2 DAYS
+            </button>
           </div>
         </div>
 
@@ -441,8 +449,8 @@ export default function Home() {
             {filteredProducts.map((p: any) => {
               const cartItem = cart[p.id];
               return (
-                <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-4 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
-                  <div className="relative aspect-square mb-2 md:mb-4 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
+                <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-3 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
+                  <div className="relative aspect-square mb-2 md:mb-3 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                     <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                     
                     <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-1">
@@ -471,31 +479,31 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 space-y-1.5">
-                    <h3 className="font-bold text-[11px] md:text-[14px] text-slate-800 line-clamp-2 uppercase min-h-[2rem] md:min-h-[2.5rem] leading-tight tracking-tight">{p.name}</h3>
+                  <div className="flex-1 space-y-1">
+                    <h3 className="font-bold text-[10px] md:text-[13px] text-slate-800 line-clamp-2 uppercase min-h-[1.8rem] md:min-h-[2.2rem] leading-tight tracking-tight">{p.name}</h3>
                     <div className="flex items-center gap-1">
-                      <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[7px] md:text-[9px] font-black uppercase px-1.5 py-0">
+                      <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[6px] md:text-[8px] font-black uppercase px-1 py-0">
                         {p.unit}
                       </Badge>
                     </div>
                   </div>
-                  <div className="mt-2 md:mt-4 flex flex-col gap-2">
+                  <div className="mt-2 md:mt-3 flex flex-col gap-2">
                     <div className="flex flex-col">
-                      <span className="text-[7px] md:text-[9px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-wider">Price</span>
-                      <span className="text-sm md:text-lg font-black text-slate-900 leading-none italic">₹{p.price}</span>
+                      <span className="text-[6px] md:text-[8px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-wider">Price</span>
+                      <span className="text-sm md:text-base font-black text-slate-900 leading-none italic">₹{p.price}</span>
                     </div>
                     {cartItem ? (
-                      <div className="flex items-center gap-1.5 bg-primary rounded-xl p-1 flex-1 justify-between shadow-lg border border-white/20">
-                        <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                      <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 flex-1 justify-between shadow-lg border border-white/20">
+                        <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 md:h-7 md:w-7 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
                           <Minus className="w-2.5 h-2.5" />
                         </Button>
-                        <span className="text-white font-black text-sm md:text-base">{cartItem.quantity}</span>
-                        <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                        <span className="text-white font-black text-xs md:text-sm">{cartItem.quantity}</span>
+                        <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 md:h-7 md:w-7 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
                           <Plus className="w-2.5 h-2.5" />
                         </Button>
                       </div>
                     ) : (
-                      <Button onClick={() => addToCart(p)} className="rounded-xl h-10 md:h-12 px-3 md:px-4 font-black text-[9px] md:text-[11px] bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
+                      <Button onClick={() => addToCart(p)} className="rounded-xl h-9 md:h-11 px-2 md:px-3 font-black text-[8px] md:text-[10px] bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
                         ADD TO BASKET
                       </Button>
                     )}
