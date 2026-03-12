@@ -559,7 +559,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* BLINKIT STYLE PRODUCT DETAIL VIEW */}
+      {/* CLEAN BLINKIT STYLE PRODUCT DETAIL VIEW */}
       <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
         <DialogContent className="max-w-2xl p-0 h-[90vh] md:h-auto md:max-h-[85vh] overflow-hidden rounded-t-[3rem] md:rounded-[3rem] bg-white border-none shadow-3xl animate-in slide-in-from-bottom-20 duration-500">
           {selectedProduct && (
@@ -583,42 +583,17 @@ export default function Home() {
                     )}
                   </CarouselContent>
                 </Carousel>
-                {selectedProduct.isPinned && (
-                  <div className="absolute top-6 right-6 bg-yellow-400 text-black px-3 py-1.5 rounded-2xl text-[10px] font-black flex items-center gap-2 shadow-2xl border border-white/40">
-                    <Star className="w-3.5 h-3.5 fill-black" /> BESTSELLER
-                  </div>
-                )}
               </div>
               
-              <div className="flex-1 overflow-y-auto px-8 py-10 space-y-8 custom-scrollbar">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Badge className="bg-primary/10 text-primary border-none rounded-xl text-[10px] font-black px-3 py-1 uppercase tracking-widest">
-                      {selectedProduct.category || "General"}
-                    </Badge>
-                    <Badge className={cn("border-none rounded-xl text-[10px] font-black px-3 py-1 uppercase tracking-widest", 
-                      selectedProduct.deliveryMode === 'instant' ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
-                    )}>
-                      {selectedProduct.deliveryMode === 'instant' ? "25 MINS" : "2 DAYS"}
-                    </Badge>
-                  </div>
+              <div className="flex-1 overflow-y-auto px-8 py-10 space-y-6 custom-scrollbar">
+                <div className="space-y-2">
                   <h2 className="text-3xl md:text-4xl font-black text-slate-900 leading-none italic uppercase tracking-tighter">{selectedProduct.name}</h2>
-                  <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">{selectedProduct.unit}</p>
                 </div>
 
-                <div className="space-y-4 pt-6 border-t border-slate-50">
-                  <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Product Details</h4>
+                <div className="pt-4">
                   <p className="text-slate-600 text-sm md:text-base leading-relaxed font-medium">
-                    {selectedProduct.description || "Fresh, premium quality product sourced directly for Bounsi Bazaar. Hand-picked for the best experience."}
+                    {selectedProduct.description || "Fresh, premium quality product sourced directly for Bounsi Bazaar."}
                   </p>
-                </div>
-
-                <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-                  <div className="flex-1 space-y-1">
-                    <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">Policy</p>
-                    <p className="text-[11px] font-bold text-slate-600">No return policy - All sales are final.</p>
-                  </div>
-                  <ShieldAlert className="w-8 h-8 text-red-500 opacity-30" />
                 </div>
               </div>
 
