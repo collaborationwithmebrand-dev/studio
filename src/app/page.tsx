@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag, X, Star, CheckCircle2 } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -497,38 +497,48 @@ export default function Home() {
           <div className="container mx-auto flex items-center justify-center gap-3">
             <Megaphone className="w-4 h-4 md:w-5 md:h-5 animate-bounce shrink-0" />
             <p className="text-[10px] md:text-sm font-black uppercase tracking-tight italic">
-              Bounsi Bazaar Live 🔺🍥🍤🌴💐
+              {settings?.freeDeliveryMessage || "Bounsi Bazaar Live 🔺🍥🍤🌴💐"}
               {announcement?.active && ` — ${announcement.message}`}
             </p>
           </div>
         </div>
 
-        <nav className="sticky top-0 glass-nav py-4 shadow-xl z-50">
-          <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="flex items-center justify-between w-full md:w-auto gap-4">
-              <h1 className={cn("text-2xl md:text-4xl font-black italic tracking-tighter uppercase festive-title bg-gradient-to-r drop-shadow-2xl transition-all duration-500", currentThemeConfig.gradient)}>
-                {currentThemeConfig.title}
-              </h1>
+        <nav className="sticky top-0 glass-nav py-6 shadow-xl z-50">
+          <div className="container mx-auto px-6 flex flex-col gap-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
+                  {settings?.estimatedDeliveryTime || "17 Minutes"}
+                </h1>
+                <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest">
+                  <MapPin className="w-3.5 h-3.5" /> HOME - <span className="text-slate-900">Bounsi, Banka (813104)</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {isActuallyAdmin && (
+                  <Button 
+                    onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
+                    className={cn("h-14 w-14 rounded-2xl shadow-xl border-none transition-all active:scale-90", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
+                  >
+                    <ShieldCheck className="w-7 h-7" />
+                  </Button>
+                )}
+                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                  <UserCircle className="w-8 h-8 text-slate-300" />
+                </div>
+              </div>
             </div>
             
-            <div className="relative flex-1 w-full max-w-2xl flex items-center gap-3">
+            <div className="relative flex items-center gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
+                <Search className="absolute left-4 top-4 text-slate-400 w-5 h-5" />
                 <Input 
-                  placeholder="Search bazaar..." 
+                  placeholder="Search for board games, snacks..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
-                  className="w-full h-12 pl-11 rounded-2xl bg-white border-none shadow-inner text-sm font-bold" 
+                  className="w-full h-14 pl-12 rounded-2xl bg-white border-none shadow-inner text-base font-bold" 
                 />
               </div>
-              {isActuallyAdmin && (
-                <Button 
-                  onClick={() => setIsAdminPanelVisible(!isAdminPanelVisible)}
-                  className={cn("h-12 w-12 rounded-2xl shadow-xl border-none transition-all active:scale-90", isAdminPanelVisible ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-600")}
-                >
-                  <ShieldCheck className="w-6 h-6" />
-                </Button>
-              )}
             </div>
           </div>
         </nav>
@@ -543,9 +553,9 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto mb-10">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
-            <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-10 rounded-full text-[9px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
-            <button onClick={() => setDeliveryFilter('instant')} className={cn("flex-1 h-10 rounded-full text-[9px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}><Zap className="w-3.5 h-3.5" /> 25 MIN</button>
-            <button onClick={() => setDeliveryFilter('standard')} className={cn("flex-1 h-10 rounded-full text-[9px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-700 text-white shadow-xl" : "text-slate-400")}><Clock className="w-3.5 h-3.5" /> 2 DAYS</button>
+            <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
+            <button onClick={() => setDeliveryFilter('instant')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}><Zap className="w-4 h-4" /> 25 MIN</button>
+            <button onClick={() => setDeliveryFilter('standard')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-700 text-white shadow-xl" : "text-slate-400")}><Clock className="w-4 h-4" /> 2 DAYS</button>
           </div>
         </div>
 
@@ -601,18 +611,23 @@ export default function Home() {
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
+        <div className="fixed bottom-10 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
             onClick={() => setCheckoutStep('details')}
-            className="group flex items-center gap-3 bg-slate-900/95 text-white p-2 pl-4 rounded-full shadow-2xl border border-white/10 backdrop-blur-2xl hover:scale-105 active:scale-95 transition-all"
+            className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-5 rounded-full shadow-[0_20px_60px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            <div className="flex flex-col items-end mr-1">
-              <p className="text-[7px] font-black uppercase opacity-50 tracking-tighter leading-none mb-0.5">{cartCount} ITEMS</p>
-              <p className="text-sm font-black italic text-green-400 leading-none">₹{cartTotal}</p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
+                <img src={Object.values(cart)[0]?.imageUrl} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex flex-col items-start leading-none">
+                <p className="text-[11px] font-black uppercase tracking-tight">View Cart</p>
+                <p className="text-[9px] font-bold opacity-80">{cartCount} items</p>
+              </div>
             </div>
-            <div className="bg-primary h-10 px-4 rounded-full flex items-center gap-2 shadow-lg shadow-primary/20">
-              <span className="text-[10px] font-black uppercase italic">PROCEED</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+            <div className="bg-white/10 h-10 px-6 rounded-full flex items-center gap-2 border border-white/20">
+              <span className="text-[12px] font-black italic">₹{orderBreakdown.finalPrice}</span>
+              <ChevronRight className="w-4 h-4" />
             </div>
           </button>
         </div>

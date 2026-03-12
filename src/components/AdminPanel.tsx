@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -27,7 +28,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // All hooks must be top-level to prevent conditional hook errors.
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -37,7 +37,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  // Security: Query strictly remains null if user is not a verified admin.
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
@@ -61,6 +60,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [manualRevenue, setManualRevenue] = useState<string>('0');
+  const [estimatedTime, setEstimatedTime] = useState('');
+  const [freeDeliveryMsg, setFreeDeliveryMsg] = useState('');
   
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
@@ -75,6 +76,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setUpiId(settings.upiId || '');
       setUpiQrUrl(settings.upiQrUrl || '');
       setManualRevenue(settings.manualRevenue?.toString() || '0');
+      setEstimatedTime(settings.estimatedDeliveryTime || '17 Minutes');
+      setFreeDeliveryMsg(settings.freeDeliveryMessage || '');
     }
   }, [settings]);
 
@@ -101,6 +104,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       upiId: upiId,
       upiQrUrl: upiQrUrl,
       manualRevenue: parseFloat(manualRevenue) || 0,
+      estimatedDeliveryTime: estimatedTime,
+      freeDeliveryMessage: freeDeliveryMsg,
       lastUpdated: new Date().toISOString()
     }, { merge: true });
     toast({ title: "Settings Updated", className: "bg-blue-600 text-white" });
@@ -179,21 +184,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card className="rounded-[2.5rem] p-8 bg-blue-600 text-white border-none shadow-xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] opacity-60 mb-3">Total Estimated Revenue</p>
-          <h3 className="text-5xl font-black italic tracking-tighter leading-none">₹{manualRevenue}</h3>
-        </Card>
-        <Card className="rounded-[2.5rem] p-8 bg-white border-none shadow-xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300 mb-3">Total Orders (Stream)</p>
-          <h3 className="text-5xl font-black italic tracking-tighter text-slate-900 leading-none">{orders?.length || 0}</h3>
-        </Card>
-        <Card className="rounded-[2.5rem] p-8 bg-white border-none shadow-xl">
-          <p className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300 mb-3">Catalog Capacity</p>
-          <h3 className="text-5xl font-black italic tracking-tighter text-slate-900 leading-none">{products?.length || 0}</h3>
-        </Card>
-      </div>
-
       <Tabs defaultValue="orders" className="w-full">
         <TabsList className="grid w-full grid-cols-4 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
@@ -210,9 +200,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <div className="space-y-2">
                     <p className="text-[9px] font-black text-blue-300 uppercase tracking-widest leading-none">ID: #{order.id.slice(-6)}</p>
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-600 text-white rounded-xl">
-                        <User className="w-4 h-4" />
-                      </div>
+                      <div className="p-2 bg-blue-600 text-white rounded-xl"><User className="w-4 h-4" /></div>
                       <div>
                         <p className="text-xl font-black text-blue-900 leading-none italic">{order.phoneNumber}</p>
                         <Badge variant="outline" className={cn("text-[9px] font-black uppercase mt-1.5", 
@@ -220,47 +208,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                           order.status === 'delivered' ? "border-green-400 text-green-600" :
                           order.status === 'cancelled' ? "border-red-400 text-red-600" :
                           "border-slate-200 text-slate-400"
-                        )}>
-                          {order.status}
-                        </Badge>
+                        )}>{order.status}</Badge>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <a href={`tel:${order.phoneNumber}`} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors">
-                      <PhoneCall className="w-4 h-4" />
-                    </a>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-500 transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <a href={`tel:${order.phoneNumber}`} className="p-3 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"><PhoneCall className="w-4 h-4" /></a>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteOrder(order.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-500 transition-all"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 </div>
-
                 <div className="bg-slate-50 rounded-[1.2rem] p-4 space-y-3 border border-blue-50">
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-[9px] font-black text-blue-400 uppercase tracking-widest">
-                      <MapPin className="w-3 h-3" /> Delivery Address
-                    </div>
+                    <div className="flex items-center gap-2 text-[9px] font-black text-blue-400 uppercase tracking-widest"><MapPin className="w-3 h-3" /> Delivery Address</div>
                     <p className="text-xs font-bold text-slate-700 italic leading-relaxed">"{order.deliveryAddress}"</p>
                   </div>
-
-                  {order.isForSomeoneElse && (
-                    <div className="pt-3 border-t border-blue-100/50 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-[8px] font-black text-pink-500 uppercase tracking-widest">
-                          <Gift className="w-3 h-3" /> Someone Else's
-                        </div>
-                        <p className="text-xs font-black text-slate-900">{order.recipientPhone}</p>
-                      </div>
-                    </div>
-                  )}
                 </div>
-
                 <div className="flex justify-between items-center px-1">
                   <p className="text-2xl font-black text-blue-600 italic leading-none">₹{order.totalAmount}</p>
                   <p className="text-[9px] font-black text-slate-300 uppercase">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
-
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} className="flex-1 bg-blue-600 text-white font-black text-[10px] h-12 uppercase rounded-xl">Confirm</Button>
                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'delivered')} className="flex-1 bg-green-600 text-white font-black text-[10px] h-12 uppercase rounded-xl">Deliver</Button>
@@ -286,109 +252,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Section</Label>
-                    <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. General Bazaar" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category</Label>
-                    <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. T-Shirts / Plants" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      {CATEGORY_SUGGESTIONS.map(cat => (
-                        <Button key={cat} onClick={() => setCategory(cat)} variant="outline" className="h-7 px-2 rounded-lg text-[8px] font-black uppercase border-blue-100 text-blue-400">
-                          {cat}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Main Image URL</Label>
-                    <div className="relative">
-                      <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-300" />
-                      <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 pl-11 font-bold" />
-                    </div>
+                    <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">2nd Image URL (Optional)</Label>
-                    <div className="relative">
-                      <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-300" />
-                      <Input value={imageUrl2} onChange={(e) => setImageUrl2(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 pl-11 font-bold" />
-                    </div>
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">2nd Image URL</Label>
+                    <Input value={imageUrl2} onChange={(e) => setImageUrl2(e.target.value)} placeholder="Optional" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                 </div>
-                
-                <div className="space-y-4">
-                  <Label className="text-[10px] font-black uppercase text-blue-300 ml-3 tracking-[0.2em]">Unit / Variant (e.g. 500gm, 1kg, XL)</Label>
-                  <div className="space-y-3">
-                    <Input 
-                      value={unit} 
-                      onChange={(e) => setUnit(e.target.value)} 
-                      placeholder="e.g. 500 gm" 
-                      className="rounded-xl bg-slate-50 border-none h-14 font-bold" 
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      {UNIT_OPTIONS.map(u => (
-                        <Button 
-                          key={u} 
-                          type="button"
-                          onClick={() => setUnit(prev => {
-                            const trimmed = prev.trim();
-                            if (!trimmed) return u;
-                            if (trimmed.endsWith(u)) return trimmed;
-                            return `${trimmed} ${u}`;
-                          })}
-                          variant="outline" 
-                          className="h-8 px-3 rounded-lg text-[9px] font-black uppercase border-blue-100 text-blue-400 hover:bg-blue-50"
-                        >
-                          + {u}
-                        </Button>
-                      ))}
-                    </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Unit / Variant (Type anything: 500 gm, 1 Liter...)</Label>
+                  <Input value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {UNIT_OPTIONS.map(u => (
+                      <Button key={u} type="button" onClick={() => setUnit(u)} variant="outline" className="h-8 px-3 rounded-lg text-[9px] font-black uppercase border-blue-100 text-blue-400">{u}</Button>
+                    ))}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center mb-1">
-                    <Label className="text-[10px] font-black uppercase text-blue-400 ml-3 tracking-widest">Description</Label>
-                    <Button onClick={handleAiDescription} disabled={isAiLoading} variant="ghost" className="h-8 px-4 rounded-lg text-[9px] font-black text-blue-600 bg-blue-50">AI ASSIST</Button>
-                  </div>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} className="rounded-xl bg-slate-50 border-none h-32 font-medium" />
-                </div>
-
-                <div className="space-y-8 pt-2">
-                  <div className="flex items-center justify-between p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
-                    <div className="flex items-center gap-3">
-                      <Star className={cn("w-5 h-5", isPinned ? "text-blue-600 fill-blue-600" : "text-blue-300")} />
-                      <Label htmlFor="p-pin" className="font-black text-blue-900 uppercase text-[10px]">Pin to Top</Label>
-                    </div>
-                    <Switch id="p-pin" checked={isPinned} onCheckedChange={setIsPinned} className="scale-110 data-[state=checked]:bg-blue-600" />
-                  </div>
-
-                  <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-blue-600 ml-3 tracking-[0.3em]">Delivery Mode</Label>
-                    <RadioGroup value={deliveryMode} onValueChange={(val: any) => setDeliveryMode(val)} className="grid grid-cols-2 gap-4">
-                      <div className={cn("p-4 rounded-[1.5rem] border-2 cursor-pointer transition-all", deliveryMode === 'instant' ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 border-transparent")}>
-                        <RadioGroupItem value="instant" id="d-instant" className="hidden" />
-                        <Label htmlFor="d-instant" className="cursor-pointer flex flex-col items-center gap-2 font-black uppercase text-[9px]">
-                          <Zap className="w-6 h-6" /> 25 Min
-                        </Label>
-                      </div>
-                      <div className={cn("p-4 rounded-[1.5rem] border-2 cursor-pointer transition-all", deliveryMode === 'standard' ? "bg-blue-600 text-white border-blue-600" : "bg-slate-50 border-transparent")}>
-                        <RadioGroupItem value="standard" id="d-standard" className="hidden" />
-                        <Label htmlFor="d-standard" className="cursor-pointer flex flex-col items-center gap-2 font-black uppercase text-[9px]">
-                          <Clock className="w-6 h-6" /> 2 Day
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </div>
-
-                  <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
-                </div>
+                <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
               </CardContent>
             </Card>
 
@@ -398,20 +281,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 {products?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-50 group">
                     <div className="flex items-center gap-4">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md">
-                        <img src={p.imageUrl} className="w-full h-full object-cover" />
-                      </div>
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md"><img src={p.imageUrl} className="w-full h-full object-cover" /></div>
                       <div>
                         <p className="text-blue-900 font-black text-xs uppercase truncate max-w-[140px] leading-tight">{p.name}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{p.price} / {p.unit}</p>
-                          <Badge variant="outline" className="text-[7px] font-black uppercase py-0 px-1 border-blue-100 text-blue-300">{p.category}</Badge>
-                        </div>
+                        <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{p.price} / {p.unit}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></Button>
                   </div>
                 ))}
               </CardContent>
@@ -448,21 +324,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             </Card>
 
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Wallet className="w-6 h-6" /> Payments</CardTitle></CardHeader>
+              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Wallet className="w-6 h-6" /> Shop Config</CardTitle></CardHeader>
               <CardContent className="px-0 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Manual Revenue (₹)</Label>
-                  <Input value={manualRevenue} onChange={(e) => setManualRevenue(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-black text-blue-900" />
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Global Delivery Time (e.g. 17 Minutes)</Label>
+                  <Input value={estimatedTime} onChange={(e) => setEstimatedTime(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-black text-blue-900" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Announcement Banner (e.g. Free Delivery)</Label>
+                  <Input value={freeDeliveryMsg} onChange={(e) => setFreeDeliveryMsg(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">WhatsApp No.</Label>
                   <Input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Merchant UPI ID</Label>
-                  <Input value={upiId} onChange={(e) => setUpiId(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-                </div>
-                <Button onClick={handleUpdateSettings} className="w-full h-16 rounded-[1.2rem] bg-blue-600 text-white font-black uppercase italic shadow-xl border-none mt-4">Save Settings</Button>
+                <Button onClick={handleUpdateSettings} className="w-full h-16 rounded-[1.2rem] bg-blue-600 text-white font-black uppercase italic shadow-xl border-none mt-4">Save Configuration</Button>
               </CardContent>
             </Card>
           </div>

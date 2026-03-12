@@ -40,14 +40,13 @@
       "properties": {
         "id": { "type": "string" },
         "manualRevenue": { "type": "number", "description": "Admin-defined total earnings display." },
-        "totalOrders": { "type": "number" },
-        "totalEarnings": { "type": "number" },
-        "activeThemeName": { "type": "string" },
+        "estimatedDeliveryTime": { "type": "string", "description": "e.g., '17 Minutes'" },
+        "freeDeliveryThreshold": { "type": "number" },
+        "freeDeliveryMessage": { "type": "string" },
         "upiId": { "type": "string" },
         "upiQrUrl": { "type": "string" },
         "whatsappNumber": { "type": "string" },
         "helpLineNumber": { "type": "string" },
-        "smsSenderNumber": { "type": "string" },
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
