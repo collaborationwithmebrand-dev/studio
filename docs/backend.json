@@ -14,6 +14,7 @@
         "section": { "type": "string" },
         "category": { "type": "string" },
         "imageUrl": { "type": "string", "format": "uri" },
+        "imageUrl2": { "type": "string", "format": "uri", "description": "Secondary product image for the carousel." },
         "description": { "type": "string" },
         "deliveryMode": { "type": "string", "enum": ["instant", "standard"], "description": "Delivery speed: instant (25m) or standard (2d)" },
         "isCodAvailable": { "type": "boolean" },

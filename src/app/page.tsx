@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -448,10 +449,29 @@ export default function Home() {
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
             {filteredProducts.map((p: any) => {
               const cartItem = cart[p.id];
+              const hasMultipleImages = !!p.imageUrl && !!p.imageUrl2;
+              
               return (
                 <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-3 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
                   <div className="relative aspect-square mb-2 md:mb-3 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
-                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    {hasMultipleImages ? (
+                      <Carousel className="w-full h-full">
+                        <CarouselContent>
+                          <CarouselItem>
+                            <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                          </CarouselItem>
+                          <CarouselItem>
+                            <img src={p.imageUrl2} alt={`${p.name} view 2`} className="w-full h-full object-cover" />
+                          </CarouselItem>
+                        </CarouselContent>
+                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+                          <div className="w-1.5 h-1.5 rounded-full bg-white/50 backdrop-blur-md" />
+                          <div className="w-1.5 h-1.5 rounded-full bg-white/20 backdrop-blur-md" />
+                        </div>
+                      </Carousel>
+                    ) : (
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    )}
                     
                     <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-1">
                       {p.deliveryMode === 'standard' ? (

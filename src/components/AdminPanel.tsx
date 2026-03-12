@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag } from 'lucide-react';
+import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -28,7 +28,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Hooks called at top level
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -50,6 +49,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [unit, setUnit] = useState('Pcs');
   const [section, setSection] = useState('General Bazaar');
   const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl2, setImageUrl2] = useState('');
   const [description, setDescription] = useState('');
   const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
   const [isPinned, setIsPinned] = useState(false);
@@ -124,12 +124,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       section, 
       category: category || "General", 
       imageUrl, 
+      imageUrl2: imageUrl2 || null,
       description,
       deliveryMode,
       isPinned,
       createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs');
+    setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs');
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -291,7 +292,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. General Bazaar" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category (Admin Control)</Label>
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category</Label>
                     <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. T-Shirts / Plants" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       {CATEGORY_SUGGESTIONS.map(cat => (
@@ -303,9 +304,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Image URL</Label>
-                  <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Main Image URL</Label>
+                    <div className="relative">
+                      <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-300" />
+                      <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 pl-11 font-bold" />
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">2nd Image URL (Optional)</Label>
+                    <div className="relative">
+                      <ImageIcon className="absolute left-4 top-4 w-4 h-4 text-slate-300" />
+                      <Input value={imageUrl2} onChange={(e) => setImageUrl2(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 pl-11 font-bold" />
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
