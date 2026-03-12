@@ -600,17 +600,17 @@ export default function Home() {
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-2xl z-[70] animate-in slide-in-from-bottom-20 duration-700">
-          <div className="bg-slate-900/95 text-white rounded-[2.5rem] p-4 flex items-center justify-between shadow-2xl border border-white/10 backdrop-blur-2xl">
-            <div className="flex items-center gap-4 ml-2">
-              <div className="bg-primary p-3 rounded-2xl shadow-xl shadow-primary/20"><ShoppingCart className="w-6 h-6 text-white" /></div>
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-[70] animate-in slide-in-from-bottom-20 duration-700">
+          <div className="bg-slate-900/95 text-white rounded-2xl p-2.5 flex items-center justify-between shadow-2xl border border-white/10 backdrop-blur-2xl">
+            <div className="flex items-center gap-3 ml-2">
+              <div className="bg-primary p-2.5 rounded-xl shadow-xl shadow-primary/20"><ShoppingCart className="w-5 h-5 text-white" /></div>
               <div>
-                <p className="text-[9px] font-black uppercase opacity-50 tracking-[0.2em]">{cartCount} ITEMS</p>
-                <p className="text-xl font-black italic text-green-400">₹{cartTotal}</p>
+                <p className="text-[8px] font-black uppercase opacity-50 tracking-widest">{cartCount} ITEMS</p>
+                <p className="text-lg font-black italic text-green-400 leading-none">₹{cartTotal}</p>
               </div>
             </div>
-            <Button onClick={() => setCheckoutStep('details')} className="bg-primary text-white h-14 px-8 rounded-2xl font-black uppercase italic text-sm flex items-center gap-2 active:scale-95 transition-all border-none shadow-xl shadow-primary/30">
-              PROCEED <ChevronRight className="w-5 h-5" />
+            <Button onClick={() => setCheckoutStep('details')} className="bg-primary text-white h-11 px-6 rounded-xl font-black uppercase italic text-xs flex items-center gap-2 active:scale-95 transition-all border-none shadow-xl shadow-primary/30">
+              PROCEED <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
         </div>
