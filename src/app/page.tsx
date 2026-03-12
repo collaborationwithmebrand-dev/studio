@@ -563,6 +563,9 @@ export default function Home() {
         <DialogContent className="max-w-2xl p-0 h-[90vh] md:h-auto md:max-h-[85vh] overflow-hidden rounded-t-[3rem] md:rounded-[3rem] bg-white border-none shadow-3xl animate-in slide-in-from-bottom-20 duration-500">
           {selectedProduct && (
             <div className="flex flex-col h-full">
+              <DialogHeader className="sr-only">
+                <DialogTitle>{selectedProduct.name}</DialogTitle>
+              </DialogHeader>
               <div className="relative h-[45%] md:h-[400px] w-full bg-slate-50 group">
                 <DialogClose className="absolute top-6 left-6 z-50 p-3 bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 border-none outline-none">
                   <ArrowLeft className="w-5 h-5 text-slate-900" />
@@ -740,10 +743,12 @@ export default function Home() {
 
       <Dialog open={isQrDialogOpen} onOpenChange={setIsQrDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl md:text-3xl font-black uppercase italic mb-8 mt-6 tracking-tighter leading-none">Scan to Pay</DialogTitle>
+          </DialogHeader>
           <Button variant="ghost" onClick={() => { setIsQrDialogOpen(false); setIsPaymentDialogOpen(true); }} className="absolute left-4 top-4 h-10 w-10 p-0 rounded-xl text-slate-300">
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h3 className="text-xl md:text-3xl font-black uppercase italic mb-8 mt-6 tracking-tighter leading-none">Scan to Pay</h3>
           <div className="p-6 bg-slate-50 rounded-[2rem] border-2 border-white shadow-inner mb-8">
             {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain rounded-xl" /> : <div className="w-full aspect-square flex items-center justify-center bg-white rounded-xl"><QrCode className="w-16 h-16 text-slate-100" /></div>}
           </div>
