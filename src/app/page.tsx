@@ -76,7 +76,7 @@ export default function Home() {
   const [isOtpLoading, setIsOtpLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
-  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
+  const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant'>('all');
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -204,9 +204,9 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  const filteredProductsBySection = useMemo(() => {
-    if (!products) return {};
-    const filtered = products
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    return products
       .filter(p => {
         const term = searchQuery.toLowerCase();
         const matchesSearch = (
@@ -214,19 +214,10 @@ export default function Home() {
           (p.section && p.section.toLowerCase().includes(term)) ||
           (p.category && p.category.toLowerCase().includes(term))
         );
-        const matchesFilter = deliveryFilter === 'all' || p.deliveryMode === deliveryFilter;
+        const matchesFilter = deliveryFilter === 'all' || p.deliveryMode === 'instant';
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
-    
-    // Group strictly by deliveryMode as requested
-    return filtered.reduce((acc: any, p: any) => {
-      const deliveryModeLabel = p.deliveryMode === 'instant' ? "⚡ 25 MIN DELIVERY" : "📅 2 DAY DELIVERY";
-      
-      if (!acc[deliveryModeLabel]) acc[deliveryModeLabel] = [];
-      acc[deliveryModeLabel].push(p);
-      return acc;
-    }, {});
   }, [products, searchQuery, deliveryFilter]);
 
   const addToCart = (product: any) => {
@@ -269,13 +260,12 @@ export default function Home() {
     return Object.values(cart).reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
-  // Dynamic Price Calculation
+  // Automatic ₹100 Total Adjustment Logic
   const orderBreakdown = useMemo(() => {
     const deliveryCharge = 25;
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
     const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
     
-    // Auto-adjust to 100 via Tax/GST
     const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
     const finalPrice = initialTotal + taxAndGst;
 
@@ -429,7 +419,7 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8 md:py-16">
-        <div className="max-w-xl mx-auto mb-8 md:mb-16">
+        <div className="max-w-xs mx-auto mb-8 md:mb-16">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden relative">
             <button 
               onClick={() => setDeliveryFilter('all')}
@@ -443,97 +433,77 @@ export default function Home() {
             >
               <Zap className="w-3.5 h-3.5" /> 25 MIN
             </button>
-            <button 
-              onClick={() => setDeliveryFilter('standard')}
-              className={cn("flex-1 h-10 md:h-12 rounded-full text-[9px] md:text-xs font-black uppercase transition-all duration-500 relative z-10 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}
-            >
-              <Clock className="w-3.5 h-3.5" /> 2 DAYS
-            </button>
           </div>
         </div>
 
-        <div className="space-y-12 md:space-y-24">
-          {Object.entries(filteredProductsBySection).map(([section, items]: [string, any]) => (
-            <section key={section} className="space-y-6 md:space-y-10">
-              <div className="flex items-center justify-between px-2">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-white rounded-xl shadow-lg border border-slate-100">
-                    {section.includes("25 MIN") ? <Zap className="w-5 h-5 text-primary" /> : <Clock className="w-5 h-5 text-slate-900" />}
-                  </div>
-                  <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{section}</h2>
-                </div>
-                <Badge variant="outline" className="rounded-full px-4 py-1.5 border-slate-200 text-slate-400 font-black text-[9px] uppercase tracking-[0.2em] bg-white/50 backdrop-blur-sm">{items.length} ITEMS</Badge>
-              </div>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
-                {items.map((p: any) => {
-                  const cartItem = cart[p.id];
-                  return (
-                    <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-4 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
-                      <div className="relative aspect-square mb-2 md:mb-4 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
-                        <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                        
-                        <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-1">
-                          {p.deliveryMode === 'standard' ? (
-                            <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
-                              <Clock className="w-2 h-2" /> 2 DAYS
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
-                              <Zap className="w-2 h-2" /> 25 MINS
-                            </Badge>
-                          )}
-                        </div>
-
-                        {p.isPinned && (
-                          <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 shadow-xl border border-white/20">
-                            <Pin className="w-2.5 h-2.5 fill-black" /> BEST
-                          </div>
-                        )}
-                        
-                        {p.category && (
-                          <div className="absolute top-1.5 right-1.5">
-                            <Badge className="bg-white/80 backdrop-blur-md text-slate-900 border-none rounded-lg text-[6px] md:text-[8px] font-black py-0.5 px-1.5 uppercase flex items-center gap-1">
-                              <Tag className="w-2 h-2" /> {p.category}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex-1 space-y-1.5">
-                        <h3 className="font-bold text-[11px] md:text-[14px] text-slate-800 line-clamp-2 uppercase min-h-[2rem] md:min-h-[2.5rem] leading-tight tracking-tight">{p.name}</h3>
-                        <div className="flex items-center gap-1">
-                          <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[7px] md:text-[9px] font-black uppercase px-1.5 py-0">
-                            {p.unit}
-                          </Badge>
-                        </div>
-                      </div>
-                      <div className="mt-2 md:mt-4 flex flex-col gap-2">
-                        <div className="flex flex-col">
-                          <span className="text-[7px] md:text-[9px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-wider">Price</span>
-                          <span className="text-sm md:text-lg font-black text-slate-900 leading-none italic">₹{p.price}</span>
-                        </div>
-                        {cartItem ? (
-                          <div className="flex items-center gap-1.5 bg-primary rounded-xl p-1 flex-1 justify-between shadow-lg border border-white/20">
-                            <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Minus className="w-2.5 h-2.5" />
-                            </Button>
-                            <span className="text-white font-black text-sm md:text-base">{cartItem.quantity}</span>
-                            <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
-                              <Plus className="w-2.5 h-2.5" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button onClick={() => addToCart(p)} className="rounded-xl h-10 md:h-12 px-3 md:px-4 font-black text-[9px] md:text-[11px] bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
-                            ADD TO BASKET
-                          </Button>
-                        )}
-                      </div>
+        <div className="space-y-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-6">
+            {filteredProducts.map((p: any) => {
+              const cartItem = cart[p.id];
+              return (
+                <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-4 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
+                  <div className="relative aspect-square mb-2 md:mb-4 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
+                    <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    
+                    <div className="absolute bottom-1.5 left-1.5 flex flex-col gap-1">
+                      {p.deliveryMode === 'standard' ? (
+                        <Badge className="bg-slate-900/80 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
+                          <Clock className="w-2 h-2" /> 2 DAYS
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-primary/90 backdrop-blur-md text-white border-none rounded-lg text-[6px] md:text-[8px] font-black flex items-center gap-1 py-0.5 px-1.5">
+                          <Zap className="w-2 h-2" /> 25 MINS
+                        </Badge>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+
+                    {p.isPinned && (
+                      <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] md:text-[9px] font-black flex items-center gap-1 shadow-xl border border-white/20">
+                        <Pin className="w-2.5 h-2.5 fill-black" /> BEST
+                      </div>
+                    )}
+                    
+                    {p.category && (
+                      <div className="absolute top-1.5 right-1.5">
+                        <Badge className="bg-white/80 backdrop-blur-md text-slate-900 border-none rounded-lg text-[6px] md:text-[8px] font-black py-0.5 px-1.5 uppercase flex items-center gap-1">
+                          <Tag className="w-2 h-2" /> {p.category}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <h3 className="font-bold text-[11px] md:text-[14px] text-slate-800 line-clamp-2 uppercase min-h-[2rem] md:min-h-[2.5rem] leading-tight tracking-tight">{p.name}</h3>
+                    <div className="flex items-center gap-1">
+                      <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[7px] md:text-[9px] font-black uppercase px-1.5 py-0">
+                        {p.unit}
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="mt-2 md:mt-4 flex flex-col gap-2">
+                    <div className="flex flex-col">
+                      <span className="text-[7px] md:text-[9px] font-black text-slate-300 uppercase leading-none mb-0.5 tracking-wider">Price</span>
+                      <span className="text-sm md:text-lg font-black text-slate-900 leading-none italic">₹{p.price}</span>
+                    </div>
+                    {cartItem ? (
+                      <div className="flex items-center gap-1.5 bg-primary rounded-xl p-1 flex-1 justify-between shadow-lg border border-white/20">
+                        <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                          <Minus className="w-2.5 h-2.5" />
+                        </Button>
+                        <span className="text-white font-black text-sm md:text-base">{cartItem.quantity}</span>
+                        <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 md:h-8 md:w-8 bg-black/10 text-white rounded-lg active:scale-90 hover:bg-black/20 transition-all border-none">
+                          <Plus className="w-2.5 h-2.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button onClick={() => addToCart(p)} className="rounded-xl h-10 md:h-12 px-3 md:px-4 font-black text-[9px] md:text-[11px] bg-primary text-white hover:brightness-110 uppercase shadow-xl active:scale-95 transition-all border-none tracking-widest">
+                        ADD TO BASKET
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </main>
 
