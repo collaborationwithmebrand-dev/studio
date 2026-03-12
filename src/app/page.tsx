@@ -1,7 +1,8 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag, X, Star } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag, X, Star, ShieldAlert } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -269,6 +270,7 @@ export default function Home() {
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
     const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
     
+    // Automatic ₹100 Order Logic: Add "Taxes & GST" if total is below 100
     const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
     const finalPrice = initialTotal + taxAndGst;
 
@@ -613,10 +615,10 @@ export default function Home() {
 
                 <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
                   <div className="flex-1 space-y-1">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Return Policy</p>
-                    <p className="text-[11px] font-bold text-slate-600">No questions asked return if not satisfied.</p>
+                    <p className="text-[9px] font-black text-red-400 uppercase tracking-widest">Policy</p>
+                    <p className="text-[11px] font-bold text-slate-600">No return policy - All sales are final.</p>
                   </div>
-                  <ShieldCheck className="w-8 h-8 text-primary opacity-30" />
+                  <ShieldAlert className="w-8 h-8 text-red-500 opacity-30" />
                 </div>
               </div>
 
