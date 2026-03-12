@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -390,7 +391,7 @@ export default function Home() {
               <div className="relative flex-1">
                 <Search className="absolute left-4 top-4 text-slate-400 w-4 h-4" />
                 <Input 
-                  placeholder="Search products..." 
+                  placeholder="Search products, categories..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)} 
                   className="w-full h-12 pl-11 rounded-2xl bg-white border-none shadow-inner text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 transition-all" 

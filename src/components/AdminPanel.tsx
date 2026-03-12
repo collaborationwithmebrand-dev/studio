@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -65,6 +66,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
   
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
+  const CATEGORY_SUGGESTIONS = ['Plants', 'Fashion', 'Kitchen', 'Electronics', 'Snacks', 'Personal Care'];
 
   useEffect(() => {
     if (settings) {
@@ -292,6 +294,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category (Admin Control)</Label>
                     <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. T-Shirts / Plants" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {CATEGORY_SUGGESTIONS.map(cat => (
+                        <Button key={cat} onClick={() => setCategory(cat)} variant="outline" className="h-7 px-2 rounded-lg text-[8px] font-black uppercase border-blue-100 text-blue-400">
+                          {cat}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
