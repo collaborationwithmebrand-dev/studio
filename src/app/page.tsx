@@ -375,7 +375,7 @@ export default function Home() {
                   <div className={cn("p-4 rounded-2xl transition-all duration-500 shadow-xl", isForSomeoneElse ? "bg-pink-500 text-white scale-110" : "bg-white text-slate-200")}>
                     <Gift className="w-6 h-6" />
                   </div>
-                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Someone Else</span>
+                  <span className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Someone Else's</span>
                 </div>
               </div>
 
@@ -446,7 +446,7 @@ export default function Home() {
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Priority Delivery</span><span>₹{orderBreakdown.deliveryCharge}</span></div>
-                  {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
+                  {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
                 </div>
                 <div className="pt-6 border-t border-white/10 flex justify-between items-end">
                   <div>
@@ -454,7 +454,7 @@ export default function Home() {
                     <p className="text-5xl font-black text-primary italic tracking-tighter leading-none">₹{orderBreakdown.finalPrice}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] font-black text-red-500 uppercase bg-red-500/10 px-2 py-1 rounded-lg">No Return Policy</p>
+                    <p className="text-[8px] font-black text-red-500 uppercase bg-red-500/10 px-2 py-1 rounded-lg italic">No Return Policy</p>
                   </div>
                 </div>
               </div>
@@ -473,6 +473,7 @@ export default function Home() {
           {checkoutStep === 'qr' && (
             <div className="space-y-10 text-center animate-in fade-in slide-in-from-bottom-5 duration-500">
               <div className="p-10 bg-slate-50 rounded-[3rem] border-4 border-white shadow-inner mx-auto max-w-sm">
+                <DialogHeader className="sr-only"><DialogTitle>QR Payment Code</DialogTitle></DialogHeader>
                 {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain rounded-2xl" /> : <QrCode className="w-32 h-32 text-slate-100 mx-auto" />}
               </div>
               <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 inline-block">
@@ -600,19 +601,20 @@ export default function Home() {
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-md z-[70] animate-in slide-in-from-bottom-20 duration-700">
-          <div className="bg-slate-900/95 text-white rounded-2xl p-2.5 flex items-center justify-between shadow-2xl border border-white/10 backdrop-blur-2xl">
-            <div className="flex items-center gap-3 ml-2">
-              <div className="bg-primary p-2.5 rounded-xl shadow-xl shadow-primary/20"><ShoppingCart className="w-5 h-5 text-white" /></div>
-              <div>
-                <p className="text-[8px] font-black uppercase opacity-50 tracking-widest">{cartCount} ITEMS</p>
-                <p className="text-lg font-black italic text-green-400 leading-none">₹{cartTotal}</p>
-              </div>
+        <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
+          <button 
+            onClick={() => setCheckoutStep('details')}
+            className="group flex items-center gap-3 bg-slate-900/95 text-white p-2 pl-4 rounded-full shadow-2xl border border-white/10 backdrop-blur-2xl hover:scale-105 active:scale-95 transition-all"
+          >
+            <div className="flex flex-col items-end mr-1">
+              <p className="text-[7px] font-black uppercase opacity-50 tracking-tighter leading-none mb-0.5">{cartCount} ITEMS</p>
+              <p className="text-sm font-black italic text-green-400 leading-none">₹{cartTotal}</p>
             </div>
-            <Button onClick={() => setCheckoutStep('details')} className="bg-primary text-white h-11 px-6 rounded-xl font-black uppercase italic text-xs flex items-center gap-2 active:scale-95 transition-all border-none shadow-xl shadow-primary/30">
-              PROCEED <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+            <div className="bg-primary h-10 px-4 rounded-full flex items-center gap-2 shadow-lg shadow-primary/20">
+              <span className="text-[10px] font-black uppercase italic">PROCEED</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </div>
+          </button>
         </div>
       )}
 
@@ -621,7 +623,7 @@ export default function Home() {
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
           <DialogHeader className="mb-8">
-            <DialogTitle className="text-2xl font-black uppercase italic text-blue-600 tracking-tighter">Admin Unlock</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase italic text-blue-600 tracking-tighter text-center w-full">Admin Unlock</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-8">
             <div className="space-y-3">
