@@ -554,7 +554,11 @@ export default function Home() {
             const hasMultipleImages = !!p.imageUrl && !!p.imageUrl2;
             
             return (
-              <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm">
+              <div 
+                key={p.id} 
+                onClick={() => addToCart(p)}
+                className="group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm cursor-pointer active:scale-95 transition-transform"
+              >
                 <div className="relative aspect-square mb-2 rounded-[1.2rem] overflow-hidden bg-slate-50">
                   {hasMultipleImages ? (
                     <Carousel className="w-full h-full">
@@ -581,12 +585,12 @@ export default function Home() {
                 <div className="mt-3">
                   {cartItem ? (
                     <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 justify-between shadow-lg">
-                      <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={(e) => { e.stopPropagation(); removeFromCart(p.id); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
                       <span className="text-white font-black text-xs">{cartItem.quantity}</span>
-                      <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
                     </div>
                   ) : (
-                    <Button onClick={() => addToCart(p)} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic">Add to Basket</Button>
+                    <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic">Add to Basket</Button>
                   )}
                 </div>
               </div>
