@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag, XCircle } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -219,10 +219,14 @@ export default function Home() {
       })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
     
+    // Primary grouping by deliveryMode then by section
     return filtered.reduce((acc: any, p: any) => {
+      const deliveryModeLabel = p.deliveryMode === 'instant' ? "⚡ 25 MIN DELIVERY" : "📅 2 DAY DELIVERY";
       const s = p.section || "General Bazaar";
-      if (!acc[s]) acc[s] = [];
-      acc[s].push(p);
+      const compositeKey = `${deliveryModeLabel} - ${s}`;
+      
+      if (!acc[compositeKey]) acc[compositeKey] = [];
+      acc[compositeKey].push(p);
       return acc;
     }, {});
   }, [products, searchQuery, deliveryFilter]);
@@ -456,7 +460,7 @@ export default function Home() {
               <div className="flex items-center justify-between px-2">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-white rounded-xl shadow-lg border border-slate-100">
-                    <LayoutGrid className="w-5 h-5 text-primary" />
+                    {section.includes("25 MIN") ? <Zap className="w-5 h-5 text-primary" /> : <Clock className="w-5 h-5 text-slate-900" />}
                   </div>
                   <h2 className="text-xl md:text-3xl font-black uppercase tracking-tighter text-slate-900 italic leading-none">{section}</h2>
                 </div>
