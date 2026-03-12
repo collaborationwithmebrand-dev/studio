@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -28,6 +27,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
+  // All hooks must be top-level to prevent conditional hook errors.
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -37,6 +37,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
+  // Security: Query strictly remains null if user is not a verified admin.
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
