@@ -28,7 +28,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  // Call hooks at top level to ensure no React violations
+  // Hooks called at top level
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -38,7 +38,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
-  // Security check for the orders collection query - prevent permission error by only querying when isAdmin is true
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
@@ -49,7 +48,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [unit, setUnit] = useState('Pcs');
-  const [section, setSection] = useState('Daily Essentials');
+  const [section, setSection] = useState('General Bazaar');
   const [imageUrl, setImageUrl] = useState('');
   const [description, setDescription] = useState('');
   const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
@@ -289,7 +288,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Section</Label>
-                    <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. Men's Fashion" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                    <Input value={section} onChange={(e) => setSection(e.target.value)} placeholder="e.g. General Bazaar" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category (Admin Control)</Label>

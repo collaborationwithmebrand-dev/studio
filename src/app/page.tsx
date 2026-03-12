@@ -219,14 +219,12 @@ export default function Home() {
       })
       .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
     
-    // Primary grouping by deliveryMode then by section
+    // Group strictly by deliveryMode as requested
     return filtered.reduce((acc: any, p: any) => {
       const deliveryModeLabel = p.deliveryMode === 'instant' ? "⚡ 25 MIN DELIVERY" : "📅 2 DAY DELIVERY";
-      const s = p.section || "General Bazaar";
-      const compositeKey = `${deliveryModeLabel} - ${s}`;
       
-      if (!acc[compositeKey]) acc[compositeKey] = [];
-      acc[compositeKey].push(p);
+      if (!acc[deliveryModeLabel]) acc[deliveryModeLabel] = [];
+      acc[deliveryModeLabel].push(p);
       return acc;
     }, {});
   }, [products, searchQuery, deliveryFilter]);
