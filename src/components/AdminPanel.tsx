@@ -60,7 +60,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [upiId, setUpiId] = useState('');
   const [upiQrUrl, setUpiQrUrl] = useState('');
   const [manualRevenue, setManualRevenue] = useState<string>('0');
-  const [estimatedTime, setEstimatedTime] = useState('');
+  const [estimatedTime, setEstimatedTime] = useState('17-25 min');
   const [freeDeliveryMsg, setFreeDeliveryMsg] = useState('');
   
   const [announcementMsg, setAnnouncementMsg] = useState('');
@@ -76,7 +76,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setUpiId(settings.upiId || '');
       setUpiQrUrl(settings.upiQrUrl || '');
       setManualRevenue(settings.manualRevenue?.toString() || '0');
-      setEstimatedTime(settings.estimatedDeliveryTime || '17 Minutes');
+      setEstimatedTime(settings.estimatedDeliveryTime || '17-25 min');
       setFreeDeliveryMsg(settings.freeDeliveryMessage || '');
     }
   }, [settings]);
@@ -327,7 +327,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
               <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Wallet className="w-6 h-6" /> Shop Config</CardTitle></CardHeader>
               <CardContent className="px-0 space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Global Delivery Time (e.g. 17 Minutes)</Label>
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Global Delivery Time (e.g. 17-25 min)</Label>
                   <Input value={estimatedTime} onChange={(e) => setEstimatedTime(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-black text-blue-900" />
                 </div>
                 <div className="space-y-1.5">

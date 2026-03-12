@@ -434,7 +434,7 @@ export default function Home() {
                 </button>
               </div>
 
-              <div className="bg-slate-950 rounded-[2.5rem] p-8 space-y-8 text-white shadow-[0_40px_100px_rgba(0,0,0,0.3)]">
+              <div className="bg-slate-950 rounded-[2.5rem] p-8 space-y-8 text-white shadow-[0_40_100px_rgba(0,0,0,0.3)]">
                 <div className="space-y-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
                   {Object.values(cart).map(item => (
                     <div key={item.id} className="flex justify-between items-center">
@@ -508,7 +508,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
-                  {settings?.estimatedDeliveryTime || "17 Minutes"}
+                  {settings?.estimatedDeliveryTime || "17-25 min"}
                 </h1>
                 <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest">
                   <MapPin className="w-3.5 h-3.5" /> HOME - <span className="text-slate-900">Bounsi, Banka (813104)</span>
@@ -614,7 +614,7 @@ export default function Home() {
         <div className="fixed bottom-10 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
             onClick={() => setCheckoutStep('details')}
-            className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-5 rounded-full shadow-[0_20px_60px_rgba(34,197,94,0.4)] hover:scale-105 active:scale-95 transition-all"
+            className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-5 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
