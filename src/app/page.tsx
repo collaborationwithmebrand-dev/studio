@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, Tag, X, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,7 @@ import {
   initiateAnonymousSignIn
 } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -65,6 +65,7 @@ export default function Home() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isQrDialogOpen, setIsQrDialogOpen] = useState(false);
   const [isSmsVerifyDialogOpen, setIsSmsVerifyDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
   
   const [phoneNumber, setPhoneNumber] = useState('');
   const [recipientPhone, setRecipientPhone] = useState('');
@@ -324,7 +325,7 @@ export default function Home() {
     }
   };
 
-  const isCheckoutInProgress = isPhoneDialogOpen || isSmsVerifyDialogOpen || isPaymentDialogOpen || isQrDialogOpen;
+  const isCheckoutInProgress = isPhoneDialogOpen || isSmsVerifyDialogOpen || isPaymentDialogOpen || isQrDialogOpen || !!selectedProduct;
 
   if (isUserLoading || !user) {
     return (
@@ -453,7 +454,7 @@ export default function Home() {
               
               return (
                 <div key={p.id} className="group product-card-premium rounded-[1.5rem] p-2 md:p-3 flex flex-col h-full animate-in fade-in duration-700 scale-in-95 relative bg-white/70 backdrop-blur-sm">
-                  <div className="relative aspect-square mb-2 md:mb-3 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
+                  <div onClick={() => setSelectedProduct(p)} className="cursor-pointer relative aspect-square mb-2 md:mb-3 rounded-[1.2rem] overflow-hidden bg-slate-50 border border-white shadow-inner">
                     {hasMultipleImages ? (
                       <Carousel className="w-full h-full">
                         <CarouselContent>
@@ -499,7 +500,7 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  <div className="flex-1 space-y-1">
+                  <div onClick={() => setSelectedProduct(p)} className="cursor-pointer flex-1 space-y-1">
                     <h3 className="font-bold text-[10px] md:text-[13px] text-slate-800 line-clamp-2 uppercase min-h-[1.8rem] md:min-h-[2.2rem] leading-tight tracking-tight">{p.name}</h3>
                     <div className="flex items-center gap-1">
                       <Badge className="bg-slate-100 text-slate-500 border-none rounded-md text-[6px] md:text-[8px] font-black uppercase px-1 py-0">
@@ -556,6 +557,92 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* BLINKIT STYLE PRODUCT DETAIL VIEW */}
+      <Dialog open={!!selectedProduct} onOpenChange={() => setSelectedProduct(null)}>
+        <DialogContent className="max-w-2xl p-0 h-[90vh] md:h-auto md:max-h-[85vh] overflow-hidden rounded-t-[3rem] md:rounded-[3rem] bg-white border-none shadow-3xl animate-in slide-in-from-bottom-20 duration-500">
+          {selectedProduct && (
+            <div className="flex flex-col h-full">
+              <div className="relative h-[45%] md:h-[400px] w-full bg-slate-50 group">
+                <DialogClose className="absolute top-6 left-6 z-50 p-3 bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 border-none outline-none">
+                  <ArrowLeft className="w-5 h-5 text-slate-900" />
+                </DialogClose>
+                <Carousel className="w-full h-full">
+                  <CarouselContent className="h-full">
+                    <CarouselItem className="h-full">
+                      <img src={selectedProduct.imageUrl} className="w-full h-full object-contain md:object-cover" alt={selectedProduct.name} />
+                    </CarouselItem>
+                    {selectedProduct.imageUrl2 && (
+                      <CarouselItem className="h-full">
+                        <img src={selectedProduct.imageUrl2} className="w-full h-full object-contain md:object-cover" alt={selectedProduct.name} />
+                      </CarouselItem>
+                    )}
+                  </CarouselContent>
+                </Carousel>
+                {selectedProduct.isPinned && (
+                  <div className="absolute top-6 right-6 bg-yellow-400 text-black px-3 py-1.5 rounded-2xl text-[10px] font-black flex items-center gap-2 shadow-2xl border border-white/40">
+                    <Star className="w-3.5 h-3.5 fill-black" /> BESTSELLER
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1 overflow-y-auto px-8 py-10 space-y-8 custom-scrollbar">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Badge className="bg-primary/10 text-primary border-none rounded-xl text-[10px] font-black px-3 py-1 uppercase tracking-widest">
+                      {selectedProduct.category || "General"}
+                    </Badge>
+                    <Badge className={cn("border-none rounded-xl text-[10px] font-black px-3 py-1 uppercase tracking-widest", 
+                      selectedProduct.deliveryMode === 'instant' ? "bg-green-100 text-green-600" : "bg-blue-100 text-blue-600"
+                    )}>
+                      {selectedProduct.deliveryMode === 'instant' ? "25 MINS" : "2 DAYS"}
+                    </Badge>
+                  </div>
+                  <h2 className="text-3xl md:text-4xl font-black text-slate-900 leading-none italic uppercase tracking-tighter">{selectedProduct.name}</h2>
+                  <p className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">{selectedProduct.unit}</p>
+                </div>
+
+                <div className="space-y-4 pt-6 border-t border-slate-50">
+                  <h4 className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Product Details</h4>
+                  <p className="text-slate-600 text-sm md:text-base leading-relaxed font-medium">
+                    {selectedProduct.description || "Fresh, premium quality product sourced directly for Bounsi Bazaar. Hand-picked for the best experience."}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-6 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+                  <div className="flex-1 space-y-1">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Return Policy</p>
+                    <p className="text-[11px] font-bold text-slate-600">No questions asked return if not satisfied.</p>
+                  </div>
+                  <ShieldCheck className="w-8 h-8 text-primary opacity-30" />
+                </div>
+              </div>
+
+              <div className="p-8 border-t border-slate-50 bg-white/80 backdrop-blur-2xl flex items-center justify-between gap-8">
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Total Price</span>
+                  <span className="text-3xl font-black text-slate-900 italic">₹{selectedProduct.price}</span>
+                </div>
+                {cart[selectedProduct.id] ? (
+                  <div className="flex items-center gap-4 bg-primary rounded-[1.5rem] p-2 flex-1 max-w-[180px] justify-between shadow-2xl shadow-primary/20">
+                    <Button onClick={() => removeFromCart(selectedProduct.id)} size="icon" className="h-10 w-10 md:h-12 md:w-12 bg-black/10 text-white rounded-xl active:scale-90 border-none">
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className="text-white font-black text-lg">{cart[selectedProduct.id].quantity}</span>
+                    <Button onClick={() => addToCart(selectedProduct)} size="icon" className="h-10 w-10 md:h-12 md:w-12 bg-black/10 text-white rounded-xl active:scale-90 border-none">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button onClick={() => addToCart(selectedProduct)} className="flex-1 h-16 rounded-[1.5rem] bg-primary text-white font-black uppercase text-sm shadow-2xl shadow-primary/30 border-none hover:brightness-110 active:scale-95 transition-all italic">
+                    ADD TO BASKET
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Toaster />
 
