@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, PlusCircle, Wallet, Trash2, Megaphone, CheckCircle2, Truck, XCircle, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, Image as ImageIcon } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -28,6 +28,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const firestore = useFirestore();
   const { toast } = useToast();
   
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
@@ -67,7 +73,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
   
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
-  const CATEGORY_SUGGESTIONS = ['Plants', 'Fashion', 'Kitchen', 'Electronics', 'Snacks', 'Personal Care'];
 
   useEffect(() => {
     if (settings) {
@@ -155,23 +160,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     toast({ title: "Product Deleted", variant: "destructive" });
   };
 
-  const handleAiDescription = async () => {
-    if (!name) return toast({ title: "Enter Title", variant: "destructive" });
-    setIsAiLoading(true);
-    try {
-      const result = await generateProductDescription({
-        productName: name,
-        keywords: [category, section]
-      });
-      setDescription(result.description);
-      toast({ title: "AI Description Generated", className: "bg-blue-600 text-white" });
-    } catch (e) {
-      toast({ title: "AI Error", variant: "destructive" });
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
   return (
     <div className="container mx-auto px-4 space-y-12 animate-in fade-in duration-700">
       <div className="flex items-center gap-6">
@@ -225,7 +213,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 </div>
                 <div className="flex justify-between items-center px-1">
                   <p className="text-2xl font-black text-blue-600 italic leading-none">₹{order.totalAmount}</p>
-                  <p className="text-[9px] font-black text-slate-300 uppercase">{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-[9px] font-black text-slate-300 uppercase">
+                    {mounted ? new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '...'}
+                  </p>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                   <Button onClick={() => handleUpdateOrderStatus(order.id, 'confirmed')} className="flex-1 bg-blue-600 text-white font-black text-[10px] h-12 uppercase rounded-xl">Confirm</Button>
@@ -240,7 +230,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <TabsContent value="inventory" className="space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><PlusCircle className="w-6 h-6" /> New Bazaar Item</CardTitle></CardHeader>
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <CirclePlus className="w-6 h-6" /> New Bazaar Item
+                </CardTitle>
+              </CardHeader>
               <CardContent className="px-0 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -276,7 +270,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             </Card>
 
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Database className="w-6 h-6" /> Inventory</CardTitle></CardHeader>
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Database className="w-6 h-6" /> Inventory
+                </CardTitle>
+              </CardHeader>
               <CardContent className="px-0 space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {products?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-50 group">
@@ -297,7 +295,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
         <TabsContent value="broadcast" className="space-y-8">
           <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none max-w-2xl mx-auto">
-            <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-2xl flex items-center gap-4 italic"><Megaphone className="w-8 h-8" /> Announcements</CardTitle></CardHeader>
+            <CardHeader className="px-0 mb-6">
+              <CardTitle className="text-blue-600 font-black uppercase text-2xl flex items-center gap-4 italic">
+                <Megaphone className="w-8 h-8" /> Announcements
+              </CardTitle>
+            </CardHeader>
             <CardContent className="px-0 space-y-8">
               <div className="space-y-3">
                 <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Message</Label>
@@ -315,7 +317,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <TabsContent value="settings" className="space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Palette className="w-6 h-6" /> Themes</CardTitle></CardHeader>
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Palette className="w-6 h-6" /> Themes
+                </CardTitle>
+              </CardHeader>
               <CardContent className="px-0 grid grid-cols-2 gap-3">
                 {(Object.keys(THEME_DATA) as FestivalTheme[]).map(t => (
                   <Button key={t} onClick={() => handleUpdateTheme(t)} variant={currentTheme === t ? "default" : "outline"} className={cn("rounded-xl font-black text-[9px] uppercase h-14 transition-all", currentTheme === t ? "bg-blue-600 text-white shadow-lg border-none" : "border-slate-50 text-slate-400")}>{t}</Button>
@@ -324,7 +330,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
             </Card>
 
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-              <CardHeader className="px-0 mb-6"><CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic"><Wallet className="w-6 h-6" /> Shop Config</CardTitle></CardHeader>
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Wallet className="w-6 h-6" /> Shop Config
+                </CardTitle>
+              </CardHeader>
               <CardContent className="px-0 space-y-4">
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Global Delivery Time (e.g. 17-25 min)</Label>

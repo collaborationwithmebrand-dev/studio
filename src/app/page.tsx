@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CheckCircle2 } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -60,6 +60,7 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
+  const [mounted, setMounted] = useState(false);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
   const [isAdminPanelVisible, setIsAdminPanelVisible] = useState(false);
   const [isVerificationDialogOpen, setIsVerificationDialogOpen] = useState(false);
@@ -81,6 +82,10 @@ export default function Home() {
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const SOMEONE_ELSES_CHARGE = 20;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -316,7 +321,7 @@ export default function Home() {
     }
   };
 
-  if (isUserLoading || !user) {
+  if (!mounted || isUserLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
         <Loader2 className="w-12 h-12 animate-spin text-green-500 mb-6" />
@@ -473,7 +478,9 @@ export default function Home() {
           {checkoutStep === 'qr' && (
             <div className="space-y-10 text-center animate-in fade-in slide-in-from-bottom-5 duration-500">
               <div className="p-10 bg-slate-50 rounded-[3rem] border-4 border-white shadow-inner mx-auto max-w-sm">
-                <DialogHeader className="sr-only"><DialogTitle>QR Payment Code</DialogTitle></DialogHeader>
+                <DialogHeader className="sr-only">
+                  <DialogTitle>QR Payment Code</DialogTitle>
+                </DialogHeader>
                 {settings?.upiQrUrl ? <img src={settings.upiQrUrl} className="w-full aspect-square object-contain rounded-2xl" /> : <QrCode className="w-32 h-32 text-slate-100 mx-auto" />}
               </div>
               <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 inline-block">
@@ -608,21 +615,18 @@ export default function Home() {
       </main>
 
       {cartCount > 0 && (
-        <div className="fixed bottom-10 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
+        <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
             onClick={() => setCheckoutStep('details')}
-            className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-5 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
+            className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center overflow-hidden">
-                <img src={Object.values(cart)[0]?.imageUrl} className="w-full h-full object-cover" />
-              </div>
               <div className="flex flex-col items-start leading-none">
                 <p className="text-[11px] font-black uppercase tracking-tight">View Cart</p>
                 <p className="text-[9px] font-bold opacity-80">{cartCount} items</p>
               </div>
             </div>
-            <div className="bg-white/10 h-10 px-6 rounded-full flex items-center gap-2 border border-white/20">
+            <div className="bg-white/10 h-11 px-6 rounded-full flex items-center gap-2 border border-white/20">
               <span className="text-[12px] font-black italic">₹{orderBreakdown.finalPrice}</span>
               <ChevronRight className="w-4 h-4" />
             </div>
@@ -634,7 +638,7 @@ export default function Home() {
 
       <Dialog open={isVerificationDialogOpen} onOpenChange={setIsVerificationDialogOpen}>
         <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] text-center bg-white border-none shadow-2xl">
-          <DialogHeader className="mb-8">
+          <DialogHeader className="mb-8 text-center">
             <DialogTitle className="text-2xl font-black uppercase italic text-blue-600 tracking-tighter text-center w-full">Admin Unlock</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleVerifyCode} className="space-y-8">
