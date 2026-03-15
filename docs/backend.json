@@ -20,6 +20,7 @@
         "isCodAvailable": { "type": "boolean" },
         "isUpiAvailable": { "type": "boolean" },
         "isPinned": { "type": "boolean" },
+        "isOutOfStock": { "type": "boolean", "description": "True if the product is currently unavailable." },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },

@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, Image as ImageIcon } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ImageIcon, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -59,6 +59,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [description, setDescription] = useState('');
   const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
   const [isPinned, setIsPinned] = useState(false);
+  const [isOutOfStock, setIsOutOfStock] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
@@ -139,9 +140,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       description,
       deliveryMode,
       isPinned,
+      isOutOfStock,
       createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs');
+    setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs'); setIsOutOfStock(false);
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -158,6 +160,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const handleDeleteProduct = (productId: string) => {
     deleteDocumentNonBlocking(doc(firestore, 'products', productId));
     toast({ title: "Product Deleted", variant: "destructive" });
+  };
+
+  const toggleStockStatus = (productId: string, currentStatus: boolean) => {
+    updateDocumentNonBlocking(doc(firestore, 'products', productId), { isOutOfStock: !currentStatus });
+    toast({ 
+      title: !currentStatus ? "Marked Out of Stock" : "Marked In Stock", 
+      className: !currentStatus ? "bg-red-600 text-white" : "bg-green-600 text-white" 
+    });
   };
 
   return (
@@ -265,6 +275,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     ))}
                   </div>
                 </div>
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
+                  <Switch checked={isOutOfStock} onCheckedChange={setIsOutOfStock} className="data-[state=checked]:bg-red-500" />
+                  <Label className="text-[10px] font-black uppercase text-blue-900">Mark Out of Stock Initially</Label>
+                </div>
                 <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
               </CardContent>
             </Card>
@@ -277,15 +291,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
               </CardHeader>
               <CardContent className="px-0 space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
                 {products?.map((p: any) => (
-                  <div key={p.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-50 group">
+                  <div key={p.id} className={cn("flex items-center justify-between p-4 rounded-2xl border transition-all duration-500 group", p.isOutOfStock ? "bg-red-50 border-red-100 opacity-80" : "bg-slate-50/50 border-slate-50")}>
                     <div className="flex items-center gap-4">
-                      <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md"><img src={p.imageUrl} className="w-full h-full object-cover" /></div>
+                      <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md">
+                        <img src={p.imageUrl} className={cn("w-full h-full object-cover", p.isOutOfStock && "grayscale")} />
+                        {p.isOutOfStock && <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center"><ShoppingBag className="w-6 h-6 text-white" /></div>}
+                      </div>
                       <div>
-                        <p className="text-blue-900 font-black text-xs uppercase truncate max-w-[140px] leading-tight">{p.name}</p>
+                        <p className={cn("font-black text-xs uppercase truncate max-w-[140px] leading-tight", p.isOutOfStock ? "text-red-900" : "text-blue-900")}>{p.name}</p>
                         <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{p.price} / {p.unit}</p>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></Button>
+                    <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center gap-1 mr-2">
+                        <Switch checked={!p.isOutOfStock} onCheckedChange={() => toggleStockStatus(p.id, p.isOutOfStock)} className="scale-75 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500" />
+                        <span className="text-[7px] font-black uppercase text-slate-400">{p.isOutOfStock ? "OUT" : "IN"}</span>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
                   </div>
                 ))}
               </CardContent>

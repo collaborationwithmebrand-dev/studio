@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -221,10 +221,16 @@ export default function Home() {
           (deliveryFilter === 'standard' && p.deliveryMode === 'standard');
         return matchesSearch && matchesFilter;
       })
-      .sort((a, b) => (a.isPinned === b.isPinned ? 0 : a.isPinned ? -1 : 1));
+      .sort((a, b) => {
+        // Sort out of stock to bottom, then pinned to top
+        if (a.isOutOfStock !== b.isOutOfStock) return a.isOutOfStock ? 1 : -1;
+        if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
+        return 0;
+      });
   }, [products, searchQuery, deliveryFilter]);
 
   const addToCart = (product: any) => {
+    if (product.isOutOfStock) return;
     setCart(prev => {
       const existing = prev[product.id];
       return {
@@ -567,12 +573,16 @@ export default function Home() {
           {filteredProducts.map((p: any) => {
             const cartItem = cart[p.id];
             const hasMultipleImages = !!p.imageUrl && !!p.imageUrl2;
+            const isOutOfStock = p.isOutOfStock === true;
             
             return (
               <div 
                 key={p.id} 
-                onClick={() => addToCart(p)}
-                className="group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm cursor-pointer active:scale-95 transition-transform"
+                onClick={() => !isOutOfStock && addToCart(p)}
+                className={cn(
+                  "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm cursor-pointer active:scale-95 transition-all",
+                  isOutOfStock && "opacity-60 grayscale cursor-not-allowed active:scale-100"
+                )}
               >
                 <div className="relative aspect-square mb-2 rounded-[1.2rem] overflow-hidden bg-slate-50">
                   {hasMultipleImages ? (
@@ -590,7 +600,12 @@ export default function Home() {
                       {p.deliveryMode === 'standard' ? <Clock className="w-2 h-2" /> : <Zap className="w-2 h-2" />} {p.deliveryMode === 'standard' ? '2 DAYS' : '25 MINS'}
                     </Badge>
                   </div>
-                  {p.isPinned && <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] font-black flex items-center gap-1"><Pin className="w-2.5 h-2.5 fill-black" /> BEST</div>}
+                  {p.isPinned && !isOutOfStock && <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] font-black flex items-center gap-1"><Pin className="w-2.5 h-2.5 fill-black" /> BEST</div>}
+                  {isOutOfStock && (
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-2">
+                      <span className="bg-white/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">OUT OF STOCK</span>
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 space-y-1">
                   <h3 className="font-bold text-[10px] md:text-[12px] text-slate-800 line-clamp-2 uppercase leading-tight italic">{p.name}</h3>
@@ -598,7 +613,9 @@ export default function Home() {
                   <p className="text-xs font-black text-slate-900 italic">₹{p.price}</p>
                 </div>
                 <div className="mt-3">
-                  {cartItem ? (
+                  {isOutOfStock ? (
+                    <Button disabled className="w-full rounded-xl h-9 font-black text-[9px] bg-slate-200 text-slate-400 uppercase border-none italic">Sold Out</Button>
+                  ) : cartItem ? (
                     <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 justify-between shadow-lg">
                       <Button onClick={(e) => { e.stopPropagation(); removeFromCart(p.id); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
                       <span className="text-white font-black text-xs">{cartItem.quantity}</span>
