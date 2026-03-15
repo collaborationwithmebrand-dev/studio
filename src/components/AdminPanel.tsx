@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ImageIcon, ShoppingBag } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ImageIcon, ShoppingBag, Pin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -170,6 +170,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     });
   };
 
+  const togglePinStatus = (productId: string, currentStatus: boolean) => {
+    updateDocumentNonBlocking(doc(firestore, 'products', productId), { isPinned: !currentStatus });
+    toast({ 
+      title: !currentStatus ? "Pinned to Top" : "Unpinned", 
+      className: "bg-yellow-500 text-white" 
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 space-y-12 animate-in fade-in duration-700">
       <div className="flex items-center gap-6">
@@ -275,9 +283,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
-                  <Switch checked={isOutOfStock} onCheckedChange={setIsOutOfStock} className="data-[state=checked]:bg-red-500" />
-                  <Label className="text-[10px] font-black uppercase text-blue-900">Mark Out of Stock Initially</Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
+                    <Switch checked={isOutOfStock} onCheckedChange={setIsOutOfStock} className="data-[state=checked]:bg-red-500" />
+                    <Label className="text-[10px] font-black uppercase text-blue-900 leading-tight">Sold Out</Label>
+                  </div>
+                  <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
+                    <Switch checked={isPinned} onCheckedChange={setIsPinned} className="data-[state=checked]:bg-yellow-500" />
+                    <Label className="text-[10px] font-black uppercase text-blue-900 leading-tight">Pin to Top</Label>
+                  </div>
                 </div>
                 <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
               </CardContent>
@@ -303,7 +317,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex flex-col items-center gap-1 mr-2">
+                      <div className="flex flex-col items-center gap-1">
+                        <Switch checked={p.isPinned} onCheckedChange={() => togglePinStatus(p.id, p.isPinned)} className="scale-75 data-[state=checked]:bg-yellow-500" />
+                        <span className="text-[7px] font-black uppercase text-slate-400">PIN</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 mx-2">
                         <Switch checked={!p.isOutOfStock} onCheckedChange={() => toggleStockStatus(p.id, p.isOutOfStock)} className="scale-75 data-[state=checked]:bg-green-500 data-[state=unchecked]:bg-red-500" />
                         <span className="text-[7px] font-black uppercase text-slate-400">{p.isOutOfStock ? "OUT" : "IN"}</span>
                       </div>
