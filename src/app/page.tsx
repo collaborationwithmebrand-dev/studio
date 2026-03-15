@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, QrCode, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,7 +52,7 @@ interface CartItem {
   quantity: number;
 }
 
-type CheckoutStep = 'details' | 'otp' | 'payment' | 'qr' | null;
+type CheckoutStep = 'summary' | 'details' | 'otp' | 'payment' | 'qr' | null;
 
 export default function Home() {
   const firestore = useFirestore();
@@ -222,7 +222,6 @@ export default function Home() {
         return matchesSearch && matchesFilter;
       })
       .sort((a, b) => {
-        // Sort out of stock to bottom, then pinned to top
         if (a.isOutOfStock !== b.isOutOfStock) return a.isOutOfStock ? 1 : -1;
         if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
         return 0;
@@ -327,6 +326,17 @@ export default function Home() {
     }
   };
 
+  const handleStepBack = () => {
+    setCheckoutStep(prev => {
+      if (prev === 'summary') return null;
+      if (prev === 'details') return 'summary';
+      if (prev === 'otp') return 'details';
+      if (prev === 'payment') return 'otp';
+      if (prev === 'qr') return 'payment';
+      return null;
+    });
+  };
+
   if (!mounted || isUserLoading || !user) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -365,12 +375,57 @@ export default function Home() {
       <div className="min-h-screen bg-white p-4 md:p-10 animate-in fade-in slide-in-from-right-10 duration-500">
         <div className="max-w-2xl mx-auto space-y-10">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={() => setCheckoutStep(prev => prev === 'details' ? null : prev === 'otp' ? 'details' : prev === 'payment' ? 'otp' : 'payment')} className="rounded-xl h-12 w-12 p-0 text-slate-400 hover:text-slate-900">
+            <Button variant="ghost" onClick={handleStepBack} className="rounded-xl h-12 w-12 p-0 text-slate-400 hover:text-slate-900">
               <ArrowLeft className="w-6 h-6" />
             </Button>
-            <h2 className="text-2xl font-black uppercase italic tracking-tighter text-slate-900">Checkout</h2>
+            <h2 className="text-2xl font-black uppercase italic tracking-tighter text-slate-900">
+              {checkoutStep === 'summary' ? 'Order Summary' : checkoutStep === 'details' ? 'Delivery Details' : 'Checkout'}
+            </h2>
             <div className="w-12" />
           </div>
+
+          {checkoutStep === 'summary' && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-500">
+              <div className="bg-slate-950 rounded-[2.5rem] p-8 space-y-8 text-white shadow-[0_40_100px_rgba(0,0,0,0.3)]">
+                <div className="space-y-4 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                  {Object.values(cart).map(item => (
+                    <div key={item.id} className="flex justify-between items-center gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-white/10">
+                          <img src={item.imageUrl} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold uppercase italic truncate max-w-[150px]">{item.name}</p>
+                          <p className="text-[9px] font-black text-slate-500 uppercase">{item.quantity} x {item.unit}</p>
+                        </div>
+                      </div>
+                      <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="space-y-2 pt-4 border-t border-white/10">
+                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
+                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Priority Delivery</span><span>₹{orderBreakdown.deliveryCharge}</span></div>
+                  {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
+                </div>
+                
+                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase italic mb-1">Grand Total</p>
+                    <p className="text-5xl font-black text-primary italic tracking-tighter leading-none">₹{orderBreakdown.finalPrice}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-red-500 uppercase bg-red-500/10 px-2 py-1 rounded-lg italic">No Return Policy</p>
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={() => setCheckoutStep('details')} className="w-full h-20 rounded-[1.8rem] bg-slate-950 text-white font-black uppercase italic shadow-2xl text-base group">
+                Add Delivery Details <ChevronRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
+          )}
 
           {checkoutStep === 'details' && (
             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-500">
@@ -443,31 +498,6 @@ export default function Home() {
                   <p className="text-[11px] font-black uppercase text-slate-900 italic">Someone Else's</p>
                   <p className="text-[8px] font-black text-pink-500 mt-1">+₹{SOMEONE_ELSES_CHARGE}</p>
                 </button>
-              </div>
-
-              <div className="bg-slate-950 rounded-[2.5rem] p-8 space-y-8 text-white shadow-[0_40_100px_rgba(0,0,0,0.3)]">
-                <div className="space-y-4 max-h-[200px] overflow-y-auto custom-scrollbar pr-2">
-                  {Object.values(cart).map(item => (
-                    <div key={item.id} className="flex justify-between items-center">
-                      <p className="text-xs font-bold text-slate-400 uppercase italic truncate max-w-[180px]">{item.quantity}x {item.name}</p>
-                      <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="space-y-2 pt-4 border-t border-white/10">
-                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
-                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Priority Delivery</span><span>₹{orderBreakdown.deliveryCharge}</span></div>
-                  {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
-                </div>
-                <div className="pt-6 border-t border-white/10 flex justify-between items-end">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-500 uppercase italic mb-1">Grand Total</p>
-                    <p className="text-5xl font-black text-primary italic tracking-tighter leading-none">₹{orderBreakdown.finalPrice}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[8px] font-black text-red-500 uppercase bg-red-500/10 px-2 py-1 rounded-lg italic">No Return Policy</p>
-                  </div>
-                </div>
               </div>
 
               <div className="flex flex-col gap-4 pt-4">
@@ -634,7 +664,7 @@ export default function Home() {
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
-            onClick={() => setCheckoutStep('details')}
+            onClick={() => setCheckoutStep('summary')}
             className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             <div className="flex items-center gap-3">
