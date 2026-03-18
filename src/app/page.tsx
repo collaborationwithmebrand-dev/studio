@@ -78,6 +78,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
   const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
+  const [now, setNow] = useState(() => new Date());
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -85,7 +86,19 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
+    setNow(new Date());
+    const timerId = setInterval(() => setNow(new Date()), 60000); // Update time every minute
+    return () => clearInterval(timerId);
   }, []);
+
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  
+  // Late night: 1:00 AM to 2:29 AM
+  const isLateNight = hour === 1 || (hour === 2 && minute < 30);
+  
+  // Store closed: 2:30 AM to 6:59 AM
+  const isStoreClosed = (hour === 2 && minute >= 30) || (hour >= 3 && hour < 7);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -270,13 +283,13 @@ export default function Home() {
   }, [cart]);
 
   const orderBreakdown = useMemo(() => {
-    const deliveryCharge = 25;
+    const deliveryCharge = isLateNight ? 35 : 25;
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
     const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
     const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
     const finalPrice = initialTotal + taxAndGst;
     return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice };
-  }, [cartTotal, packagingType]);
+  }, [cartTotal, packagingType, isLateNight]);
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
@@ -370,6 +383,21 @@ export default function Home() {
     );
   }
 
+  if (isStoreClosed) {
+    return (
+      <div className={cn("min-h-screen flex flex-col items-center justify-center p-8 text-center gap-10", currentTheme === 'Normal' ? 'bg-slate-900' : currentThemeConfig.bg)}>
+         <FestiveEffects theme={currentTheme} />
+        <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center shadow-xl backdrop-blur-md">
+          <Clock className="w-10 h-10 text-white" />
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-3xl font-black text-white uppercase italic">WE ARE RESTING</h1>
+          <p className="text-slate-400 max-w-xs font-bold leading-relaxed text-sm">Our store is closed from 2:30 AM to 7:00 AM. Please come back soon!</p>
+        </div>
+      </div>
+    );
+  }
+
   if (checkoutStep) {
     return (
       <div className="min-h-screen bg-white p-4 md:p-10 animate-in fade-in slide-in-from-right-10 duration-500">
@@ -406,7 +434,13 @@ export default function Home() {
                 
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
-                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Priority Delivery</span><span>₹{orderBreakdown.deliveryCharge}</span></div>
+                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                    <span>Priority Delivery</span>
+                    <div className="flex items-center gap-2">
+                        {isLateNight && <Badge variant="outline" className="bg-orange-500/20 text-orange-300 border-none text-[7px] font-black">LATE NIGHT</Badge>}
+                        <span>₹{orderBreakdown.deliveryCharge}</span>
+                    </div>
+                  </div>
                   {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
                 </div>
                 
