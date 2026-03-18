@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -60,7 +59,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
   const [isPinned, setIsPinned] = useState(false);
   const [isOutOfStock, setIsOutOfStock] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const [whatsapp, setWhatsapp] = useState('');
   const [helpline, setHelpline] = useState('');
