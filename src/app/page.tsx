@@ -78,7 +78,8 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
   const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
-  const [now, setNow] = useState(() => new Date());
+  const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
+  const { isLateNight, isStoreClosed } = timeFlags;
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -86,19 +87,25 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-    setNow(new Date());
-    const timerId = setInterval(() => setNow(new Date()), 60000); // Update time every minute
+    
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      
+      // Late night: 1:00 AM to 2:29 AM
+      const isLateNight = hour === 1 || (hour === 2 && minute < 30);
+      
+      // Store closed: 2:30 AM to 6:59 AM
+      const isStoreClosed = (hour === 2 && minute >= 30) || (hour >= 3 && hour < 7);
+      
+      setTimeFlags({ isLateNight, isStoreClosed });
+    };
+
+    checkTime();
+    const timerId = setInterval(checkTime, 60000); // Update time every minute
     return () => clearInterval(timerId);
   }, []);
-
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  
-  // Late night: 1:00 AM to 2:29 AM
-  const isLateNight = hour === 1 || (hour === 2 && minute < 30);
-  
-  // Store closed: 2:30 AM to 6:59 AM
-  const isStoreClosed = (hour === 2 && minute >= 30) || (hour >= 3 && hour < 7);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
