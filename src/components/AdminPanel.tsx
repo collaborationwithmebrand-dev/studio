@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ImageIcon, ShoppingBag, Pin } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, Megaphone, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ImageIcon, ShoppingBag, Pin, Power } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -36,9 +36,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
-
-  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
-  const { data: announcement } = useDoc(announcementRef);
+  
+  const adsQuery = useMemoFirebase(() => query(collection(firestore, 'advertisements'), orderBy('updatedAt', 'desc')), [firestore]);
+  const { data: advertisements } = useCollection(adsQuery);
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
@@ -70,11 +70,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [estimatedTime, setEstimatedTime] = useState('17-25 min');
   const [freeDeliveryMsg, setFreeDeliveryMsg] = useState('');
   
-  const [announcementMsg, setAnnouncementMsg] = useState('');
-  const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
-  const [announcementImageUrl, setAnnouncementImageUrl] = useState('');
-  const [announcementCtaText, setAnnouncementCtaText] = useState('');
-  const [announcementCtaLink, setAnnouncementCtaLink] = useState('');
+  const [newAdMessage, setNewAdMessage] = useState('');
+  const [newAdImageUrl, setNewAdImageUrl] = useState('');
+  const [newAdCtaText, setNewAdCtaText] = useState('');
+  const [newAdCtaLink, setNewAdCtaLink] = useState('');
 
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
   const SECTION_OPTIONS = ['General Bazaar', 'Fresh Produce', 'Electronics', 'Apparel', 'Essentials'];
@@ -91,16 +90,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setFreeDeliveryMsg(settings.freeDeliveryMessage || '');
     }
   }, [settings]);
-
-  useEffect(() => {
-    if (announcement) {
-      setAnnouncementMsg(announcement.message || '');
-      setIsAnnouncementActive(announcement.active || false);
-      setAnnouncementImageUrl(announcement.imageUrl || '');
-      setAnnouncementCtaText(announcement.ctaText || '');
-      setAnnouncementCtaLink(announcement.ctaLink || '');
-    }
-  }, [announcement]);
 
   if (!isAdmin) return null;
 
@@ -125,17 +114,37 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     toast({ title: "Settings Updated", className: "bg-blue-600 text-white" });
   };
 
-  const handleUpdateAnnouncement = () => {
-    if (!announcementRef) return;
-    setDocumentNonBlocking(announcementRef, {
-      message: announcementMsg,
-      active: isAnnouncementActive,
-      imageUrl: announcementImageUrl,
-      ctaText: announcementCtaText,
-      ctaLink: announcementCtaLink,
+  const handleAddAd = () => {
+    if (!newAdMessage) return toast({ title: "Ad Message is Required", variant: "destructive" });
+    if (advertisements && advertisements.length >= 10) {
+      return toast({ title: "Ad Limit Reached", description: "You can only have up to 10 ads.", variant: "destructive" });
+    }
+    addDocumentNonBlocking(collection(firestore, 'advertisements'), {
+      message: newAdMessage,
+      imageUrl: newAdImageUrl,
+      ctaText: newAdCtaText,
+      ctaLink: newAdCtaLink,
+      active: true, // New ads are active by default
       updatedAt: new Date().toISOString()
-    }, { merge: true });
-    toast({ title: "Broadcast Live", className: "bg-blue-600 text-white" });
+    });
+    setNewAdMessage('');
+    setNewAdImageUrl('');
+    setNewAdCtaText('');
+    setNewAdCtaLink('');
+    toast({ title: "New Ad Published", className: "bg-blue-600 text-white" });
+  };
+
+  const handleToggleAdStatus = (adId: string, currentStatus: boolean) => {
+      updateDocumentNonBlocking(doc(firestore, 'advertisements', adId), { 
+        active: !currentStatus,
+        updatedAt: new Date().toISOString()
+      });
+      toast({ title: `Ad ${!currentStatus ? 'Activated' : 'Deactivated'}` });
+  };
+  
+  const handleDeleteAd = (adId: string) => {
+      deleteDocumentNonBlocking(doc(firestore, 'advertisements', adId));
+      toast({ title: "Ad Deleted", variant: "destructive" });
   };
 
   const handleAdd = () => {
@@ -364,36 +373,67 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         </TabsContent>
 
         <TabsContent value="broadcast" className="space-y-8">
-          <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none max-w-2xl mx-auto">
-            <CardHeader className="px-0 mb-6">
-              <CardTitle className="text-blue-600 font-black uppercase text-2xl flex items-center gap-4 italic">
-                <Megaphone className="w-8 h-8" /> Advertisements
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-0 space-y-6">
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Title/Message</Label>
-                <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="e.g. FLAT 50% OFF" className="rounded-2xl bg-slate-50 border-none h-24 text-blue-950 font-black uppercase p-6 shadow-inner" />
-              </div>
-              <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Image URL (Optional)</Label>
-                <Input value={announcementImageUrl} onChange={(e) => setAnnouncementImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-              </div>
-               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Button Text (e.g. Shop Now)</Label>
-                <Input value={announcementCtaText} onChange={(e) => setAnnouncementCtaText(e.target.value)} placeholder="Shop Now" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-              </div>
-               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Link (on click)</Label>
-                <Input value={announcementCtaLink} onChange={(e) => setAnnouncementCtaLink(e.target.value)} placeholder="/category/snacks" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-              </div>
-              <div className="flex items-center gap-4 p-6 bg-blue-50/50 rounded-2xl border border-blue-50">
-                <Switch id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="scale-125 data-[state=checked]:bg-blue-600" />
-                <Label htmlFor="c-broadcast" className="font-black text-blue-900 uppercase text-[10px]">Broadcast Active: {isAnnouncementActive ? "ON" : "OFF"}</Label>
-              </div>
-              <Button onClick={handleUpdateAnnouncement} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg border-none">Publish Ad</Button>
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <CirclePlus className="w-6 h-6" /> Add New Ad
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Title/Message</Label>
+                  <Textarea value={newAdMessage} onChange={(e) => setNewAdMessage(e.target.value)} placeholder="e.g. FLAT 50% OFF" className="rounded-2xl bg-slate-50 border-none h-24 text-blue-950 font-black uppercase p-6 shadow-inner" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Image URL</Label>
+                  <Input value={newAdImageUrl} onChange={(e) => setNewAdImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Button Text</Label>
+                  <Input value={newAdCtaText} onChange={(e) => setNewAdCtaText(e.target.value)} placeholder="Shop Now" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Click Link</Label>
+                  <Input value={newAdCtaLink} onChange={(e) => setNewAdCtaLink(e.target.value)} placeholder="/category/snacks" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <Button onClick={handleAddAd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg border-none mt-4">Publish New Ad</Button>
+              </CardContent>
+            </Card>
+
+            <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Megaphone className="w-6 h-6" /> Current Ads ({advertisements?.length || 0}/10)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 space-y-3 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                {advertisements?.map((ad: any) => (
+                  <div key={ad.id} className={cn("p-4 rounded-2xl border transition-all duration-500", ad.active ? "bg-blue-50/50 border-blue-50" : "bg-slate-50 border-slate-100 opacity-60")}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 flex-shrink-0 bg-slate-100 rounded-lg flex items-center justify-center">
+                          {ad.imageUrl ? <img src={ad.imageUrl} className="w-full h-full object-cover rounded-lg" /> : <ImageIcon className="w-6 h-6 text-slate-300" />}
+                        </div>
+                        <div>
+                          <p className="font-bold text-xs text-blue-950 leading-tight line-clamp-2">{ad.message}</p>
+                          <p className="text-[9px] font-semibold text-slate-400 line-clamp-1">{ad.ctaLink}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Button onClick={() => handleToggleAdStatus(ad.id, ad.active)} size="icon" variant="ghost" className={cn("h-9 w-9 rounded-lg", ad.active ? "text-green-500 hover:bg-green-100 hover:text-green-600" : "text-slate-400 hover:bg-slate-200 hover:text-slate-600")}>
+                          <Power className="w-4 h-4" />
+                        </Button>
+                        <Button onClick={() => handleDeleteAd(ad.id)} size="icon" variant="ghost" className="h-9 w-9 rounded-lg text-slate-400 hover:bg-red-100 hover:text-red-500">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-10">

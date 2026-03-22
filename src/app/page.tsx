@@ -20,7 +20,7 @@ import {
   setDocumentNonBlocking,
   useUser
 } from '@/firebase';
-import { collection, doc, query } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -129,8 +130,8 @@ export default function Home() {
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
-  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
-  const { data: announcement } = useDoc(announcementRef);
+  const adsQuery = useMemoFirebase(() => query(collection(firestore, 'advertisements'), where('active', '==', true)), [firestore]);
+  const { data: activeAds } = useCollection(adsQuery);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -708,33 +709,48 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        {announcement?.active && (announcement.message || announcement.imageUrl) && (
+        {activeAds && activeAds.length > 0 && (
           <div className="mb-8">
-            <a href={announcement.ctaLink || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)]">
-              {announcement.imageUrl ? (
-                <div className="relative">
-                  <img src={announcement.imageUrl} alt={announcement.message || 'Advertisement'} className="w-full h-auto object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
-                    <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-2">{announcement.message}</h3>
-                    {announcement.ctaText && (
-                      <div className="inline-flex items-center gap-2 bg-white text-black font-black text-xs uppercase px-4 py-2 rounded-lg group-hover:scale-105 transition-transform">
-                        {announcement.ctaText} <ChevronRight className="w-4 h-4" />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
-                   <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-4">{announcement.message}</h3>
-                   {announcement.ctaText && (
-                      <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-black text-xs uppercase px-5 py-3 rounded-lg group-hover:scale-105 transition-transform border border-white/30">
-                        {announcement.ctaText} <ChevronRight className="w-4 h-4" />
-                      </div>
-                    )}
-                </div>
-              )}
-            </a>
+            <Carousel
+              plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              className="w-full"
+            >
+              <CarouselContent>
+                {activeAds.map((ad: any) => (
+                  <CarouselItem key={ad.id}>
+                    <a href={ad.ctaLink || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)]">
+                      {ad.imageUrl ? (
+                        <div className="relative">
+                          <img src={ad.imageUrl} alt={ad.message || 'Advertisement'} className="w-full aspect-[2/1] md:aspect-[3/1] object-cover" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                          <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
+                            <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-2">{ad.message}</h3>
+                            {ad.ctaText && (
+                              <div className="inline-flex items-center gap-2 bg-white text-black font-black text-xs uppercase px-4 py-2 rounded-lg group-hover:scale-105 transition-transform">
+                                {ad.ctaText} <ChevronRight className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
+                          <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-4">{ad.message}</h3>
+                          {ad.ctaText && (
+                              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-black text-xs uppercase px-5 py-3 rounded-lg group-hover:scale-105 transition-transform border border-white/30">
+                                {ad.ctaText} <ChevronRight className="w-4 h-4" />
+                              </div>
+                            )}
+                        </div>
+                      )}
+                    </a>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
           </div>
         )}
 

@@ -111,9 +111,9 @@
       "schema": { "$ref": "#/backend/entities/StoreSetting" },
       "description": "Sensitive administrative settings."
     },
-    "/storeSettings/announcement": {
+    "/advertisements/{adId}": {
       "schema": { "$ref": "#/backend/entities/Announcement" },
-      "description": "Global store announcement for all customers."
+      "description": "Sliding advertisement banners for the homepage."
     },
     "/publicDisplaySettings/theme": {
       "schema": { "$ref": "#/backend/entities/public_theme_setting" },
