@@ -83,6 +83,9 @@ export default function Home() {
   const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
   const { isLateNight, isStoreClosed } = timeFlags;
   const [isSnacksOfferClaimed, setIsSnacksOfferClaimed] = useState(false);
+  const [isAgeGateOpen, setIsAgeGateOpen] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [pendingCategory, setPendingCategory] = useState<string | null>(null);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -232,6 +235,19 @@ export default function Home() {
     ];
     return ['all', ...uniqueCategories];
   }, [products]);
+
+  const categoryDisplayMap: Record<string, string> = {
+    'Paan & Tobacco': 'Paan & Essentials (18+)',
+  };
+
+  const handleCategorySelect = (category: string) => {
+    if (category === 'Paan & Tobacco' && !isAgeVerified) {
+      setPendingCategory(category);
+      setIsAgeGateOpen(true);
+    } else {
+      setSelectedCategory(category);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     if (!products) return [];
@@ -699,10 +715,12 @@ export default function Home() {
           </div>
           
           <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4">
-            {categories.map((cat: string) => (
+            {categories.map((cat: string) => {
+              const displayName = categoryDisplayMap[cat] || cat;
+              return (
                 <button
                     key={cat}
-                    onClick={() => setSelectedCategory(cat)}
+                    onClick={() => handleCategorySelect(cat)}
                     className={cn(
                         "px-5 py-2.5 rounded-full text-[11px] font-black uppercase transition-all duration-500 whitespace-nowrap shadow-md",
                         selectedCategory === cat
@@ -710,9 +728,10 @@ export default function Home() {
                         : "bg-white/80 text-slate-500 backdrop-blur-sm"
                     )}
                 >
-                    {cat}
+                    {displayName}
                 </button>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -812,6 +831,54 @@ export default function Home() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isAgeGateOpen} onOpenChange={setIsAgeGateOpen}>
+        <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] bg-white border-none shadow-2xl">
+            <DialogHeader className="mb-4 text-center">
+                <DialogTitle className="text-2xl font-black uppercase italic text-red-600 tracking-tighter text-center w-full">Age Verification (18+)</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 text-center text-slate-700">
+                <div className="bg-red-50 border-2 border-dashed border-red-200 p-4 rounded-2xl space-y-3">
+                    <p className="font-black text-red-700 text-sm">Sale of tobacco products to persons under the age of 18 is a punishable offense.</p>
+                    <p className="text-xs font-bold text-slate-600">You must be 18 years or older to view and purchase items from this category.</p>
+                </div>
+                
+                <div className="text-left text-xs font-bold space-y-2 text-slate-500">
+                    <p>• <span className="font-black">ID Check:</span> Delivery ke waqt Aadhar Card dikhana anivarya (mandatory) hai.</p>
+                    <p>• <span className="font-black">No Minor Sales:</span> 18 saal se kam umar ke vyaktiyo ko tobacco bechna kanoonan apradh hai.</p>
+                    <p>• <span className="font-black">Location Policy:</span> We do not deliver within a 100-yard radius of any school or hospital.</p>
+                </div>
+                
+                <div className="text-center p-4 bg-yellow-100/50 rounded-xl">
+                    <p className="text-yellow-800 font-black text-xs uppercase">Mandatory Warning</p>
+                    <p className="text-yellow-900 font-bold text-xs">Tobacco causes painful death. Quit today, call 1800-11-2356.</p>
+                </div>
+                
+                <Button 
+                    onClick={() => {
+                        setIsAgeVerified(true);
+                        if (pendingCategory) {
+                            setSelectedCategory(pendingCategory);
+                        }
+                        setIsAgeGateOpen(false);
+                        setPendingCategory(null);
+                    }}
+                    className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs italic shadow-xl">
+                    I am 18+ and I Accept
+                </Button>
+                 <Button 
+                    onClick={() => {
+                        setIsAgeGateOpen(false);
+                        setPendingCategory(null);
+                    }}
+                    variant="outline"
+                    className="w-full h-12 rounded-2xl font-bold">
+                    Cancel
+                </Button>
+            </div>
+        </DialogContent>
+    </Dialog>
     </div>
   );
 }
+
