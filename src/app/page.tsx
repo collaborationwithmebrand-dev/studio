@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,6 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import Autoplay from "embla-carousel-autoplay";
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -129,9 +128,6 @@ export default function Home() {
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
-
-  const adsQuery = useMemoFirebase(() => query(collection(firestore, 'advertisements'), where('active', '==', true)), [firestore]);
-  const { data: activeAds } = useCollection(adsQuery);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -709,51 +705,6 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        {activeAds && activeAds.length > 0 && (
-          <div className="mb-8">
-            <Carousel
-              plugins={[Autoplay({ delay: 4000, stopOnInteraction: false })]}
-              opts={{
-                align: "start",
-                loop: true,
-              }}
-              className="w-full"
-            >
-              <CarouselContent>
-                {activeAds.map((ad: any) => (
-                  <CarouselItem key={ad.id}>
-                    <a href={ad.ctaLink || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)]">
-                      {ad.imageUrl ? (
-                        <div className="relative">
-                          <img src={ad.imageUrl} alt={ad.message || 'Advertisement'} className="w-full aspect-[2/1] md:aspect-[3/1] object-cover" />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                          <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
-                            <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-2">{ad.message}</h3>
-                            {ad.ctaText && (
-                              <div className="inline-flex items-center gap-2 bg-white text-black font-black text-xs uppercase px-4 py-2 rounded-lg group-hover:scale-105 transition-transform">
-                                {ad.ctaText} <ChevronRight className="w-4 h-4" />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
-                          <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-4">{ad.message}</h3>
-                          {ad.ctaText && (
-                              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-black text-xs uppercase px-5 py-3 rounded-lg group-hover:scale-105 transition-transform border border-white/30">
-                                {ad.ctaText} <ChevronRight className="w-4 h-4" />
-                              </div>
-                            )}
-                        </div>
-                      )}
-                    </a>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-        )}
-
         <div className="max-w-md mx-auto mb-10 space-y-4">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
             <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>

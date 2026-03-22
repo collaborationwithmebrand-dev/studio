@@ -51,18 +51,6 @@
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },
-    "Announcement": {
-      "title": "Store Announcement",
-      "type": "object",
-      "properties": {
-        "message": { "type": "string" },
-        "active": { "type": "boolean" },
-        "imageUrl": { "type": "string", "format": "uri", "description": "Optional image for the announcement banner." },
-        "ctaText": { "type": "string", "description": "Call to action text for the button, e.g., 'Shop Now'." },
-        "ctaLink": { "type": "string", "format": "uri", "description": "URL to link to when the banner is clicked." },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      }
-    },
     "Order": {
       "title": "Order",
       "type": "object",
@@ -110,10 +98,6 @@
     "/storeSettings/mainSettings": {
       "schema": { "$ref": "#/backend/entities/StoreSetting" },
       "description": "Sensitive administrative settings."
-    },
-    "/advertisements/{adId}": {
-      "schema": { "$ref": "#/backend/entities/Announcement" },
-      "description": "Sliding advertisement banners for the homepage."
     },
     "/publicDisplaySettings/theme": {
       "schema": { "$ref": "#/backend/entities/public_theme_setting" },

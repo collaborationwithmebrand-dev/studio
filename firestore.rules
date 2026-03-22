@@ -28,12 +28,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Advertisements are public for reading
-    match /advertisements/{adId} {
-      allow get, list: if true;
-      allow write: if isAdmin();
-    }
-
     // Public display settings (Theme) are public
     match /publicDisplaySettings/{settingId} {
       allow read: if true;
