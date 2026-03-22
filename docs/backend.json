@@ -57,6 +57,9 @@
       "properties": {
         "message": { "type": "string" },
         "active": { "type": "boolean" },
+        "imageUrl": { "type": "string", "format": "uri", "description": "Optional image for the announcement banner." },
+        "ctaText": { "type": "string", "description": "Call to action text for the button, e.g., 'Shop Now'." },
+        "ctaLink": { "type": "string", "format": "uri", "description": "URL to link to when the banner is clicked." },
         "updatedAt": { "type": "string", "format": "date-time" }
       }
     },

@@ -72,7 +72,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   
   const [announcementMsg, setAnnouncementMsg] = useState('');
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
-  
+  const [announcementImageUrl, setAnnouncementImageUrl] = useState('');
+  const [announcementCtaText, setAnnouncementCtaText] = useState('');
+  const [announcementCtaLink, setAnnouncementCtaLink] = useState('');
+
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
   const SECTION_OPTIONS = ['General Bazaar', 'Fresh Produce', 'Electronics', 'Apparel', 'Essentials'];
   const CATEGORY_OPTIONS = ['Snacks', 'Beverages', 'Mobiles', 'Fashion', 'Grocery', 'Vegetables', 'Fruits', 'Paan & Tobacco', 'Summer', 'Beauty', 'Decor'];
@@ -93,6 +96,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     if (announcement) {
       setAnnouncementMsg(announcement.message || '');
       setIsAnnouncementActive(announcement.active || false);
+      setAnnouncementImageUrl(announcement.imageUrl || '');
+      setAnnouncementCtaText(announcement.ctaText || '');
+      setAnnouncementCtaLink(announcement.ctaLink || '');
     }
   }, [announcement]);
 
@@ -124,6 +130,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     setDocumentNonBlocking(announcementRef, {
       message: announcementMsg,
       active: isAnnouncementActive,
+      imageUrl: announcementImageUrl,
+      ctaText: announcementCtaText,
+      ctaLink: announcementCtaLink,
       updatedAt: new Date().toISOString()
     }, { merge: true });
     toast({ title: "Broadcast Live", className: "bg-blue-600 text-white" });
@@ -198,7 +207,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
         <TabsList className="grid w-full grid-cols-4 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Items</TabsTrigger>
-          <TabsTrigger value="broadcast" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Alerts</TabsTrigger>
+          <TabsTrigger value="broadcast" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Ads</TabsTrigger>
           <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Config</TabsTrigger>
         </TabsList>
 
@@ -358,19 +367,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
           <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none max-w-2xl mx-auto">
             <CardHeader className="px-0 mb-6">
               <CardTitle className="text-blue-600 font-black uppercase text-2xl flex items-center gap-4 italic">
-                <Megaphone className="w-8 h-8" /> Announcements
+                <Megaphone className="w-8 h-8" /> Advertisements
               </CardTitle>
             </CardHeader>
-            <CardContent className="px-0 space-y-8">
+            <CardContent className="px-0 space-y-6">
               <div className="space-y-3">
-                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Message</Label>
-                <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="Type info for all..." className="rounded-2xl bg-slate-50 border-none h-40 text-blue-950 font-black uppercase p-6 shadow-inner" />
+                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Title/Message</Label>
+                <Textarea value={announcementMsg} onChange={(e) => setAnnouncementMsg(e.target.value)} placeholder="e.g. FLAT 50% OFF" className="rounded-2xl bg-slate-50 border-none h-24 text-blue-950 font-black uppercase p-6 shadow-inner" />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Image URL (Optional)</Label>
+                <Input value={announcementImageUrl} onChange={(e) => setAnnouncementImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+              </div>
+               <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Button Text (e.g. Shop Now)</Label>
+                <Input value={announcementCtaText} onChange={(e) => setAnnouncementCtaText(e.target.value)} placeholder="Shop Now" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+              </div>
+               <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase text-slate-300 ml-4">Ad Link (on click)</Label>
+                <Input value={announcementCtaLink} onChange={(e) => setAnnouncementCtaLink(e.target.value)} placeholder="/category/snacks" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
               </div>
               <div className="flex items-center gap-4 p-6 bg-blue-50/50 rounded-2xl border border-blue-50">
                 <Switch id="c-broadcast" checked={isAnnouncementActive} onCheckedChange={(checked) => setIsAnnouncementActive(checked)} className="scale-125 data-[state=checked]:bg-blue-600" />
                 <Label htmlFor="c-broadcast" className="font-black text-blue-900 uppercase text-[10px]">Broadcast Active: {isAnnouncementActive ? "ON" : "OFF"}</Label>
               </div>
-              <Button onClick={handleUpdateAnnouncement} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg border-none">Update News</Button>
+              <Button onClick={handleUpdateAnnouncement} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl italic text-lg border-none">Publish Ad</Button>
             </CardContent>
           </Card>
         </TabsContent>

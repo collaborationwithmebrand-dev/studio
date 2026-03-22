@@ -654,12 +654,11 @@ export default function Home() {
       <FestiveEffects theme={currentTheme} />
       
       <header className="relative z-[60]">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-400 text-black py-3 px-4 text-center border-b-2 border-black/10 shadow-lg">
-          <div className="container mx-auto flex items-center justify-center gap-3">
-            <Megaphone className="w-4 h-4 md:w-5 md:h-5 animate-bounce shrink-0" />
-            <p className="text-[10px] md:text-sm font-black uppercase tracking-tight italic">
+        <div className="bg-slate-900 text-white py-2 px-4 text-center">
+          <div className="container mx-auto flex items-center justify-center gap-2">
+            <Tag className="w-4 h-4 shrink-0" />
+            <p className="text-[10px] md:text-sm font-bold uppercase tracking-wide italic">
               {settings?.freeDeliveryMessage || "FREE DELIVERY ON ALL ORDERS 🔺🍥🍤🌴💐"}
-              {announcement?.active && ` — ${announcement.message}`}
             </p>
           </div>
         </div>
@@ -709,6 +708,36 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
+        {announcement?.active && (announcement.message || announcement.imageUrl) && (
+          <div className="mb-8">
+            <a href={announcement.ctaLink || '#'} target="_blank" rel="noopener noreferrer" className="block rounded-3xl overflow-hidden shadow-2xl group transition-all duration-500 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)]">
+              {announcement.imageUrl ? (
+                <div className="relative">
+                  <img src={announcement.imageUrl} alt={announcement.message || 'Advertisement'} className="w-full h-auto object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="absolute bottom-0 left-0 p-6 md:p-8 text-white">
+                    <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-2">{announcement.message}</h3>
+                    {announcement.ctaText && (
+                      <div className="inline-flex items-center gap-2 bg-white text-black font-black text-xs uppercase px-4 py-2 rounded-lg group-hover:scale-105 transition-transform">
+                        {announcement.ctaText} <ChevronRight className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white text-center">
+                   <h3 className="text-xl md:text-3xl font-black uppercase italic tracking-tighter mb-4">{announcement.message}</h3>
+                   {announcement.ctaText && (
+                      <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm text-white font-black text-xs uppercase px-5 py-3 rounded-lg group-hover:scale-105 transition-transform border border-white/30">
+                        {announcement.ctaText} <ChevronRight className="w-4 h-4" />
+                      </div>
+                    )}
+                </div>
+              )}
+            </a>
+          </div>
+        )}
+
         <div className="max-w-md mx-auto mb-10 space-y-4">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
             <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
