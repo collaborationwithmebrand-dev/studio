@@ -432,7 +432,7 @@ export default function Home() {
     );
   }
 
-  if (isStoreClosed) {
+  if (isStoreClosed && !isActuallyAdmin) {
     return (
       <div className={cn("min-h-screen flex flex-col items-center justify-center p-8 text-center gap-10", currentTheme === 'Normal' ? 'bg-slate-900' : currentThemeConfig.bg)}>
          <FestiveEffects theme={currentTheme} />
@@ -489,7 +489,7 @@ export default function Home() {
                           <Star className="w-5 h-5 text-yellow-400" />
                           <p className="text-yellow-400 font-black text-sm uppercase italic">Special Offer Unlocked</p>
                         </div>
-                        <p className="text-slate-400 text-xs font-bold mb-4">You get FREE delivery on this order (Snacks total &gt; ₹{orderBreakdown.snacksTotal}).</p>
+                        <p className="text-slate-400 text-xs font-bold mb-4">You get FREE delivery on this order (Snacks total &gt; ₹500).</p>
                         <Button onClick={() => setIsSnacksOfferClaimed(true)} className="bg-yellow-400 text-black font-black h-12 w-full rounded-xl shadow-lg hover:brightness-110">
                           <Tag className="w-4 h-4 mr-2"/> Claim Free Delivery
                         </Button>
