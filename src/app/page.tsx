@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,9 +18,7 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking,
   setDocumentNonBlocking,
-  useUser,
-  useAuth,
-  initiateAnonymousSignIn
+  useUser
 } from '@/firebase';
 import { collection, doc, query } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -57,7 +55,6 @@ type CheckoutStep = 'summary' | 'details' | 'otp' | 'payment' | 'qr' | null;
 
 export default function Home() {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
@@ -109,12 +106,6 @@ export default function Home() {
     const timerId = setInterval(checkTime, 60000);
     return () => clearInterval(timerId);
   }, []);
-
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
 
   useEffect(() => {
     if (!user) return;
@@ -236,8 +227,19 @@ export default function Home() {
     return ['all', ...uniqueCategories];
   }, [products]);
 
-  const categoryDisplayMap: Record<string, string> = {
-    'Paan & Tobacco': 'Paan & Essentials (18+)',
+  const categoryDisplayMap: Record<string, { name: string; icon: React.ReactNode }> = {
+    'all': { name: 'All', icon: <LayoutGrid className="w-6 h-6" /> },
+    'Snacks': { name: 'Snacks', icon: <Cookie className="w-6 h-6" /> },
+    'Beverages': { name: 'Drinks', icon: <CupSoda className="w-6 h-6" /> },
+    'Summer': { name: 'Summer', icon: <Sun className="w-6 h-6" /> },
+    'Beauty': { name: 'Beauty', icon: <Sparkles className="w-6 h-6" /> },
+    'Fashion': { name: 'Fashion', icon: <Shirt className="w-6 h-6" /> },
+    'Mobiles': { name: 'Electronics', icon: <Headphones className="w-6 h-6" /> },
+    'Grocery': { name: 'Grocery', icon: <ShoppingBasket className="w-6 h-6" /> },
+    'Vegetables': { name: 'Veggies', icon: <Carrot className="w-6 h-6" /> },
+    'Fruits': { name: 'Fruits', icon: <Apple className="w-6 h-6" /> },
+    'Paan & Tobacco': { name: 'Paan & More', icon: <Leaf className="w-6 h-6" /> },
+    'Decor': { name: 'Decor', icon: <LampDesk className="w-6 h-6" /> },
   };
 
   const handleCategorySelect = (category: string) => {
@@ -716,19 +718,21 @@ export default function Home() {
           
           <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4">
             {categories.map((cat: string) => {
-              const displayName = categoryDisplayMap[cat] || cat;
+              const displayInfo = categoryDisplayMap[cat] || { name: cat.charAt(0).toUpperCase() + cat.slice(1), icon: <ShoppingBag className="w-6 h-6" /> };
+              
               return (
                 <button
                     key={cat}
                     onClick={() => handleCategorySelect(cat)}
                     className={cn(
-                        "px-5 py-2.5 rounded-full text-[11px] font-black uppercase transition-all duration-500 whitespace-nowrap shadow-md",
+                        "flex flex-col items-center justify-center gap-1.5 flex-shrink-0 w-20 h-20 rounded-2xl transition-all duration-300",
                         selectedCategory === cat
-                        ? "bg-slate-900 text-white scale-105 shadow-xl"
-                        : "bg-white/80 text-slate-500 backdrop-blur-sm"
+                        ? "bg-primary/10 text-primary scale-105"
+                        : "text-slate-500 hover:bg-slate-50"
                     )}
                 >
-                    {displayName}
+                    {displayInfo.icon}
+                    <span className="text-[10px] font-bold">{displayInfo.name}</span>
                 </button>
               )
             })}
@@ -881,4 +885,3 @@ export default function Home() {
     </div>
   );
 }
-
