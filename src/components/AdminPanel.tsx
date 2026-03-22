@@ -51,7 +51,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState('Snacks');
   const [unit, setUnit] = useState('Pcs');
   const [section, setSection] = useState('General Bazaar');
   const [imageUrl, setImageUrl] = useState('');
@@ -74,6 +74,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isAnnouncementActive, setIsAnnouncementActive] = useState(false);
   
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
+  const SECTION_OPTIONS = ['General Bazaar', 'Fresh Produce', 'Electronics', 'Apparel', 'Essentials'];
+  const CATEGORY_OPTIONS = ['Snacks', 'Beverages', 'Mobiles', 'Fashion', 'Grocery', 'Vegetables', 'Fruits'];
 
   useEffect(() => {
     if (settings) {
@@ -134,7 +136,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       price: parseFloat(price), 
       unit, 
       section, 
-      category: category || "General", 
+      category, 
       imageUrl, 
       imageUrl2: imageUrl2 || null,
       description,
@@ -143,7 +145,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       isOutOfStock,
       createdAt: new Date().toISOString()
     });
-    setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); setCategory(''); setIsPinned(false); setUnit('Pcs'); setIsOutOfStock(false);
+    setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); 
+    setCategory('Snacks'); setSection('General Bazaar');
+    setIsPinned(false); setUnit('Pcs'); setIsOutOfStock(false);
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -275,11 +279,27 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   </div>
                 </div>
                 <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Section</Label>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {SECTION_OPTIONS.map(s => (
+                      <Button key={s} type="button" onClick={() => setSection(s)} variant={section === s ? 'default' : 'outline'} className={cn("h-8 px-3 rounded-lg text-[9px] font-black uppercase", section === s ? 'bg-blue-600 text-white border-none' : 'border-blue-100 text-blue-400')}>{s}</Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Category</Label>
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {CATEGORY_OPTIONS.map(c => (
+                      <Button key={c} type="button" onClick={() => setCategory(c)} variant={category === c ? 'default' : 'outline'} className={cn("h-8 px-3 rounded-lg text-[9px] font-black uppercase", category === c ? 'bg-blue-600 text-white border-none' : 'border-blue-100 text-blue-400')}>{c}</Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Unit / Variant (Type anything: 500 gm, 1 Liter...)</Label>
                   <Input value={unit} onChange={(e) => setUnit(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-                  <div className="flex flex-wrap gap-2 mt-2">
+                  <div className="flex flex-wrap gap-2 pt-2">
                     {UNIT_OPTIONS.map(u => (
-                      <Button key={u} type="button" onClick={() => setUnit(u)} variant="outline" className="h-8 px-3 rounded-lg text-[9px] font-black uppercase border-blue-100 text-blue-400">{u}</Button>
+                      <Button key={u} type="button" onClick={() => setUnit(u)} variant={unit === u ? 'default' : 'outline'} className={cn("h-8 px-3 rounded-lg text-[9px] font-black uppercase", unit === u ? 'bg-blue-600 text-white border-none' : 'border-blue-100 text-blue-400')}>{u}</Button>
                     ))}
                   </div>
                 </div>
