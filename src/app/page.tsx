@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +50,7 @@ interface CartItem {
   unit: string;
   imageUrl: string;
   quantity: number;
+  category: string;
 }
 
 type CheckoutStep = 'summary' | 'details' | 'otp' | 'payment' | 'qr' | null;
@@ -81,6 +82,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
   const { isLateNight, isStoreClosed } = timeFlags;
+  const [isSnacksOfferClaimed, setIsSnacksOfferClaimed] = useState(false);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -269,6 +271,7 @@ export default function Home() {
           price: product.price,
           unit: product.unit,
           imageUrl: product.imageUrl,
+          category: product.category,
           quantity: existing ? Math.min(existing.quantity + 1, 10) : 1
         }
       };
@@ -299,13 +302,24 @@ export default function Home() {
   }, [cart]);
 
   const orderBreakdown = useMemo(() => {
-    const deliveryCharge = isLateNight ? 35 : 25;
+    const snacksTotal = Object.values(cart)
+        .filter(item => item.category === 'Snacks')
+        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const isOfferEligible = snacksTotal >= 500 && !isLateNight;
+
+    let deliveryCharge = isLateNight ? 35 : 25;
+    if (isOfferEligible && isSnacksOfferClaimed) {
+        deliveryCharge = 0;
+    }
+
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
     const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
     const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
     const finalPrice = initialTotal + taxAndGst;
-    return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice };
-  }, [cartTotal, packagingType, isLateNight]);
+    
+    return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice, isOfferEligible, snacksTotal };
+  }, [cart, cartTotal, packagingType, isLateNight, isSnacksOfferClaimed]);
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
@@ -339,6 +353,7 @@ export default function Home() {
       window.open(`https://wa.me/${settings?.whatsappNumber || "917319965930"}?text=${encodeURIComponent(message)}`, '_blank');
       setCheckoutStep(null);
       setCart({});
+      setIsSnacksOfferClaimed(false);
       toast({ title: "Order Placed Successfully!", className: "bg-green-600 text-white" });
     };
 
@@ -357,7 +372,10 @@ export default function Home() {
 
   const handleStepBack = () => {
     setCheckoutStep(prev => {
-      if (prev === 'summary') return null;
+      if (prev === 'summary') {
+        setIsSnacksOfferClaimed(false);
+        return null;
+      }
       if (prev === 'details') return 'summary';
       if (prev === 'otp') return 'details';
       if (prev === 'payment') return 'otp';
@@ -447,14 +465,46 @@ export default function Home() {
                     </div>
                   ))}
                 </div>
+
+                {orderBreakdown.isOfferEligible && (
+                  <div className="my-4 p-5 bg-yellow-400/10 rounded-2xl border-2 border-dashed border-yellow-400/20 text-center animate-in fade-in">
+                    {!isSnacksOfferClaimed ? (
+                      <>
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Star className="w-5 h-5 text-yellow-400" />
+                          <p className="text-yellow-400 font-black text-sm uppercase italic">Special Offer Unlocked</p>
+                        </div>
+                        <p className="text-slate-400 text-xs font-bold mb-4">You get FREE delivery on this order (Snacks total &gt; ₹{orderBreakdown.snacksTotal}).</p>
+                        <Button onClick={() => setIsSnacksOfferClaimed(true)} className="bg-yellow-400 text-black font-black h-12 w-full rounded-xl shadow-lg hover:brightness-110">
+                          <Tag className="w-4 h-4 mr-2"/> Claim Free Delivery
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center gap-3">
+                        <CircleCheck className="w-8 h-8 text-primary shrink-0"/>
+                        <div className="text-left">
+                          <p className="text-primary font-black text-sm">Free Delivery Claimed!</p>
+                          <p className="text-slate-400 text-xs font-bold">Enjoy your snacks!</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
                     <span>Priority Delivery</span>
                     <div className="flex items-center gap-2">
-                        {isLateNight && <Badge variant="outline" className="bg-orange-500/20 text-orange-300 border-none text-[7px] font-black">LATE NIGHT</Badge>}
+                      {isLateNight && <Badge variant="outline" className="bg-orange-500/20 text-orange-300 border-none text-[7px] font-black">LATE NIGHT</Badge>}
+                      {isSnacksOfferClaimed && orderBreakdown.isOfferEligible ? (
+                        <>
+                          <span className="line-through text-slate-600">₹{isLateNight ? 35 : 25}</span>
+                          <span className="text-primary font-black text-base ml-1">FREE</span>
+                        </>
+                      ) : (
                         <span>₹{orderBreakdown.deliveryCharge}</span>
+                      )}
                     </div>
                   </div>
                   {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
@@ -734,12 +784,10 @@ export default function Home() {
             onClick={() => setCheckoutStep('summary')}
             className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-start leading-none">
+            <div className="flex flex-col items-start leading-none">
                 <p className="text-[11px] font-black uppercase tracking-tight">View Cart</p>
                 <p className="text-[9px] font-bold opacity-80">{cartCount} items</p>
               </div>
-            </div>
             <div className="bg-white/10 h-11 px-6 rounded-full flex items-center gap-2 border border-white/20">
               <span className="text-[12px] font-black italic">₹{orderBreakdown.finalPrice}</span>
               <ChevronRight className="w-4 h-4" />
@@ -767,3 +815,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
