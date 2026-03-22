@@ -78,6 +78,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
   const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
   const { isLateNight, isStoreClosed } = timeFlags;
 
@@ -93,17 +94,14 @@ export default function Home() {
       const hour = now.getHours();
       const minute = now.getMinutes();
       
-      // Late night: 1:00 AM to 2:29 AM
       const isLateNight = hour === 1 || (hour === 2 && minute < 30);
-      
-      // Store closed: 2:30 AM to 6:59 AM
       const isStoreClosed = (hour === 2 && minute >= 30) || (hour >= 3 && hour < 7);
       
       setTimeFlags({ isLateNight, isStoreClosed });
     };
 
     checkTime();
-    const timerId = setInterval(checkTime, 60000); // Update time every minute
+    const timerId = setInterval(checkTime, 60000);
     return () => clearInterval(timerId);
   }, []);
 
@@ -225,28 +223,39 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
+  const categories = useMemo(() => {
+    if (!products) return ['all'];
+    const uniqueCategories = [
+      ...new Set(products.map((p: any) => p.category).filter(Boolean))
+    ];
+    return ['all', ...uniqueCategories];
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     return products
-      .filter(p => {
+      .filter((p: any) => {
         const term = searchQuery.toLowerCase();
         const matchesSearch = (
           p.name.toLowerCase().includes(term) || 
           (p.section && p.section.toLowerCase().includes(term)) ||
           (p.category && p.category.toLowerCase().includes(term))
         );
-        const matchesFilter = 
+        const matchesDelivery = 
           deliveryFilter === 'all' || 
           (deliveryFilter === 'instant' && p.deliveryMode === 'instant') ||
           (deliveryFilter === 'standard' && p.deliveryMode === 'standard');
-        return matchesSearch && matchesFilter;
+        
+        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+
+        return matchesSearch && matchesDelivery && matchesCategory;
       })
       .sort((a, b) => {
         if (a.isOutOfStock !== b.isOutOfStock) return a.isOutOfStock ? 1 : -1;
         if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
         return 0;
       });
-  }, [products, searchQuery, deliveryFilter]);
+  }, [products, searchQuery, deliveryFilter, selectedCategory]);
 
   const addToCart = (product: any) => {
     if (product.isOutOfStock) return;
@@ -632,11 +641,28 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto mb-10">
+        <div className="max-w-md mx-auto mb-10 space-y-4">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
             <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
             <button onClick={() => setDeliveryFilter('instant')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}><Zap className="w-4 h-4" /> 25 MIN</button>
             <button onClick={() => setDeliveryFilter('standard')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-700 text-white shadow-xl" : "text-slate-400")}><Clock className="w-4 h-4" /> 2 DAYS</button>
+          </div>
+          
+          <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4">
+            {categories.map((cat: string) => (
+                <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={cn(
+                        "px-5 py-2.5 rounded-full text-[11px] font-black uppercase transition-all duration-500 whitespace-nowrap shadow-md",
+                        selectedCategory === cat
+                        ? "bg-slate-900 text-white scale-105 shadow-xl"
+                        : "bg-white/80 text-slate-500 backdrop-blur-sm"
+                    )}
+                >
+                    {cat}
+                </button>
+            ))}
           </div>
         </div>
 
