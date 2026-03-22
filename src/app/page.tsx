@@ -2,7 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Mail, KeyRound, LogOut } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,13 +22,6 @@ import {
   useAuth,
   initiateAnonymousSignIn
 } from '@/firebase';
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  EmailAuthProvider,
-  linkWithCredential,
-} from 'firebase/auth';
 import { collection, doc, query } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -37,7 +30,6 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -91,12 +83,6 @@ export default function Home() {
   const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
   const { isLateNight, isStoreClosed } = timeFlags;
   const [isSnacksOfferClaimed, setIsSnacksOfferClaimed] = useState(false);
-
-  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('signup');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isAuthLoading, setIsAuthLoading] = useState(false);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -170,58 +156,6 @@ export default function Home() {
       setSearchQuery('');
     }
   }, [searchQuery]);
-
-  const handleSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) return toast({ title: "Email and password required", variant: "destructive" });
-    setIsAuthLoading(true);
-    try {
-      if (user && user.isAnonymous) {
-        const credential = EmailAuthProvider.credential(email, password);
-        await linkWithCredential(user, credential);
-      } else {
-        await createUserWithEmailAndPassword(auth, email, password);
-      }
-      toast({ title: "Account Created!", description: "You are now signed in.", className: "bg-green-600 text-white" });
-      setIsAuthDialogOpen(false);
-      setEmail('');
-      setPassword('');
-    } catch (error: any) {
-      toast({ title: "Sign Up Failed", description: error.message, variant: "destructive" });
-    } finally {
-      setIsAuthLoading(false);
-    }
-  };
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) return toast({ title: "Email and password required", variant: "destructive" });
-    setIsAuthLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({ title: "Signed In!", description: "Welcome back.", className: "bg-green-600 text-white" });
-      setIsAuthDialogOpen(false);
-      setEmail('');
-      setPassword('');
-    } catch (error: any) {
-      toast({ title: "Login Failed", description: error.message, variant: "destructive" });
-    } finally {
-      setIsAuthLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    setIsAuthLoading(true);
-    try {
-      await signOut(auth);
-      toast({ title: "Signed Out" });
-      setIsAuthDialogOpen(false);
-    } catch (error: any) {
-      toast({ title: "Sign Out Failed", description: error.message, variant: "destructive" });
-    } finally {
-      setIsAuthLoading(false);
-    }
-  };
 
   const handleVerifyCode = (e: React.FormEvent) => {
     e.preventDefault();
@@ -729,19 +663,9 @@ export default function Home() {
                     <ShieldCheck className="w-7 h-7" />
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsAuthDialogOpen(true)}
-                  className="h-14 w-14 rounded-2xl bg-slate-50 text-slate-300 hover:bg-slate-100 shadow-xl transition-all active:scale-90 p-0"
-                >
-                  {user && !user.isAnonymous ? (
-                      <UserCircle className="w-8 h-8 text-primary" />
-                  ) : (
-                      <UserCircle className="w-8 h-8" />
-                  )}
-                  <span className="sr-only">Account</span>
-                </Button>
+                <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center shadow-xl">
+                    <UserCircle className="w-8 h-8 text-slate-300" />
+                </div>
               </div>
             </div>
             
@@ -886,50 +810,6 @@ export default function Home() {
             </div>
             <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 text-white font-black uppercase text-xs italic shadow-xl">Unlock Tools</Button>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] bg-white border-none shadow-2xl">
-            {user && !user.isAnonymous ? (
-                <>
-                    <DialogHeader className="mb-4 text-center">
-                        <DialogTitle className="text-2xl font-black uppercase italic text-slate-900 tracking-tighter">My Account</DialogTitle>
-                    </DialogHeader>
-                    <div className="text-center space-y-6">
-                        <p className="font-bold text-slate-500">Signed in as <span className="text-primary italic">{user.email}</span></p>
-                        <Button onClick={handleLogout} disabled={isAuthLoading} className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs italic shadow-xl">
-                            {isAuthLoading ? <Loader2 className="w-5 h-5 animate-spin"/> : <LogOut className="w-4 h-4 mr-2" />}
-                            Sign Out
-                        </Button>
-                    </div>
-                </>
-            ) : (
-                <>
-                    <DialogHeader className="mb-4">
-                        <DialogTitle className="text-2xl font-black uppercase italic text-slate-900 tracking-tighter text-center">{authMode === 'signup' ? 'Create Account' : 'Sign In'}</DialogTitle>
-                    </DialogHeader>
-                    <Tabs value={authMode} onValueChange={(value) => setAuthMode(value as 'login' | 'signup')} className="w-full mb-6">
-                        <TabsList className="grid w-full grid-cols-2 bg-slate-100 h-14 rounded-2xl p-1.5">
-                            <TabsTrigger value="signup" className="rounded-xl h-full font-black uppercase text-xs">Sign Up</TabsTrigger>
-                            <TabsTrigger value="login" className="rounded-xl h-full font-black uppercase text-xs">Login</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                    <form onSubmit={authMode === 'signup' ? handleSignUp : handleLogin} className="space-y-6">
-                        <div className="relative">
-                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Address" className="h-16 pl-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-sm" required />
-                        </div>
-                        <div className="relative">
-                            <KeyRound className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                            <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" className="h-16 pl-14 rounded-2xl bg-slate-50 border-none shadow-inner font-bold text-sm" required />
-                        </div>
-                        <Button type="submit" disabled={isAuthLoading} className="w-full h-16 rounded-2xl bg-slate-900 text-white font-black uppercase text-base italic shadow-xl active:scale-95 transition-transform">
-                            {isAuthLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : (authMode === 'signup' ? 'Create My Account' : 'Sign In')}
-                        </Button>
-                    </form>
-                </>
-            )}
         </DialogContent>
       </Dialog>
     </div>
