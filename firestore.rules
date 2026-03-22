@@ -30,7 +30,7 @@ service cloud.firestore {
 
     // Advertisements are public for reading
     match /advertisements/{adId} {
-      allow read: if true;
+      allow get, list: if true;
       allow write: if isAdmin();
     }
 
