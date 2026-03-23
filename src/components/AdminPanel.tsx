@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AdminPanelProps {
   currentTheme: FestivalTheme;
@@ -66,8 +67,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [inventorySearch, setInventorySearch] = useState('');
 
   // Ad state
-  const [adTitle, setAdTitle] = useState('');
-  const [adImageUrl, setAdImageUrl] = useState('');
+  const [featuredProductId, setFeaturedProductId] = useState<string>('');
 
   // Settings state
   const [whatsapp, setWhatsapp] = useState('');
@@ -160,15 +160,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   };
 
   const handleAddAd = () => {
-    if (!adTitle || !adImageUrl) return toast({ title: "Ad Details Missing", variant: "destructive" });
+    if (!featuredProductId) return toast({ title: "Please select a product to feature.", variant: "destructive" });
+    
+    const isAlreadyFeatured = (ads as any[])?.some(ad => ad.productId === featuredProductId);
+    if (isAlreadyFeatured) {
+        toast({ title: "This product is already featured.", variant: "destructive" });
+        return;
+    }
+
     addDocumentNonBlocking(collection(firestore, 'ads'), {
-      title: adTitle,
-      imageUrl: adImageUrl,
+      productId: featuredProductId,
       createdAt: new Date().toISOString()
     });
-    setAdTitle('');
-    setAdImageUrl('');
-    toast({ title: "Ad Published", className: "bg-blue-600 text-white" });
+    setFeaturedProductId('');
+    toast({ title: "Product Featured in Ad", className: "bg-blue-600 text-white" });
   };
 
   const handleDeleteAd = (adId: string) => {
@@ -419,14 +424,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     </CardHeader>
                     <CardContent className="px-0 space-y-6">
                         <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Ad Title</Label>
-                            <Input value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="e.g. Summer Sale" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Product to Feature</Label>
+                            <Select value={featuredProductId} onValueChange={setFeaturedProductId}>
+                                <SelectTrigger className="rounded-xl bg-slate-50 border-none h-14 font-bold">
+                                    <SelectValue placeholder="Select a product from inventory..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {products?.filter(p => !p.isOutOfStock).map((p: any) => (
+                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Ad Image URL</Label>
-                            <Input value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
-                        </div>
-                        <Button onClick={handleAddAd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Ad</Button>
+                        <Button onClick={handleAddAd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Feature Product</Button>
                     </CardContent>
                 </Card>
 
@@ -437,19 +447,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="px-0 space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {(ads as any[])?.map((ad: any) => (
-                            <div key={ad.id} className="flex items-center justify-between p-4 rounded-2xl border bg-slate-50/50 border-slate-50">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md bg-white">
-                                        <img src={ad.imageUrl} className="w-full h-full object-cover" />
+                        {(ads as any[])?.map((ad: any) => {
+                            const product = products?.find(p => p.id === ad.productId);
+                            if (!product) return null;
+                            return (
+                                <div key={ad.id} className="flex items-center justify-between p-4 rounded-2xl border bg-slate-50/50 border-slate-50">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md bg-white">
+                                            <img src={product.imageUrl} className="w-full h-full object-cover" />
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-xs uppercase text-blue-900">{product.name}</p>
+                                            <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{product.price}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="font-black text-xs uppercase text-blue-900">{ad.title}</p>
-                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                            </div>
-                        ))}
+                            )
+                        })}
                     </CardContent>
                 </Card>
             </div>

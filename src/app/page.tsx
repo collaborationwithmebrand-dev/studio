@@ -740,18 +740,49 @@ export default function Home() {
         {ads && ads.length > 0 && (
           <Carousel
             plugins={[autoplayPlugin.current]}
-            className="w-full mx-auto mb-8 rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/50"
+            className="w-full mx-auto mb-8"
             onMouseEnter={autoplayPlugin.current.stop}
             onMouseLeave={autoplayPlugin.current.reset}
           >
             <CarouselContent>
-              {(ads as any[]).map((ad: any) => (
-                <CarouselItem key={ad.id}>
-                  <div className="aspect-[2/1] md:aspect-[3/1] bg-slate-100">
-                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
-                  </div>
-                </CarouselItem>
-              ))}
+              {(ads as any[]).map((ad: any) => {
+                const product = products?.find((p: any) => p.id === ad.productId);
+                if (!product) return null;
+
+                const cartItem = cart[product.id];
+                const isOrderable = canOrder && !product.isOutOfStock;
+
+                return (
+                  <CarouselItem key={ad.id}>
+                    <div className="relative aspect-[2/1] md:aspect-[2.5/1] bg-slate-900 rounded-3xl overflow-hidden p-6 md:p-12 flex items-center shadow-2xl shadow-slate-200/50">
+                      <img src={product.imageUrl} alt={product.name} className="absolute inset-0 w-full h-full object-cover opacity-20" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-900 via-slate-900/70 to-transparent" />
+                      
+                      <div className="relative z-10 w-full md:w-1/2 text-white">
+                        <Badge className="bg-yellow-400 text-black font-black uppercase text-[10px] mb-4">Featured Product</Badge>
+                        <h2 className="text-3xl md:text-5xl font-black italic uppercase leading-none line-clamp-2">{product.name}</h2>
+                        <p className="text-xl font-black text-primary italic mt-2">₹{product.price}</p>
+                        
+                        <div className="mt-6 w-48">
+                          {!isOrderable ? (
+                            <Button disabled className="w-full rounded-xl h-12 font-black text-xs bg-slate-700 text-slate-400 uppercase italic">
+                              {product.isOutOfStock ? 'Sold Out' : 'Unavailable'}
+                            </Button>
+                          ) : cartItem ? (
+                            <div className="flex items-center gap-2 bg-primary rounded-xl p-1 justify-between shadow-lg">
+                              <Button onClick={() => removeFromCart(product.id)} size="icon" className="h-9 w-9 bg-black/20 text-white rounded-lg border-none"><Minus className="w-4 h-4" /></Button>
+                              <span className="text-white font-black text-lg">{cartItem.quantity}</span>
+                              <Button onClick={() => addToCart(product)} size="icon" className="h-9 w-9 bg-black/20 text-white rounded-lg border-none"><Plus className="w-4 h-4" /></Button>
+                            </div>
+                          ) : (
+                            <Button onClick={() => addToCart(product)} className="w-full rounded-xl h-12 font-black text-xs bg-primary text-white uppercase shadow-xl border-none italic active:scale-95">Add to Basket</Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                )
+              })}
             </CarouselContent>
           </Carousel>
         )}
