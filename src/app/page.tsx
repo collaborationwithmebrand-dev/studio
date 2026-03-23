@@ -687,7 +687,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div className="relative h-10 w-40 md:h-14 md:w-56">
                 <Image
-                  src="https://i.supaimg.com/dd42da9f-0bb9-4818-b52d-6f85cb4c5a0b/8994e3cd-d5c0-47bd-a79b-8d68f91f7388.png"
+                  src="https://i.supaimg.com/e6fcf5cf-d868-458e-8ba0-07476269af55/a673cd42-8b74-4a9c-9be5-0fafb17d0658.png"
                   alt="Bounsi Bazaar Logo"
                   fill
                   className="object-contain"
