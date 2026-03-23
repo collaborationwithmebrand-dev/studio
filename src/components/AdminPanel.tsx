@@ -13,13 +13,12 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ShoppingBag, Pin, Power, Search } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, ShoppingBag, Pin, Power, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AdminPanelProps {
   currentTheme: FestivalTheme;
@@ -42,9 +41,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
   
-  const adsQuery = useMemoFirebase(() => collection(firestore, 'ads'), [firestore]);
-  const { data: ads } = useCollection(adsQuery);
-
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
@@ -65,9 +61,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isOutOfStock, setIsOutOfStock] = useState(false);
 
   const [inventorySearch, setInventorySearch] = useState('');
-
-  // Ad state
-  const [featuredProductId, setFeaturedProductId] = useState<string>('');
 
   // Settings state
   const [whatsapp, setWhatsapp] = useState('');
@@ -159,28 +152,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
-  const handleAddAd = () => {
-    if (!featuredProductId) return toast({ title: "Please select a product to feature.", variant: "destructive" });
-    
-    const isAlreadyFeatured = (ads as any[])?.some(ad => ad.productId === featuredProductId);
-    if (isAlreadyFeatured) {
-        toast({ title: "This product is already featured.", variant: "destructive" });
-        return;
-    }
-
-    addDocumentNonBlocking(collection(firestore, 'ads'), {
-      productId: featuredProductId,
-      createdAt: new Date().toISOString()
-    });
-    setFeaturedProductId('');
-    toast({ title: "Product Featured in Ad", className: "bg-blue-600 text-white" });
-  };
-
-  const handleDeleteAd = (adId: string) => {
-    deleteDocumentNonBlocking(doc(firestore, 'ads', adId));
-    toast({ title: "Ad Deleted", variant: "destructive" });
-  };
-
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus });
     toast({ title: `Order ${newStatus}`, className: "bg-blue-600 text-white font-black" });
@@ -225,10 +196,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
+        <TabsList className="grid w-full grid-cols-3 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Items</TabsTrigger>
-          <TabsTrigger value="ads" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Ads</TabsTrigger>
           <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Config</TabsTrigger>
         </TabsList>
 
@@ -414,62 +384,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
           </div>
         </TabsContent>
         
-        <TabsContent value="ads" className="space-y-10">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-                    <CardHeader className="px-0 mb-6">
-                        <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
-                            <Tag className="w-6 h-6" /> New Advertisement
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-0 space-y-6">
-                        <div className="space-y-1.5">
-                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Product to Feature</Label>
-                            <Select value={featuredProductId} onValueChange={setFeaturedProductId}>
-                                <SelectTrigger className="rounded-xl bg-slate-50 border-none h-14 font-bold">
-                                    <SelectValue placeholder="Select a product from inventory..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {products?.filter(p => !p.isOutOfStock).map((p: any) => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button onClick={handleAddAd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Feature Product</Button>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
-                    <CardHeader className="px-0 mb-6">
-                        <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
-                        <Database className="w-6 h-6" /> Current Ads
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="px-0 space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {(ads as any[])?.map((ad: any) => {
-                            const product = products?.find(p => p.id === ad.productId);
-                            if (!product) return null;
-                            return (
-                                <div key={ad.id} className="flex items-center justify-between p-4 rounded-2xl border bg-slate-50/50 border-slate-50">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md bg-white">
-                                            <img src={product.imageUrl} className="w-full h-full object-cover" />
-                                        </div>
-                                        <div>
-                                            <p className="font-black text-xs uppercase text-blue-900">{product.name}</p>
-                                            <p className="text-blue-400 font-black text-[9px] uppercase italic">₹{product.price}</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
-                                </div>
-                            )
-                        })}
-                    </CardContent>
-                </Card>
-            </div>
-        </TabsContent>
-
         <TabsContent value="settings" className="space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">

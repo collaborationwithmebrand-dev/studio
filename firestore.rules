@@ -13,12 +13,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Ads are public for reading
-    match /ads/{adId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
     // Orders are private to the owner, but admins see all
     match /orders/{orderId} {
       // Split read into get and list for clarity and admin collection queries
