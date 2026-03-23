@@ -30,6 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -89,6 +90,8 @@ export default function Home() {
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
   const SOMEONE_ELSES_CHARGE = 20;
+  
+  const autoplayPlugin = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
 
   useEffect(() => {
     setMounted(true);
@@ -147,11 +150,6 @@ export default function Home() {
   const hasWhatsappNumber = !!settings?.whatsappNumber;
   const isOrderingManuallyDisabled = !isOrderingEnabledBySwitch || !hasWhatsappNumber;
 
-  // The store can be ordered from if:
-  // 1. It's not store closing hours (2:30am - 7am)
-  // 2. The admin has enabled ordering via the switch in the hub
-  // 3. The admin has provided a WhatsApp number to receive orders
-  // OR... the user is an admin, who can bypass all these rules.
   const canOrder = (!isStoreClosed && isOrderingEnabledBySwitch && hasWhatsappNumber) || isActuallyAdmin;
 
 
@@ -229,6 +227,9 @@ export default function Home() {
 
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
+  
+  const adsQuery = useMemoFirebase(() => collection(firestore, 'ads'), [firestore]);
+  const { data: ads } = useCollection(adsQuery);
 
   const categories = useMemo(() => {
     if (!products) return ['all'];
@@ -736,6 +737,25 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
+        {ads && ads.length > 0 && (
+          <Carousel
+            plugins={[autoplayPlugin.current]}
+            className="w-full mx-auto mb-8 rounded-3xl overflow-hidden shadow-2xl shadow-slate-200/50"
+            onMouseEnter={autoplayPlugin.current.stop}
+            onMouseLeave={autoplayPlugin.current.reset}
+          >
+            <CarouselContent>
+              {(ads as any[]).map((ad: any) => (
+                <CarouselItem key={ad.id}>
+                  <div className="aspect-[2/1] md:aspect-[3/1] bg-slate-100">
+                    <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+        )}
+
         {(!canOrder && !isActuallyAdmin) && (
           <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
             <div className="flex items-center justify-center gap-3">

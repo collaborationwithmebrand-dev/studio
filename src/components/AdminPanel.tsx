@@ -40,6 +40,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
+  
+  const adsQuery = useMemoFirebase(() => collection(firestore, 'ads'), [firestore]);
+  const { data: ads } = useCollection(adsQuery);
 
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
@@ -61,6 +64,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isOutOfStock, setIsOutOfStock] = useState(false);
 
   const [inventorySearch, setInventorySearch] = useState('');
+
+  // Ad state
+  const [adTitle, setAdTitle] = useState('');
+  const [adImageUrl, setAdImageUrl] = useState('');
 
   // Settings state
   const [whatsapp, setWhatsapp] = useState('');
@@ -152,6 +159,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
+  const handleAddAd = () => {
+    if (!adTitle || !adImageUrl) return toast({ title: "Ad Details Missing", variant: "destructive" });
+    addDocumentNonBlocking(collection(firestore, 'ads'), {
+      title: adTitle,
+      imageUrl: adImageUrl,
+      createdAt: new Date().toISOString()
+    });
+    setAdTitle('');
+    setAdImageUrl('');
+    toast({ title: "Ad Published", className: "bg-blue-600 text-white" });
+  };
+
+  const handleDeleteAd = (adId: string) => {
+    deleteDocumentNonBlocking(doc(firestore, 'ads', adId));
+    toast({ title: "Ad Deleted", variant: "destructive" });
+  };
+
   const handleUpdateOrderStatus = (orderId: string, newStatus: string) => {
     updateDocumentNonBlocking(doc(firestore, 'orders', orderId), { status: newStatus });
     toast({ title: `Order ${newStatus}`, className: "bg-blue-600 text-white font-black" });
@@ -196,9 +220,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
+        <TabsList className="grid w-full grid-cols-4 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Items</TabsTrigger>
+          <TabsTrigger value="ads" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Ads</TabsTrigger>
           <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Config</TabsTrigger>
         </TabsList>
 
@@ -384,6 +409,52 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
           </div>
         </TabsContent>
         
+        <TabsContent value="ads" className="space-y-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+                    <CardHeader className="px-0 mb-6">
+                        <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                            <Tag className="w-6 h-6" /> New Advertisement
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-0 space-y-6">
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Ad Title</Label>
+                            <Input value={adTitle} onChange={(e) => setAdTitle(e.target.value)} placeholder="e.g. Summer Sale" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Ad Image URL</Label>
+                            <Input value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                        </div>
+                        <Button onClick={handleAddAd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Ad</Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+                    <CardHeader className="px-0 mb-6">
+                        <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                        <Database className="w-6 h-6" /> Current Ads
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-0 space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                        {(ads as any[])?.map((ad: any) => (
+                            <div key={ad.id} className="flex items-center justify-between p-4 rounded-2xl border bg-slate-50/50 border-slate-50">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 rounded-xl overflow-hidden shadow-md bg-white">
+                                        <img src={ad.imageUrl} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-xs uppercase text-blue-900">{ad.title}</p>
+                                    </div>
+                                </div>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            </div>
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
