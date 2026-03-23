@@ -148,6 +148,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     setName(''); setPrice(''); setImageUrl(''); setImageUrl2(''); setDescription(''); 
     setCategory('Snacks'); setSection('General Bazaar');
     setIsPinned(false); setUnit('Pcs'); setIsOutOfStock(false);
+    setDeliveryMode('instant');
     toast({ title: "Item Published", className: "bg-blue-600 text-white font-black" });
   };
 
@@ -277,6 +278,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <Input value={imageUrl2} onChange={(e) => setImageUrl2(e.target.value)} placeholder="Optional" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
                   </div>
                 </div>
+                 <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Description</Label>
+                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Product details..." className="rounded-xl bg-slate-50 border-none h-24 font-bold" />
+                </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Section</Label>
                   <div className="flex flex-wrap gap-2 pt-2">
@@ -301,6 +306,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                       <Button key={u} type="button" onClick={() => setUnit(u)} variant={unit === u ? 'default' : 'outline'} className={cn("h-8 px-3 rounded-lg text-[9px] font-black uppercase", unit === u ? 'bg-blue-600 text-white border-none' : 'border-blue-100 text-blue-400')}>{u}</Button>
                     ))}
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Delivery Mode</Label>
+                  <RadioGroup
+                    value={deliveryMode}
+                    onValueChange={(value: 'instant' | 'standard') => setDeliveryMode(value)}
+                    className="grid grid-cols-2 gap-4 pt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="instant" id="instant" />
+                      <Label htmlFor="instant" className="font-bold flex items-center gap-2"><Zap className="w-4 h-4 text-primary" />Instant (25 Min)</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="standard" id="standard" />
+                      <Label htmlFor="standard" className="font-bold flex items-center gap-2"><Clock className="w-4 h-4 text-slate-600" />Standard (2 Days)</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-blue-50/50">
