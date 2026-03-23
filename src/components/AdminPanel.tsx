@@ -12,7 +12,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ShoppingBag, Pin, Power } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ShoppingBag, Pin, Power, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -40,12 +40,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
+  const adsQuery = useMemoFirebase(() => query(collection(firestore, 'advertisements'), orderBy('createdAt', 'desc')), [firestore]);
+  const { data: ads } = useCollection(adsQuery);
+
   const ordersQuery = useMemoFirebase(() => {
     if (!isAdmin || !firestore) return null;
     return query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [firestore, isAdmin]);
   const { data: orders } = useCollection(ordersQuery);
 
+  // Product state
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('Snacks');
@@ -57,8 +61,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [deliveryMode, setDeliveryMode] = useState<'instant' | 'standard'>('instant');
   const [isPinned, setIsPinned] = useState(false);
   const [isOutOfStock, setIsOutOfStock] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
+  // Ad state
+  const [adMessage, setAdMessage] = useState('');
+  const [adImageUrl, setAdImageUrl] = useState('');
+  const [adButtonText, setAdButtonText] = useState('');
+  const [adLinkUrl, setAdLinkUrl] = useState('');
+
+  // Settings state
   const [whatsapp, setWhatsapp] = useState('');
   const [helpline, setHelpline] = useState('');
   const [upiId, setUpiId] = useState('');
@@ -115,7 +125,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       });
   };
 
-  const handleAdd = () => {
+  const handleAddProduct = () => {
     if (!name || !price || !imageUrl) return toast({ title: "Fields Missing", variant: "destructive" });
     addDocumentNonBlocking(collection(firestore, 'products'), {
       name, 
@@ -168,6 +178,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     });
   };
 
+  const handleAddAd = () => {
+    if ((!adMessage && !adImageUrl) || ads?.length >= 10) {
+      return toast({
+        title: ads?.length >= 10 ? 'Ad Limit Reached' : 'Message or Image Required',
+        description: ads?.length >= 10 ? 'You can only have up to 10 active ads.' : 'Please provide a message or an image for the ad.',
+        variant: 'destructive',
+      });
+    }
+    addDocumentNonBlocking(collection(firestore, 'advertisements'), {
+      message: adMessage,
+      imageUrl: adImageUrl,
+      buttonText: adButtonText,
+      linkUrl: adLinkUrl,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    });
+    setAdMessage('');
+    setAdImageUrl('');
+    setAdButtonText('');
+    setAdLinkUrl('');
+    toast({ title: 'Advertisement Published', className: 'bg-blue-600 text-white' });
+  };
+
+  const toggleAdStatus = (adId: string, currentStatus: boolean) => {
+    updateDocumentNonBlocking(doc(firestore, 'advertisements', adId), { isActive: !currentStatus });
+    toast({
+      title: `Ad ${!currentStatus ? 'Activated' : 'Deactivated'}`,
+      className: !currentStatus ? 'bg-green-600 text-white' : 'bg-red-600 text-white',
+    });
+  };
+
+  const handleDeleteAd = (adId: string) => {
+    deleteDocumentNonBlocking(doc(firestore, 'advertisements', adId));
+    toast({ title: 'Advertisement Deleted', variant: 'destructive' });
+  };
+
   return (
     <div className="container mx-auto px-4 space-y-12 animate-in fade-in duration-700">
       <div className="flex items-center gap-6">
@@ -181,9 +227,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       </div>
 
       <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
+        <TabsList className="grid w-full grid-cols-4 bg-blue-50/50 rounded-[2rem] h-16 p-1.5 mb-12 shadow-inner">
           <TabsTrigger value="orders" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Orders</TabsTrigger>
           <TabsTrigger value="inventory" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Items</TabsTrigger>
+          <TabsTrigger value="ads" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Ads</TabsTrigger>
           <TabsTrigger value="settings" className="rounded-xl font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-blue-600 data-[state=active]:text-white">Config</TabsTrigger>
         </TabsList>
 
@@ -298,7 +345,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                     <Label className="text-[10px] font-black uppercase text-blue-900 leading-tight">Pin to Top</Label>
                   </div>
                 </div>
-                <Button onClick={handleAdd} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
+                <Button onClick={handleAddProduct} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Item</Button>
               </CardContent>
             </Card>
 
@@ -331,6 +378,67 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                         <span className="text-[7px] font-black uppercase text-slate-400">{p.isOutOfStock ? "OUT" : "IN"}</span>
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => handleDeleteProduct(p.id)} className="h-10 w-10 rounded-xl text-slate-200 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="ads" className="space-y-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+            <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Megaphone className="w-6 h-6" /> New Advertisement
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Ad Message (shown if no image)</Label>
+                  <Input value={adMessage} onChange={(e) => setAdMessage(e.target.value)} placeholder="e.g., BIG SALE TODAY!" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Image URL</Label>
+                  <Input value={adImageUrl} onChange={(e) => setAdImageUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                 <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Button Text (optional)</Label>
+                  <Input value={adButtonText} onChange={(e) => setAdButtonText(e.target.value)} placeholder="e.g., Shop Now" className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Click Link URL</Label>
+                  <Input value={adLinkUrl} onChange={(e) => setAdLinkUrl(e.target.value)} placeholder="https://..." className="rounded-xl bg-slate-50 border-none h-14 font-bold" />
+                </div>
+                <Button onClick={handleAddAd} disabled={(ads?.length ?? 0) >= 10} className="w-full h-16 rounded-[1.5rem] bg-blue-600 text-white font-black uppercase shadow-xl hover:brightness-110 text-lg italic border-none">Publish Ad</Button>
+              </CardContent>
+            </Card>
+            <Card className="rounded-[2.5rem] p-8 bg-white shadow-2xl border-none">
+              <CardHeader className="px-0 mb-6">
+                <CardTitle className="text-blue-600 font-black uppercase text-xl flex items-center gap-3 italic">
+                  <Database className="w-6 h-6" /> Ad Manager
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-0 space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {ads?.map((ad: any) => (
+                  <div key={ad.id} className={cn("flex items-center justify-between p-4 rounded-2xl border transition-all duration-500", !ad.isActive && "opacity-50 bg-slate-50")}>
+                    <div className="flex items-center gap-4">
+                       {ad.imageUrl ? (
+                        <img src={ad.imageUrl} className="w-14 h-14 rounded-xl object-cover bg-slate-100" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl bg-slate-100 flex items-center justify-center">
+                          <Megaphone className="w-6 h-6 text-slate-400"/>
+                        </div>
+                      )}
+                      <div>
+                        <p className="font-black text-xs uppercase text-blue-900 truncate max-w-[150px]">{ad.message || 'Image Ad'}</p>
+                        <p className="text-blue-400 font-black text-[9px] uppercase italic">{ad.buttonText}</p>
+                      </div>
+                    </div>
+                     <div className="flex items-center gap-2">
+                      <Switch checked={ad.isActive} onCheckedChange={() => toggleAdStatus(ad.id, ad.isActive)} className="scale-90 data-[state=checked]:bg-green-500" />
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteAd(ad.id)} className="h-10 w-10 rounded-xl text-slate-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></Button>
                     </div>
                   </div>
                 ))}

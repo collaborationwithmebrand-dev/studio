@@ -82,6 +82,19 @@
       "properties": {
         "activeThemeName": { "type": "string" }
       }
+    },
+    "Advertisement": {
+      "title": "Advertisement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "message": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "buttonText": { "type": "string" },
+        "linkUrl": { "type": "string", "format": "uri" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -111,6 +124,10 @@
     "/orders/{orderId}": {
       "schema": { "$ref": "#/backend/entities/Order" },
       "description": "Tracked customer orders."
+    },
+    "/advertisements/{adId}": {
+      "schema": { "$ref": "#/backend/entities/Advertisement" },
+      "description": "Promotional advertisements for the homepage carousel."
     }
   }
 }

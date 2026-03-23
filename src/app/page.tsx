@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -57,6 +58,8 @@ export default function Home() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
+
+  const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }));
 
   const [mounted, setMounted] = useState(false);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -128,6 +131,10 @@ export default function Home() {
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
+
+  const adsQuery = useMemoFirebase(() => collection(firestore, 'advertisements'), [firestore]);
+  const { data: ads } = useCollection(adsQuery);
+  const activeAds = useMemo(() => ads?.filter((ad: any) => ad.isActive), [ads]);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -311,6 +318,14 @@ export default function Home() {
     });
   };
 
+  const removeEntireItemFromCart = (productId: string) => {
+    setCart(prev => {
+      const newCart = { ...prev };
+      delete newCart[productId];
+      return newCart;
+    });
+  };
+
   const cartTotal = useMemo(() => {
     return Object.values(cart).reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [cart]);
@@ -464,7 +479,12 @@ export default function Home() {
                           <p className="text-[9px] font-black text-slate-500 uppercase">{item.quantity} x {item.unit}</p>
                         </div>
                       </div>
-                      <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
+                        <Button variant="ghost" size="icon" onClick={() => removeEntireItemFromCart(item.id)} className="h-8 w-8 rounded-full text-slate-500 hover:bg-white/20 hover:text-white">
+                          <X className="w-4 h-4"/>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -693,6 +713,35 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
+        {activeAds && activeAds.length > 0 && (
+          <div className="mb-8 -mx-4">
+            <Carousel 
+              className="w-full"
+              plugins={[autoplay.current]}
+              onMouseEnter={autoplay.current.stop}
+              onMouseLeave={autoplay.current.reset}
+              opts={{ loop: true }}
+            >
+              <CarouselContent>
+                {activeAds.map((ad: any) => (
+                  <CarouselItem key={ad.id}>
+                    <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full aspect-[2/1] md:aspect-[3/1] rounded-2xl overflow-hidden shadow-2xl shadow-slate-200/50 group">
+                      {ad.imageUrl ? (
+                        <img src={ad.imageUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      ): (
+                        <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
+                          <p className="text-2xl md:text-4xl font-black text-white italic">{ad.message}</p>
+                          {ad.buttonText && <Badge className="mt-4 bg-primary text-primary-foreground text-sm font-bold">{ad.buttonText}</Badge>}
+                        </div>
+                      )}
+                    </a>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+        )}
+
         {(!canOrder && !isActuallyAdmin) && (
           <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
             <div className="flex items-center justify-center gap-3">
@@ -748,10 +797,9 @@ export default function Home() {
             return (
               <div 
                 key={p.id} 
-                onClick={() => isOrderable && addToCart(p)}
                 className={cn(
                   "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm transition-all",
-                  isOrderable ? "cursor-pointer active:scale-95" : "opacity-60 grayscale cursor-not-allowed"
+                  !isOrderable && "opacity-60 grayscale"
                 )}
               >
                 <div className="relative aspect-square mb-2 rounded-[1.2rem] overflow-hidden bg-slate-50">
@@ -796,7 +844,7 @@ export default function Home() {
                       <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
                     </div>
                   ) : (
-                    <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic">Add to Basket</Button>
+                    <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic active:scale-95">Add to Basket</Button>
                   )}
                 </div>
               </div>
