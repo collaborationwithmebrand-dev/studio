@@ -28,7 +28,6 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { generateOtp } from '@/ai/flows/send-otp-flow';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
-import Autoplay from "embla-carousel-autoplay";
 
 const BOUNSI_LAT = 24.8021;
 const BOUNSI_LNG = 87.0267;
@@ -58,8 +57,6 @@ export default function Home() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
-
-  const autoplay = useRef(Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }));
 
   const [mounted, setMounted] = useState(false);
   const [cart, setCart] = useState<Record<string, CartItem>>({});
@@ -131,10 +128,6 @@ export default function Home() {
 
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
-
-  const adsQuery = useMemoFirebase(() => collection(firestore, 'advertisements'), [firestore]);
-  const { data: ads } = useCollection(adsQuery);
-  const activeAds = useMemo(() => ads?.filter((ad: any) => ad.isActive), [ads]);
 
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
@@ -713,35 +706,6 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        {activeAds && activeAds.length > 0 && (
-          <div className="mb-8 -mx-4">
-            <Carousel 
-              className="w-full"
-              plugins={[autoplay.current]}
-              onMouseEnter={autoplay.current.stop}
-              onMouseLeave={autoplay.current.reset}
-              opts={{ loop: true }}
-            >
-              <CarouselContent>
-                {activeAds.map((ad: any) => (
-                  <CarouselItem key={ad.id}>
-                    <a href={ad.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full aspect-[2/1] md:aspect-[3/1] rounded-2xl overflow-hidden shadow-2xl shadow-slate-200/50 group">
-                      {ad.imageUrl ? (
-                        <img src={ad.imageUrl} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                      ): (
-                        <div className="w-full h-full bg-slate-900 flex flex-col items-center justify-center p-8 text-center">
-                          <p className="text-2xl md:text-4xl font-black text-white italic">{ad.message}</p>
-                          {ad.buttonText && <Badge className="mt-4 bg-primary text-primary-foreground text-sm font-bold">{ad.buttonText}</Badge>}
-                        </div>
-                      )}
-                    </a>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-            </Carousel>
-          </div>
-        )}
-
         {(!canOrder && !isActuallyAdmin) && (
           <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
             <div className="flex items-center justify-center gap-3">
