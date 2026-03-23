@@ -362,8 +362,8 @@ export default function Home() {
     
     if (!settings?.whatsappNumber) {
       toast({
-        title: "WhatsApp Number Not Configured",
-        description: "Please set the WhatsApp number in the Admin Hub to receive orders.",
+        title: "Shop is closed for sometime",
+        description: "We are not accepting orders at this moment.",
         variant: "destructive",
       });
       return;
