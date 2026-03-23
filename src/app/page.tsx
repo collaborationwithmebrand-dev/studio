@@ -2,6 +2,7 @@
 "use client"
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -428,15 +429,19 @@ export default function Home() {
     );
   }
 
-  if ((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin) {
+  if (((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin) || (isStoreClosed && !isActuallyAdmin)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-10">
         <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center shadow-xl shadow-red-50">
           <LayoutGrid className="w-10 h-10 text-red-500" />
         </div>
         <div className="space-y-4">
-          <h1 className="text-3xl font-black text-slate-900 uppercase italic">Out of Range</h1>
-          <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">We deliver within 9km of Bounsi (813104). Please enable location access.</p>
+          <h1 className="text-3xl font-black text-slate-900 uppercase italic">
+            {isStoreClosed ? "WE ARE RESTING" : "Out of Range"}
+          </h1>
+          <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">
+            {isStoreClosed ? "You can browse our products between 7:00 AM and 2:30 AM." : "We deliver within 9km of Bounsi (813104). Please enable location access."}
+          </p>
         </div>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">RETRY ACCESS</Button>
       </div>
@@ -664,10 +669,14 @@ export default function Home() {
         <nav className="sticky top-0 glass-nav py-6 shadow-xl z-50">
           <div className="container mx-auto px-6 flex flex-col gap-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
-                  Bounsi Bazaar
-                </h1>
+              <div className="relative h-10 w-40 md:h-14 md:w-56">
+                <Image
+                  src="https://i.supaimg.com/dd42da9f-0bb9-4818-b52d-6f85cb4c5a0b/8994e3cd-d5c0-47bd-a79b-8d68f91f7388.png"
+                  alt="Bounsi Bazaar Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
               <div className="flex items-center gap-3">
                 {isActuallyAdmin && (
