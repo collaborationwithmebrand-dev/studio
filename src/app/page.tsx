@@ -279,7 +279,7 @@ export default function Home() {
   }, [products, searchQuery, deliveryFilter, selectedCategory]);
 
   const addToCart = (product: any) => {
-    if (product.isOutOfStock) return;
+    if (!canOrder || product.isOutOfStock) return;
     setCart(prev => {
       const existing = prev[product.id];
       return {
@@ -429,7 +429,7 @@ export default function Home() {
     );
   }
 
-  if (((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin) || (isStoreClosed && !isActuallyAdmin)) {
+  if (((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-10">
         <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center shadow-xl shadow-red-50">
@@ -437,10 +437,10 @@ export default function Home() {
         </div>
         <div className="space-y-4">
           <h1 className="text-3xl font-black text-slate-900 uppercase italic">
-            {isStoreClosed ? "WE ARE RESTING" : "Out of Range"}
+            Out of Range
           </h1>
           <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">
-            {isStoreClosed ? "You can browse our products between 7:00 AM and 2:30 AM." : "We deliver within 9km of Bounsi (813104). Please enable location access."}
+            We deliver within 9km of Bounsi (813104). Please enable location access.
           </p>
         </div>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">RETRY ACCESS</Button>
@@ -812,12 +812,12 @@ export default function Home() {
                     </Button>
                   ) : cartItem ? (
                     <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 justify-between shadow-lg">
-                      <Button onClick={(e) => { e.stopPropagation(); removeFromCart(p.id); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
                       <span className="text-white font-black text-xs">{cartItem.quantity}</span>
-                      <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
                     </div>
                   ) : (
-                    <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic active:scale-95">Add to Basket</Button>
+                    <Button onClick={() => addToCart(p)} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic active:scale-95">Add to Basket</Button>
                   )}
                 </div>
               </div>
