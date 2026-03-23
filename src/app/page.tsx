@@ -666,7 +666,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
-                  {settings?.estimatedDeliveryTime || "17-25 min"}
+                  Bounsi Bazaar
                 </h1>
               </div>
               <div className="flex items-center gap-3">
