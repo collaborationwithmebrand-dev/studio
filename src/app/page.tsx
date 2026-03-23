@@ -140,6 +140,7 @@ export default function Home() {
   }, [user, firestore]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
+  const canOrder = !isStoreClosed || isActuallyAdmin;
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -432,21 +433,6 @@ export default function Home() {
     );
   }
 
-  if (isStoreClosed && !isActuallyAdmin) {
-    return (
-      <div className={cn("min-h-screen flex flex-col items-center justify-center p-8 text-center gap-10", currentTheme === 'Normal' ? 'bg-slate-900' : currentThemeConfig.bg)}>
-         <FestiveEffects theme={currentTheme} />
-        <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center shadow-xl backdrop-blur-md">
-          <Clock className="w-10 h-10 text-white" />
-        </div>
-        <div className="space-y-4">
-          <h1 className="text-3xl font-black text-white uppercase italic">WE ARE RESTING</h1>
-          <p className="text-slate-400 max-w-xs font-bold leading-relaxed text-sm">Our store is closed from 2:30 AM to 7:00 AM. Please come back soon!</p>
-        </div>
-      </div>
-    );
-  }
-
   if (checkoutStep) {
     return (
       <div className="min-h-screen bg-white p-4 md:p-10 animate-in fade-in slide-in-from-right-10 duration-500">
@@ -705,6 +691,17 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
+        {!canOrder && (
+          <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
+            <div className="flex items-center justify-center gap-3">
+              <Clock className="w-6 h-6" />
+              <div className="text-left">
+                <p className="font-black uppercase text-base">Store is currently closed for orders</p>
+                <p className="text-xs font-bold opacity-90">You can browse our products. Ordering will resume at 7:00 AM.</p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="max-w-md mx-auto mb-10 space-y-4">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
             <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
@@ -740,14 +737,15 @@ export default function Home() {
             const cartItem = cart[p.id];
             const hasMultipleImages = !!p.imageUrl && !!p.imageUrl2;
             const isOutOfStock = p.isOutOfStock === true;
+            const isOrderable = canOrder && !isOutOfStock;
             
             return (
               <div 
                 key={p.id} 
-                onClick={() => !isOutOfStock && addToCart(p)}
+                onClick={() => isOrderable && addToCart(p)}
                 className={cn(
-                  "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm cursor-pointer active:scale-95 transition-all",
-                  isOutOfStock && "opacity-60 grayscale cursor-not-allowed active:scale-100"
+                  "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm transition-all",
+                  isOrderable ? "cursor-pointer active:scale-95" : "opacity-60 grayscale cursor-not-allowed"
                 )}
               >
                 <div className="relative aspect-square mb-2 rounded-[1.2rem] overflow-hidden bg-slate-50">
@@ -767,9 +765,11 @@ export default function Home() {
                     </Badge>
                   </div>
                   {p.isPinned && !isOutOfStock && <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] font-black flex items-center gap-1"><Pin className="w-2.5 h-2.5 fill-black" /> BEST</div>}
-                  {isOutOfStock && (
+                  {!isOrderable && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-2">
-                      <span className="bg-white/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">OUT OF STOCK</span>
+                      <span className="bg-white/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">
+                        {isOutOfStock ? 'OUT OF STOCK' : 'ORDERS CLOSED'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -779,8 +779,10 @@ export default function Home() {
                   <p className="text-xs font-black text-slate-900 italic">₹{p.price}</p>
                 </div>
                 <div className="mt-3">
-                  {isOutOfStock ? (
-                    <Button disabled className="w-full rounded-xl h-9 font-black text-[9px] bg-slate-200 text-slate-400 uppercase border-none italic">Sold Out</Button>
+                  {!isOrderable ? (
+                    <Button disabled className="w-full rounded-xl h-9 font-black text-[9px] bg-slate-200 text-slate-400 uppercase border-none italic">
+                      {isOutOfStock ? 'Sold Out' : 'Orders Closed'}
+                    </Button>
                   ) : cartItem ? (
                     <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 justify-between shadow-lg">
                       <Button onClick={(e) => { e.stopPropagation(); removeFromCart(p.id); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
@@ -800,7 +802,7 @@ export default function Home() {
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
-            onClick={() => setCheckoutStep('summary')}
+            onClick={() => canOrder ? setCheckoutStep('summary') : toast({title: "Store Closed", description: "Ordering will resume at 7:00 AM.", variant: "destructive"})}
             className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             <div className="flex flex-col items-start leading-none">
