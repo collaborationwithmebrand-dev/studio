@@ -1,9 +1,10 @@
 
+
 "use client"
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag } from 'lucide-react';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -250,6 +251,7 @@ export default function Home() {
     'Fruits': { name: 'Fruits', icon: <Apple className="w-6 h-6" /> },
     'Paan & Tobacco': { name: 'Paan & More', icon: <Leaf className="w-6 h-6" /> },
     'Decor': { name: 'Decor', icon: <LampDesk className="w-6 h-6" /> },
+    'Skin Care': { name: 'Skin Care', icon: <Heart className="w-6 h-6" /> },
   };
 
   const handleCategorySelect = (category: string) => {

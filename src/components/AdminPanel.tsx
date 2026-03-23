@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -74,7 +75,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
 
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
   const SECTION_OPTIONS = ['General Bazaar', 'Fresh Produce', 'Electronics', 'Apparel', 'Essentials'];
-  const CATEGORY_OPTIONS = ['Snacks', 'Beverages', 'Mobiles', 'Fashion', 'Grocery', 'Vegetables', 'Fruits', 'Paan & Tobacco', 'Summer', 'Beauty', 'Decor'];
+  const CATEGORY_OPTIONS = ['Snacks', 'Beverages', 'Mobiles', 'Fashion', 'Grocery', 'Vegetables', 'Fruits', 'Paan & Tobacco', 'Summer', 'Beauty', 'Decor', 'Skin Care'];
 
   useEffect(() => {
     if (settings) {
