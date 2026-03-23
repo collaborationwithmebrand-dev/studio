@@ -1,7 +1,6 @@
-
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { FestivalTheme, THEME_DATA } from '@/app/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { collection, doc, query, orderBy, limit } from 'firebase/firestore';
-import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ShoppingBag, Pin, Power } from 'lucide-react';
+import { Palette, CirclePlus, Wallet, Trash2, CircleCheck, Truck, CircleX, Database, LayoutDashboard, PhoneCall, MapPin, User, Gift, Clock, Zap, Star, Tag, ShoppingBag, Pin, Power, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { generateProductDescription } from '@/ai/flows/admin-ai-product-description';
@@ -59,6 +58,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [isPinned, setIsPinned] = useState(false);
   const [isOutOfStock, setIsOutOfStock] = useState(false);
 
+  const [inventorySearch, setInventorySearch] = useState('');
+
   // Settings state
   const [whatsapp, setWhatsapp] = useState('');
   const [helpline, setHelpline] = useState('');
@@ -83,6 +84,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
       setFreeDeliveryMsg(settings.freeDeliveryMessage || '');
     }
   }, [settings]);
+
+  const filteredInventory = useMemo(() => {
+    if (!products) return [];
+    if (!inventorySearch) return products;
+    return products.filter(p => 
+        (p.name && p.name.toLowerCase().includes(inventorySearch.toLowerCase()))
+    );
+  }, [products, inventorySearch]);
 
   if (!isAdmin) return null;
 
@@ -309,8 +318,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                   <Database className="w-6 h-6" /> Inventory
                 </CardTitle>
               </CardHeader>
-              <CardContent className="px-0 space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                {products?.map((p: any) => (
+              <div className="relative mb-6">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <Input 
+                    placeholder="Search inventory..." 
+                    value={inventorySearch} 
+                    onChange={(e) => setInventorySearch(e.target.value)}
+                    className="w-full h-14 pl-12 rounded-2xl bg-slate-50 border-none shadow-inner text-base font-bold"
+                />
+              </div>
+              <CardContent className="px-0 space-y-3 max-h-[520px] overflow-y-auto pr-2 custom-scrollbar">
+                {filteredInventory?.map((p: any) => (
                   <div key={p.id} className={cn("flex items-center justify-between p-4 rounded-2xl border transition-all duration-500 group", p.isOutOfStock ? "bg-red-50 border-red-100 opacity-80" : "bg-slate-50/50 border-slate-50")}>
                     <div className="flex items-center gap-4">
                       <div className="relative w-14 h-14 rounded-xl overflow-hidden shadow-md">
