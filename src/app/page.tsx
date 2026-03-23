@@ -142,9 +142,17 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
 
-  const isOrderingEnabled = settings?.isOrderingEnabled === true;
-  const isOrderingManuallyDisabled = !isOrderingEnabled;
-  const canOrder = (!isStoreClosed && isOrderingEnabled) || isActuallyAdmin;
+  const isOrderingEnabledBySwitch = settings?.isOrderingEnabled === true;
+  const hasWhatsappNumber = !!settings?.whatsappNumber;
+  const isOrderingManuallyDisabled = !isOrderingEnabledBySwitch || !hasWhatsappNumber;
+
+  // The store can be ordered from if:
+  // 1. It's not store closing hours (2:30am - 7am)
+  // 2. The admin has enabled ordering via the switch in the hub
+  // 3. The admin has provided a WhatsApp number to receive orders
+  // OR... the user is an admin, who can bypass all these rules.
+  const canOrder = (!isStoreClosed && isOrderingEnabledBySwitch && hasWhatsappNumber) || isActuallyAdmin;
+
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -351,6 +359,16 @@ export default function Home() {
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
+    
+    if (!settings?.whatsappNumber) {
+      toast({
+        title: "WhatsApp Number Not Configured",
+        description: "Please set the WhatsApp number in the Admin Hub to receive orders.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { finalPrice } = orderBreakdown;
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
@@ -378,7 +396,7 @@ export default function Home() {
         createdAt: new Date().toISOString()
       });
 
-      window.open(`https://wa.me/${settings?.whatsappNumber || "917319965930"}?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
       setCheckoutStep(null);
       setCart({});
       setIsSnacksOfferClaimed(false);
