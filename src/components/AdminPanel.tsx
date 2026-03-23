@@ -105,6 +105,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
     }, { merge: true });
     toast({ title: "Settings Updated", className: "bg-blue-600 text-white" });
   };
+  
+  const handleToggleOrdering = (enabled: boolean) => {
+      if (!settingsRef) return;
+      updateDocumentNonBlocking(settingsRef, { isOrderingEnabled: enabled });
+      toast({ 
+          title: enabled ? "Store Ordering ENABLED" : "Store Ordering DISABLED",
+          className: enabled ? "bg-green-600 text-white" : "bg-red-600 text-white",
+      });
+  };
 
   const handleAdd = () => {
     if (!name || !price || !imageUrl) return toast({ title: "Fields Missing", variant: "destructive" });
@@ -352,6 +361,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
                 </CardTitle>
               </CardHeader>
               <CardContent className="px-0 space-y-4">
+                <div className={cn("flex items-center justify-between p-4 rounded-2xl border-2",
+                    settings?.isOrderingEnabled ?? true ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                )}>
+                    <div className="flex items-center gap-3">
+                        <Power className={cn("w-6 h-6", settings?.isOrderingEnabled ?? true ? "text-green-600" : "text-red-600")} />
+                        <Label className="text-sm font-black uppercase text-blue-900">
+                            {settings?.isOrderingEnabled ?? true ? "Store is LIVE" : "Store is OFF"}
+                        </Label>
+                    </div>
+                    <Switch
+                        checked={settings?.isOrderingEnabled ?? true}
+                        onCheckedChange={handleToggleOrdering}
+                        className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-red-600"
+                    />
+                </div>
                 <div className="space-y-1.5">
                   <Label className="text-[10px] font-black uppercase text-slate-300 ml-3">Global Delivery Time (e.g. 17-25 min)</Label>
                   <Input value={estimatedTime} onChange={(e) => setEstimatedTime(e.target.value)} className="rounded-xl bg-slate-50 border-none h-14 font-black text-blue-900" />

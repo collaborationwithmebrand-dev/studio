@@ -48,6 +48,7 @@
         "upiQrUrl": { "type": "string" },
         "whatsappNumber": { "type": "string" },
         "helpLineNumber": { "type": "string" },
+        "isOrderingEnabled": { "type": "boolean", "description": "Admin toggle to enable/disable all ordering sitewide." },
         "lastUpdated": { "type": "string", "format": "date-time" }
       }
     },

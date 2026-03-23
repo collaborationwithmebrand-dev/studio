@@ -140,7 +140,9 @@ export default function Home() {
   }, [user, firestore]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
-  const canOrder = !isStoreClosed || isActuallyAdmin;
+
+  const isOrderingManuallyDisabled = settings?.isOrderingEnabled === false;
+  const canOrder = (!isStoreClosed && !isOrderingManuallyDisabled) || isActuallyAdmin;
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -409,7 +411,7 @@ export default function Home() {
     );
   }
 
-  if (locationStatus === 'checking') {
+  if (locationStatus === 'checking' && !isActuallyAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
         <Loader2 className="w-12 h-12 animate-spin text-green-500" />
@@ -418,7 +420,7 @@ export default function Home() {
     );
   }
 
-  if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
+  if ((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-10">
         <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center shadow-xl shadow-red-50">
@@ -691,13 +693,17 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        {!canOrder && (
+        {(!canOrder && !isActuallyAdmin) && (
           <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
             <div className="flex items-center justify-center gap-3">
               <Clock className="w-6 h-6" />
               <div className="text-left">
-                <p className="font-black uppercase text-base">Store is currently closed for orders</p>
-                <p className="text-xs font-bold opacity-90">You can browse our products. Ordering will resume at 7:00 AM.</p>
+                <p className="font-black uppercase text-base">
+                  {isOrderingManuallyDisabled ? "Ordering is Temporarily Disabled" : "Store is currently closed for orders"}
+                </p>
+                <p className="text-xs font-bold opacity-90">
+                  {isOrderingManuallyDisabled ? "We'll be back online shortly." : "You can browse our products. Ordering will resume at 7:00 AM."}
+                </p>
               </div>
             </div>
           </div>
@@ -802,7 +808,11 @@ export default function Home() {
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
-            onClick={() => canOrder ? setCheckoutStep('summary') : toast({title: "Store Closed", description: "Ordering will resume at 7:00 AM.", variant: "destructive"})}
+            onClick={() => canOrder ? setCheckoutStep('summary') : toast({
+                title: isOrderingManuallyDisabled ? "Ordering Disabled" : "Store Closed",
+                description: isOrderingManuallyDisabled ? "We are not accepting orders at this moment." : "Ordering will resume at 7:00 AM.",
+                variant: "destructive"
+            })}
             className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
             <div className="flex flex-col items-start leading-none">
