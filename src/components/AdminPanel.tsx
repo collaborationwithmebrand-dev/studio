@@ -70,6 +70,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
   const [estimatedTime, setEstimatedTime] = useState('17-25 min');
   const [freeDeliveryMsg, setFreeDeliveryMsg] = useState('');
   
+  const isStoreLive = settings?.isOrderingEnabled === true;
+
   const UNIT_OPTIONS = ['gm', 'kg', 'Liter', 'Pcs', 'L', 'XL', 'XXL', '32', '34', '36', '38'];
   const SECTION_OPTIONS = ['General Bazaar', 'Fresh Produce', 'Electronics', 'Apparel', 'Essentials'];
   const CATEGORY_OPTIONS = ['Snacks', 'Beverages', 'Mobiles', 'Fashion', 'Grocery', 'Vegetables', 'Fruits', 'Paan & Tobacco', 'Summer', 'Beauty', 'Decor'];
@@ -382,16 +384,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ currentTheme, isAdmin })
               </CardHeader>
               <CardContent className="px-0 space-y-4">
                 <div className={cn("flex items-center justify-between p-4 rounded-2xl border-2",
-                    settings?.isOrderingEnabled ?? true ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
+                    isStoreLive ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"
                 )}>
                     <div className="flex items-center gap-3">
-                        <Power className={cn("w-6 h-6", settings?.isOrderingEnabled ?? true ? "text-green-600" : "text-red-600")} />
+                        <Power className={cn("w-6 h-6", isStoreLive ? "text-green-600" : "text-red-600")} />
                         <Label className="text-sm font-black uppercase text-blue-900">
-                            {settings?.isOrderingEnabled ?? true ? "Store is LIVE" : "Store is OFF"}
+                            {isStoreLive ? "Store is LIVE" : "Store is OFF"}
                         </Label>
                     </div>
                     <Switch
-                        checked={settings?.isOrderingEnabled ?? true}
+                        checked={isStoreLive}
                         onCheckedChange={handleToggleOrdering}
                         className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-red-600"
                     />

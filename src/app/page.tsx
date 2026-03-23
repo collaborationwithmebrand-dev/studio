@@ -142,8 +142,9 @@ export default function Home() {
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
 
-  const isOrderingManuallyDisabled = settings?.isOrderingEnabled === false;
-  const canOrder = (!isStoreClosed && !isOrderingManuallyDisabled) || isActuallyAdmin;
+  const isOrderingEnabled = settings?.isOrderingEnabled === true;
+  const isOrderingManuallyDisabled = !isOrderingEnabled;
+  const canOrder = (!isStoreClosed && isOrderingEnabled) || isActuallyAdmin;
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
