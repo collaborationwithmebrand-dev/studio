@@ -9,6 +9,4 @@ Welcome to **Bounsi Bazaar**, your premium local e-commerce destination.
 - **Admin Hub**: Powerful administrative tools for inventory and order management.
 - **Secure Authentication**: Built-in login and registration system.
 
-## Admin Access
-- Enter the secret key `kela123` in the search bar.
-- Use the verification code `5930` to unlock the hub.
+## 
