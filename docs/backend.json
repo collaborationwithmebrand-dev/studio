@@ -48,16 +48,8 @@
         "upiQrUrl": { "type": "string" },
         "whatsappNumber": { "type": "string" },
         "helpLineNumber": { "type": "string" },
+        "isOrderingEnabled": { "type": "boolean", "description": "Admin toggle to enable/disable all ordering sitewide." },
         "lastUpdated": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Announcement": {
-      "title": "Store Announcement",
-      "type": "object",
-      "properties": {
-        "message": { "type": "string" },
-        "active": { "type": "boolean" },
-        "updatedAt": { "type": "string", "format": "date-time" }
       }
     },
     "Order": {
@@ -107,10 +99,6 @@
     "/storeSettings/mainSettings": {
       "schema": { "$ref": "#/backend/entities/StoreSetting" },
       "description": "Sensitive administrative settings."
-    },
-    "/storeSettings/announcement": {
-      "schema": { "$ref": "#/backend/entities/Announcement" },
-      "description": "Global store announcement for all customers."
     },
     "/publicDisplaySettings/theme": {
       "schema": { "$ref": "#/backend/entities/public_theme_setting" },

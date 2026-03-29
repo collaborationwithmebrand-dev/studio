@@ -1,8 +1,10 @@
 
+
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, Megaphone, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { Search, ShieldCheck, Loader2, LayoutGrid, ShoppingCart, UserCircle, MessageSquareCode, Package, Gift, ChevronRight, Smartphone, Banknote, Pin, Plus, Minus, PhoneCall, ArrowLeft, Zap, Clock, MapPin, X, CircleCheck, Info, Star, QrCode, Tag, Sun, Sparkles, Cookie, CupSoda, Shirt, ShoppingBasket, Carrot, Apple, Leaf, Headphones, LampDesk, ShoppingBag, Heart } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,11 +20,9 @@ import {
   useMemoFirebase,
   addDocumentNonBlocking,
   setDocumentNonBlocking,
-  useUser,
-  useAuth,
-  initiateAnonymousSignIn
+  useUser
 } from '@/firebase';
-import { collection, doc, query } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -50,13 +50,13 @@ interface CartItem {
   unit: string;
   imageUrl: string;
   quantity: number;
+  category: string;
 }
 
 type CheckoutStep = 'summary' | 'details' | 'otp' | 'payment' | 'qr' | null;
 
 export default function Home() {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
 
@@ -78,6 +78,13 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [locationStatus, setLocationStatus] = useState<'checking' | 'allowed' | 'denied' | 'out_of_range'>('allowed');
   const [deliveryFilter, setDeliveryFilter] = useState<'all' | 'instant' | 'standard'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [timeFlags, setTimeFlags] = useState({ isLateNight: false, isStoreClosed: false });
+  const { isLateNight, isStoreClosed } = timeFlags;
+  const [isSnacksOfferClaimed, setIsSnacksOfferClaimed] = useState(false);
+  const [isAgeGateOpen, setIsAgeGateOpen] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  const [pendingCategory, setPendingCategory] = useState<string | null>(null);
 
   const ADMIN_SECRET_KEY = 'kela123';
   const ADMIN_VERIFICATION_CODE = '5930'; 
@@ -85,13 +92,22 @@ export default function Home() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    
+    const checkTime = () => {
+      const now = new Date();
+      const hour = now.getHours();
+      const minute = now.getMinutes();
+      
+      const isLateNight = hour === 1 || (hour === 2 && minute < 30);
+      const isStoreClosed = (hour === 2 && minute >= 30) || (hour >= 3 && hour < 7);
+      
+      setTimeFlags({ isLateNight, isStoreClosed });
+    };
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [user, isUserLoading, auth]);
+    checkTime();
+    const timerId = setInterval(checkTime, 60000);
+    return () => clearInterval(timerId);
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -115,9 +131,6 @@ export default function Home() {
   const settingsRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'mainSettings'), [firestore]);
   const { data: settings } = useDoc(settingsRef);
 
-  const announcementRef = useMemoFirebase(() => doc(firestore, 'storeSettings', 'announcement'), [firestore]);
-  const { data: announcement } = useDoc(announcementRef);
-
   const themeDocRef = useMemoFirebase(() => doc(firestore, 'publicDisplaySettings', 'theme'), [firestore]);
   const { data: themeData } = useDoc(themeDocRef);
   const currentTheme: FestivalTheme = (themeData?.activeThemeName as FestivalTheme) || 'Normal';
@@ -129,6 +142,18 @@ export default function Home() {
   }, [user, firestore]);
   const { data: adminRole } = useDoc(adminRoleRef);
   const isActuallyAdmin = !!adminRole;
+
+  const isOrderingEnabledBySwitch = settings?.isOrderingEnabled === true;
+  const hasWhatsappNumber = !!settings?.whatsappNumber;
+  const isOrderingManuallyDisabled = !isOrderingEnabledBySwitch || !hasWhatsappNumber;
+
+  // The store can be ordered from if:
+  // 1. It's not store closing hours (2:30am - 7am)
+  // 2. The admin has enabled ordering via the switch in the hub
+  // 3. The admin has provided a WhatsApp number to receive orders
+  // OR... the user is an admin, who can bypass all these rules.
+  const canOrder = (!isStoreClosed && isOrderingEnabledBySwitch && hasWhatsappNumber) || isActuallyAdmin;
+
 
   useEffect(() => {
     if (searchQuery.toLowerCase() === ADMIN_SECRET_KEY) {
@@ -205,31 +230,67 @@ export default function Home() {
   const productsQuery = useMemoFirebase(() => collection(firestore, 'products'), [firestore]);
   const { data: products } = useCollection(productsQuery);
 
+  const categories = useMemo(() => {
+    if (!products) return ['all'];
+    const uniqueCategories = [
+      ...new Set(products.map((p: any) => p.category).filter(Boolean))
+    ];
+    return ['all', ...uniqueCategories];
+  }, [products]);
+
+  const categoryDisplayMap: Record<string, { name: string; icon: React.ReactNode }> = {
+    'all': { name: 'All', icon: <LayoutGrid className="w-6 h-6" /> },
+    'Snacks': { name: 'Snacks', icon: <Cookie className="w-6 h-6" /> },
+    'Beverages': { name: 'Drinks', icon: <CupSoda className="w-6 h-6" /> },
+    'Summer': { name: 'Summer', icon: <Sun className="w-6 h-6" /> },
+    'Beauty': { name: 'Beauty', icon: <Sparkles className="w-6 h-6" /> },
+    'Fashion': { name: 'Fashion', icon: <Shirt className="w-6 h-6" /> },
+    'Mobiles': { name: 'Electronics', icon: <Headphones className="w-6 h-6" /> },
+    'Grocery': { name: 'Grocery', icon: <ShoppingBasket className="w-6 h-6" /> },
+    'Vegetables': { name: 'Veggies', icon: <Carrot className="w-6 h-6" /> },
+    'Fruits': { name: 'Fruits', icon: <Apple className="w-6 h-6" /> },
+    'Paan & Tobacco': { name: 'Paan & More', icon: <Leaf className="w-6 h-6" /> },
+    'Decor': { name: 'Decor', icon: <LampDesk className="w-6 h-6" /> },
+    'Skin Care': { name: 'Skin Care', icon: <Heart className="w-6 h-6" /> },
+  };
+
+  const handleCategorySelect = (category: string) => {
+    if (category === 'Paan & Tobacco' && !isAgeVerified) {
+      setPendingCategory(category);
+      setIsAgeGateOpen(true);
+    } else {
+      setSelectedCategory(category);
+    }
+  };
+
   const filteredProducts = useMemo(() => {
     if (!products) return [];
     return products
-      .filter(p => {
+      .filter((p: any) => {
         const term = searchQuery.toLowerCase();
         const matchesSearch = (
           p.name.toLowerCase().includes(term) || 
           (p.section && p.section.toLowerCase().includes(term)) ||
           (p.category && p.category.toLowerCase().includes(term))
         );
-        const matchesFilter = 
+        const matchesDelivery = 
           deliveryFilter === 'all' || 
           (deliveryFilter === 'instant' && p.deliveryMode === 'instant') ||
           (deliveryFilter === 'standard' && p.deliveryMode === 'standard');
-        return matchesSearch && matchesFilter;
+        
+        const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
+
+        return matchesSearch && matchesDelivery && matchesCategory;
       })
       .sort((a, b) => {
         if (a.isOutOfStock !== b.isOutOfStock) return a.isOutOfStock ? 1 : -1;
         if (a.isPinned !== b.isPinned) return a.isPinned ? -1 : 1;
         return 0;
       });
-  }, [products, searchQuery, deliveryFilter]);
+  }, [products, searchQuery, deliveryFilter, selectedCategory]);
 
   const addToCart = (product: any) => {
-    if (product.isOutOfStock) return;
+    if (!canOrder || product.isOutOfStock) return;
     setCart(prev => {
       const existing = prev[product.id];
       return {
@@ -240,6 +301,7 @@ export default function Home() {
           price: product.price,
           unit: product.unit,
           imageUrl: product.imageUrl,
+          category: product.category,
           quantity: existing ? Math.min(existing.quantity + 1, 10) : 1
         }
       };
@@ -261,6 +323,14 @@ export default function Home() {
     });
   };
 
+  const removeEntireItemFromCart = (productId: string) => {
+    setCart(prev => {
+      const newCart = { ...prev };
+      delete newCart[productId];
+      return newCart;
+    });
+  };
+
   const cartTotal = useMemo(() => {
     return Object.values(cart).reduce((sum, item) => sum + (item.price * item.quantity), 0);
   }, [cart]);
@@ -270,16 +340,37 @@ export default function Home() {
   }, [cart]);
 
   const orderBreakdown = useMemo(() => {
-    const deliveryCharge = 25;
+    const snacksTotal = Object.values(cart)
+        .filter(item => item.category === 'Snacks')
+        .reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    const isOfferEligible = snacksTotal >= 500 && !isLateNight;
+
+    let deliveryCharge = isLateNight ? 35 : 25;
+    if (isOfferEligible && isSnacksOfferClaimed) {
+        deliveryCharge = 0;
+    }
+
     const someoneElsesFee = packagingType === 'Special' ? SOMEONE_ELSES_CHARGE : 0;
     const initialTotal = cartTotal + deliveryCharge + someoneElsesFee;
     const taxAndGst = initialTotal < 100 ? (100 - initialTotal) : 0;
     const finalPrice = initialTotal + taxAndGst;
-    return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice };
-  }, [cartTotal, packagingType]);
+    
+    return { deliveryCharge, someoneElsesFee, taxAndGst, finalPrice, isOfferEligible, snacksTotal };
+  }, [cart, cartTotal, packagingType, isLateNight, isSnacksOfferClaimed]);
 
   const finalizeOrder = (method: 'COD' | 'UPI') => {
     if (!user) return;
+    
+    if (!settings?.whatsappNumber) {
+      toast({
+        title: "Shop is closed for sometime",
+        description: "We are not accepting orders at this moment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { finalPrice } = orderBreakdown;
     const itemsList = Object.values(cart).map(item => `• ${item.name} (${item.quantity} ${item.unit})`).join('\n');
     
@@ -307,9 +398,10 @@ export default function Home() {
         createdAt: new Date().toISOString()
       });
 
-      window.open(`https://wa.me/${settings?.whatsappNumber || "917319965930"}?text=${encodeURIComponent(message)}`, '_blank');
+      window.open(`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank');
       setCheckoutStep(null);
       setCart({});
+      setIsSnacksOfferClaimed(false);
       toast({ title: "Order Placed Successfully!", className: "bg-green-600 text-white" });
     };
 
@@ -328,7 +420,10 @@ export default function Home() {
 
   const handleStepBack = () => {
     setCheckoutStep(prev => {
-      if (prev === 'summary') return null;
+      if (prev === 'summary') {
+        setIsSnacksOfferClaimed(false);
+        return null;
+      }
       if (prev === 'details') return 'summary';
       if (prev === 'otp') return 'details';
       if (prev === 'payment') return 'otp';
@@ -346,7 +441,7 @@ export default function Home() {
     );
   }
 
-  if (locationStatus === 'checking') {
+  if (locationStatus === 'checking' && !isActuallyAdmin) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white gap-6">
         <Loader2 className="w-12 h-12 animate-spin text-green-500" />
@@ -355,15 +450,19 @@ export default function Home() {
     );
   }
 
-  if (locationStatus === 'out_of_range' || locationStatus === 'denied') {
+  if (((locationStatus === 'out_of_range' || locationStatus === 'denied') && !isActuallyAdmin)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white p-8 text-center gap-10">
         <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center shadow-xl shadow-red-50">
           <LayoutGrid className="w-10 h-10 text-red-500" />
         </div>
         <div className="space-y-4">
-          <h1 className="text-3xl font-black text-slate-900 uppercase italic">Out of Range</h1>
-          <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">We deliver within 9km of Bounsi (813104). Please enable location access.</p>
+          <h1 className="text-3xl font-black text-slate-900 uppercase italic">
+            Out of Range
+          </h1>
+          <p className="text-slate-500 max-w-xs font-bold leading-relaxed text-sm">
+            We deliver within 9km of Bounsi (813104). Please enable location access.
+          </p>
         </div>
         <Button onClick={() => window.location.reload()} size="lg" className="rounded-full px-10 h-14 bg-black text-white font-black text-xs uppercase shadow-2xl active:scale-95 transition-all">RETRY ACCESS</Button>
       </div>
@@ -399,14 +498,57 @@ export default function Home() {
                           <p className="text-[9px] font-black text-slate-500 uppercase">{item.quantity} x {item.unit}</p>
                         </div>
                       </div>
-                      <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-black italic">₹{item.price * item.quantity}</p>
+                        <Button variant="ghost" size="icon" onClick={() => removeEntireItemFromCart(item.id)} className="h-8 w-8 rounded-full text-slate-500 hover:bg-white/20 hover:text-white">
+                          <X className="w-4 h-4"/>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                {orderBreakdown.isOfferEligible && (
+                  <div className="my-4 p-5 bg-yellow-400/10 rounded-2xl border-2 border-dashed border-yellow-400/20 text-center animate-in fade-in">
+                    {!isSnacksOfferClaimed ? (
+                      <>
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <Star className="w-5 h-5 text-yellow-400" />
+                          <p className="text-yellow-400 font-black text-sm uppercase italic">Special Offer Unlocked</p>
+                        </div>
+                        <p className="text-slate-400 text-xs font-bold mb-4">You get FREE delivery on this order (Snacks total &gt; ₹500).</p>
+                        <Button onClick={() => setIsSnacksOfferClaimed(true)} className="bg-yellow-400 text-black font-black h-12 w-full rounded-xl shadow-lg hover:brightness-110">
+                          <Tag className="w-4 h-4 mr-2"/> Claim Free Delivery
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center gap-3">
+                        <CircleCheck className="w-8 h-8 text-primary shrink-0"/>
+                        <div className="text-left">
+                          <p className="text-primary font-black text-sm">Free Delivery Claimed!</p>
+                          <p className="text-slate-400 text-xs font-bold">Enjoy your snacks!</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div className="space-y-2 pt-4 border-t border-white/10">
                   <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Subtotal</span><span>₹{cartTotal}</span></div>
-                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest"><span>Priority Delivery</span><span>₹{orderBreakdown.deliveryCharge}</span></div>
+                  <div className="flex justify-between text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                    <span>Priority Delivery</span>
+                    <div className="flex items-center gap-2">
+                      {isLateNight && <Badge variant="outline" className="bg-orange-500/20 text-orange-300 border-none text-[7px] font-black">LATE NIGHT</Badge>}
+                      {isSnacksOfferClaimed && orderBreakdown.isOfferEligible ? (
+                        <>
+                          <span className="line-through text-slate-600">₹{isLateNight ? 35 : 25}</span>
+                          <span className="text-primary font-black text-base ml-1">FREE</span>
+                        </>
+                      ) : (
+                        <span>₹{orderBreakdown.deliveryCharge}</span>
+                      )}
+                    </div>
+                  </div>
                   {orderBreakdown.taxAndGst > 0 && <div className="flex justify-between text-[9px] font-black text-yellow-400 uppercase tracking-widest"><span>Taxes & GST (Min Order adj.)</span><span>₹{orderBreakdown.taxAndGst}</span></div>}
                 </div>
                 
@@ -536,12 +678,11 @@ export default function Home() {
       <FestiveEffects theme={currentTheme} />
       
       <header className="relative z-[60]">
-        <div className="bg-gradient-to-r from-yellow-400 via-orange-400 to-yellow-400 text-black py-3 px-4 text-center border-b-2 border-black/10 shadow-lg">
-          <div className="container mx-auto flex items-center justify-center gap-3">
-            <Megaphone className="w-4 h-4 md:w-5 md:h-5 animate-bounce shrink-0" />
-            <p className="text-[10px] md:text-sm font-black uppercase tracking-tight italic">
+        <div className="bg-slate-900 text-white py-2 px-4 text-center">
+          <div className="container mx-auto flex items-center justify-center gap-2">
+            <Tag className="w-4 h-4 shrink-0" />
+            <p className="text-[10px] md:text-sm font-bold uppercase tracking-wide italic">
               {settings?.freeDeliveryMessage || "FREE DELIVERY ON ALL ORDERS 🔺🍥🍤🌴💐"}
-              {announcement?.active && ` — ${announcement.message}`}
             </p>
           </div>
         </div>
@@ -549,10 +690,14 @@ export default function Home() {
         <nav className="sticky top-0 glass-nav py-6 shadow-xl z-50">
           <div className="container mx-auto px-6 flex flex-col gap-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">
-                  {settings?.estimatedDeliveryTime || "17-25 min"}
-                </h1>
+              <div className="relative h-10 w-40 md:h-14 md:w-56">
+                <Image
+                  src="https://i.supaimg.com/dd42da9f-0bb9-4818-b52d-6f85cb4c5a0b/8994e3cd-d5c0-47bd-a79b-8d68f91f7388.png"
+                  alt="Bounsi Bazaar Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
               <div className="flex items-center gap-3">
                 {isActuallyAdmin && (
@@ -563,8 +708,8 @@ export default function Home() {
                     <ShieldCheck className="w-7 h-7" />
                   </Button>
                 )}
-                <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                  <UserCircle className="w-8 h-8 text-slate-300" />
+                <div className="h-14 w-14 rounded-2xl bg-slate-50 flex items-center justify-center shadow-xl">
+                    <UserCircle className="w-8 h-8 text-slate-300" />
                 </div>
               </div>
             </div>
@@ -591,11 +736,48 @@ export default function Home() {
       )}
 
       <main className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto mb-10">
+        {(!canOrder && !isActuallyAdmin) && (
+          <div className="bg-red-600/90 text-white p-4 rounded-3xl text-center mb-8 shadow-2xl shadow-red-500/20 backdrop-blur-sm border border-white/20">
+            <div className="flex items-center justify-center gap-3">
+              <Clock className="w-6 h-6" />
+              <div className="text-left">
+                <p className="font-black uppercase text-base">
+                  {isOrderingManuallyDisabled ? "Ordering is Temporarily Disabled" : "Store is currently closed for orders"}
+                </p>
+                <p className="text-xs font-bold opacity-90">
+                  {isOrderingManuallyDisabled ? "We'll be back online shortly." : "You can browse our products. Ordering will resume at 7:00 AM."}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        <div className="max-w-md mx-auto mb-10 space-y-4">
           <div className="glass-card rounded-full p-1.5 flex items-center shadow-2xl border-white/40 overflow-hidden">
             <button onClick={() => setDeliveryFilter('all')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500", deliveryFilter === 'all' ? "bg-slate-900 text-white shadow-xl" : "text-slate-400")}>EVERYTHING</button>
             <button onClick={() => setDeliveryFilter('instant')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'instant' ? "bg-primary text-white shadow-xl" : "text-slate-400")}><Zap className="w-4 h-4" /> 25 MIN</button>
             <button onClick={() => setDeliveryFilter('standard')} className={cn("flex-1 h-12 rounded-full text-[10px] font-black uppercase transition-all duration-500 flex items-center justify-center gap-2", deliveryFilter === 'standard' ? "bg-slate-700 text-white shadow-xl" : "text-slate-400")}><Clock className="w-4 h-4" /> 2 DAYS</button>
+          </div>
+          
+          <div className="flex items-center space-x-2 overflow-x-auto custom-scrollbar pb-2 -mx-4 px-4">
+            {categories.map((cat: string) => {
+              const displayInfo = categoryDisplayMap[cat] || { name: cat.charAt(0).toUpperCase() + cat.slice(1), icon: <ShoppingBag className="w-6 h-6" /> };
+              
+              return (
+                <button
+                    key={cat}
+                    onClick={() => handleCategorySelect(cat)}
+                    className={cn(
+                        "flex flex-col items-center justify-center gap-1.5 flex-shrink-0 w-20 h-20 rounded-2xl transition-all duration-300",
+                        selectedCategory === cat
+                        ? "bg-primary/10 text-primary scale-105"
+                        : "text-slate-500 hover:bg-slate-50"
+                    )}
+                >
+                    {displayInfo.icon}
+                    <span className="text-[10px] font-bold">{displayInfo.name}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
 
@@ -604,14 +786,14 @@ export default function Home() {
             const cartItem = cart[p.id];
             const hasMultipleImages = !!p.imageUrl && !!p.imageUrl2;
             const isOutOfStock = p.isOutOfStock === true;
+            const isOrderable = canOrder && !isOutOfStock;
             
             return (
               <div 
                 key={p.id} 
-                onClick={() => !isOutOfStock && addToCart(p)}
                 className={cn(
-                  "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm cursor-pointer active:scale-95 transition-all",
-                  isOutOfStock && "opacity-60 grayscale cursor-not-allowed active:scale-100"
+                  "group product-card-premium rounded-[1.5rem] p-2 flex flex-col h-full animate-in fade-in duration-700 relative bg-white/70 backdrop-blur-sm transition-all",
+                  !isOrderable && "opacity-60 grayscale"
                 )}
               >
                 <div className="relative aspect-square mb-2 rounded-[1.2rem] overflow-hidden bg-slate-50">
@@ -631,9 +813,11 @@ export default function Home() {
                     </Badge>
                   </div>
                   {p.isPinned && !isOutOfStock && <div className="absolute top-1.5 left-1.5 bg-yellow-400 text-black px-1.5 py-0.5 rounded-lg text-[7px] font-black flex items-center gap-1"><Pin className="w-2.5 h-2.5 fill-black" /> BEST</div>}
-                  {isOutOfStock && (
+                  {!isOrderable && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-2">
-                      <span className="bg-white/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">OUT OF STOCK</span>
+                      <span className="bg-white/90 text-black text-[10px] font-black px-3 py-1 rounded-full uppercase italic tracking-tighter">
+                        {isOutOfStock ? 'OUT OF STOCK' : 'ORDERS CLOSED'}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -643,16 +827,18 @@ export default function Home() {
                   <p className="text-xs font-black text-slate-900 italic">₹{p.price}</p>
                 </div>
                 <div className="mt-3">
-                  {isOutOfStock ? (
-                    <Button disabled className="w-full rounded-xl h-9 font-black text-[9px] bg-slate-200 text-slate-400 uppercase border-none italic">Sold Out</Button>
+                  {!isOrderable ? (
+                    <Button disabled className="w-full rounded-xl h-9 font-black text-[9px] bg-slate-200 text-slate-400 uppercase border-none italic">
+                      {isOutOfStock ? 'Sold Out' : 'Orders Closed'}
+                    </Button>
                   ) : cartItem ? (
                     <div className="flex items-center gap-1 bg-primary rounded-xl p-0.5 justify-between shadow-lg">
-                      <Button onClick={(e) => { e.stopPropagation(); removeFromCart(p.id); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={() => removeFromCart(p.id)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Minus className="w-2.5 h-2.5" /></Button>
                       <span className="text-white font-black text-xs">{cartItem.quantity}</span>
-                      <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
+                      <Button onClick={() => addToCart(p)} size="icon" className="h-6 w-6 bg-black/10 text-white rounded-lg border-none"><Plus className="w-2.5 h-2.5" /></Button>
                     </div>
                   ) : (
-                    <Button onClick={(e) => { e.stopPropagation(); addToCart(p); }} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic">Add to Basket</Button>
+                    <Button onClick={() => addToCart(p)} className="w-full rounded-xl h-9 font-black text-[9px] bg-primary text-white uppercase shadow-xl border-none italic active:scale-95">Add to Basket</Button>
                   )}
                 </div>
               </div>
@@ -664,15 +850,17 @@ export default function Home() {
       {cartCount > 0 && (
         <div className="fixed bottom-6 right-4 z-[70] animate-in slide-in-from-right-20 duration-700">
           <button 
-            onClick={() => setCheckoutStep('summary')}
+            onClick={() => canOrder ? setCheckoutStep('summary') : toast({
+                title: isOrderingManuallyDisabled ? "Ordering Disabled" : "Store Closed",
+                description: isOrderingManuallyDisabled ? "We are not accepting orders at this moment." : "Ordering will resume at 7:00 AM.",
+                variant: "destructive"
+            })}
             className="group flex items-center gap-3 bg-green-600 text-white p-2 pl-4 rounded-full shadow-[0_20px_60px_rgba(22,163,74,0.4)] hover:scale-105 active:scale-95 transition-all"
           >
-            <div className="flex items-center gap-3">
-              <div className="flex flex-col items-start leading-none">
+            <div className="flex flex-col items-start leading-none">
                 <p className="text-[11px] font-black uppercase tracking-tight">View Cart</p>
                 <p className="text-[9px] font-bold opacity-80">{cartCount} items</p>
               </div>
-            </div>
             <div className="bg-white/10 h-11 px-6 rounded-full flex items-center gap-2 border border-white/20">
               <span className="text-[12px] font-black italic">₹{orderBreakdown.finalPrice}</span>
               <ChevronRight className="w-4 h-4" />
@@ -697,6 +885,53 @@ export default function Home() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      <Dialog open={isAgeGateOpen} onOpenChange={setIsAgeGateOpen}>
+        <DialogContent className="rounded-[2.5rem] p-8 max-md:max-w-[95%] bg-white border-none shadow-2xl">
+            <DialogHeader className="mb-4 text-center">
+                <DialogTitle className="text-2xl font-black uppercase italic text-red-600 tracking-tighter text-center w-full">Age Verification (18+)</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6 text-center text-slate-700">
+                <div className="bg-red-50 border-2 border-dashed border-red-200 p-4 rounded-2xl space-y-3">
+                    <p className="font-black text-red-700 text-sm">Sale of tobacco products to persons under the age of 18 is a punishable offense.</p>
+                    <p className="text-xs font-bold text-slate-600">You must be 18 years or older to view and purchase items from this category.</p>
+                </div>
+                
+                <div className="text-left text-xs font-bold space-y-2 text-slate-500">
+                    <p>• <span className="font-black">ID Check:</span> Delivery ke waqt Aadhar Card dikhana anivarya (mandatory) hai.</p>
+                    <p>• <span className="font-black">No Minor Sales:</span> 18 saal se kam umar ke vyaktiyo ko tobacco bechna kanoonan apradh hai.</p>
+                    <p>• <span className="font-black">Location Policy:</span> We do not deliver within a 100-yard radius of any school or hospital.</p>
+                </div>
+                
+                <div className="text-center p-4 bg-yellow-100/50 rounded-xl">
+                    <p className="text-yellow-800 font-black text-xs uppercase">Mandatory Warning</p>
+                    <p className="text-yellow-900 font-bold text-xs">Tobacco causes painful death. Quit today, call 1800-11-2356.</p>
+                </div>
+                
+                <Button 
+                    onClick={() => {
+                        setIsAgeVerified(true);
+                        if (pendingCategory) {
+                            setSelectedCategory(pendingCategory);
+                        }
+                        setIsAgeGateOpen(false);
+                        setPendingCategory(null);
+                    }}
+                    className="w-full h-14 rounded-2xl bg-slate-900 text-white font-black uppercase text-xs italic shadow-xl">
+                    I am 18+ and I Accept
+                </Button>
+                 <Button 
+                    onClick={() => {
+                        setIsAgeGateOpen(false);
+                        setPendingCategory(null);
+                    }}
+                    variant="outline"
+                    className="w-full h-12 rounded-2xl font-bold">
+                    Cancel
+                </Button>
+            </div>
+        </DialogContent>
+    </Dialog>
     </div>
   );
 }
