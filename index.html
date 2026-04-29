@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neha ❤️ My Cute Cry Baby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --baby-blue: #d9efff;
+      --pastel-pink: #ffd9ea;
+      --white: #ffffff;
+      --text: #2d4564;
+      --accent: #79b4ff;
+      --accent-2: #ff8ec2;
+      --glass: rgba(255, 255, 255, 0.65);
+      --shadow: 0 12px 32px rgba(64, 96, 140, 0.15);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Poppins", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, var(--baby-blue), #eef8ff 35%, #fff0f7 75%, var(--pastel-pink));
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -1;
+      overflow: hidden;
+    }
+
+    .cloud {
+      position: absolute;
+      width: 180px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 999px;
+      filter: blur(1px);
+      animation: drift 18s linear infinite;
+    }
+
+    .cloud::before,
+    .cloud::after {
+      content: "";
+      position: absolute;
+      background: inherit;
+      border-radius: 50%;
+    }
+
+    .cloud::before { width: 70px; height: 70px; top: -30px; left: 25px; }
+    .cloud::after { width: 90px; height: 90px; top: -40px; right: 25px; }
+
+    @keyframes drift {
+      0% { transform: translateX(-20vw); }
+      100% { transform: translateX(120vw); }
+    }
+
+    .falling-petal,
+    .sparkle,
+    .floating-heart {
+      position: fixed;
+      pointer-events: none;
+      user-select: none;
+      z-index: 0;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    .container {
+      width: min(1024px, 92vw);
+      margin: 0 auto;
+      padding: 20px 0 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    section {
+      background: var(--glass);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+      margin: 18px 0;
+    }
+
+    h1, h2 {
+      margin: 0 0 12px;
+      color: #325b86;
+    }
+
+    h1 {
+      font-family: "Pacifico", cursive;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      line-height: 1.15;
+      text-align: center;
+    }
+
+    h2 { font-size: clamp(1.2rem, 3vw, 1.8rem); }
+
+    p { margin: 0.35rem 0 0.8rem; line-height: 1.7; }
+
+    .hero {
+      text-align: center;
+      padding-top: 40px;
+    }
+
+    .subtitle {
+      font-size: clamp(1rem, 2.6vw, 1.25rem);
+      color: #4a6e95;
+      margin-bottom: 18px;
+    }
+
+    .typewriter {
+      font-weight: 600;
+      color: #ff6fae;
+      min-height: 1.6em;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 20px;
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      box-shadow: 0 8px 20px rgba(255, 120, 180, 0.32);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .btn:hover { transform: translateY(-3px) scale(1.02); }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    ul { padding-left: 1.2rem; }
+
+    .photo-frame {
+      width: min(280px, 80vw);
+      aspect-ratio: 1/1;
+      border: 8px solid #fff;
+      border-radius: 22px;
+      margin: 10px auto 0;
+      background: linear-gradient(135deg, #f7fbff, #ffeaf4);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      color: #7d95b6;
+      text-align: center;
+      padding: 12px;
+    }
+
+    .photo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .flower-garden {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .flower {
+      border: none;
+      border-radius: 16px;
+      padding: 10px 0;
+      background: linear-gradient(145deg, #fff, #ffeef5);
+      box-shadow: 0 6px 16px rgba(127, 80, 120, 0.14);
+      font-size: 1.5rem;
+      cursor: pointer;
+      animation: bloom 2.8s ease-in-out infinite;
+    }
+
+    .flower:nth-child(odd) { animation-delay: .5s; }
+
+    @keyframes bloom {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1) rotate(4deg); }
+    }
+
+    .music-toggle {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 9;
+    }
+
+    .counter {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #3a5f88;
+    }
+
+    .teddy {
+      font-size: 3rem;
+      display: inline-block;
+      animation: teddy-bounce 1.4s ease-in-out infinite;
+    }
+
+    @keyframes teddy-bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px) rotate(-5deg); }
+    }
+
+    .ending {
+      text-align: center;
+      padding: 36px 24px;
+    }
+
+    .celebrate {
+      margin-top: 16px;
+    }
+
+    .tiny-note {
+      opacity: .8;
+      font-size: .9rem;
+    }
+
+    @media (max-width: 640px) {
+      section { padding: 20px; }
+      .btn { width: 100%; }
+      .btn-row .btn { flex: 1 1 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-layer" id="bgLayer" aria-hidden="true">
+    <div class="cloud" style="top:10%; left:-15%; animation-delay:-3s;"></div>
+    <div class="cloud" style="top:20%; left:-45%; transform:scale(.8); animation-duration:22s;"></div>
+    <div class="cloud" style="top:34%; left:-25%; transform:scale(1.1); animation-duration:26s;"></div>
+  </div>
+
+  <main class="container">
+    <section class="hero">
+      <h1>Neha ❤️ My Cute Cry Baby</h1>
+      <p class="subtitle">Distance doesn't matter when my heart is always with you</p>
+      <p class="typewriter" id="typewriter"></p>
+      <button class="btn" onclick="document.getElementById('love-letter').scrollIntoView({behavior:'smooth'})">Open My Love Letter 💌</button>
+    </section>
+
+    <section id="love-letter">
+      <h2>Our Love Story</h2>
+      <p>
+        Miles between us can never reduce what we feel. Every morning text, every late-night call,
+        and every little “I miss you” makes our long-distance love softer, deeper, and stronger.
+      </p>
+      <p class="counter">Days I Loved You: ∞</p>
+    </section>
+
+    <section>
+      <h2>Reasons Why I Love You</h2>
+      <ul>
+        <li>🥺 You make my heart feel safe and warm.</li>
+        <li>💗 Your smile fixes every bad day instantly.</li>
+        <li>🌸 You are soft, kind, and my favorite person.</li>
+        <li>🐻 You are my comfort, my home, my forever.</li>
+      </ul>
+      <div class="teddy" aria-hidden="true">🧸</div>
+    </section>
+
+    <section>
+      <h2>Virtual Hug & Kiss</h2>
+      <div class="btn-row">
+        <button class="btn" id="hugBtn">Hug Me 🫂</button>
+        <button class="btn" id="kissBtn">Kiss for You 😘</button>
+      </div>
+      <p id="hugMsg" class="tiny-note"></p>
+    </section>
+
+    <section>
+      <h2>Flower Garden Page</h2>
+      <p>Tap any flower for a sweet little message 💙</p>
+      <div class="flower-garden" id="garden"></div>
+    </section>
+
+    <section>
+      <h2>My Beautiful Neha 📸</h2>
+      <p class="tiny-note">Add your image by replacing <code>your-neha-photo.jpg</code> in the <code>&lt;img&gt;</code> src below.</p>
+      <div class="photo-frame">
+        <img src="your-neha-photo.jpg" alt="My Beautiful Neha" onerror="this.replaceWith(document.createTextNode('Your Neha photo will appear here 🌸'))">
+      </div>
+    </section>
+
+    <section class="ending">
+      <h2>No matter how far you are, you will always be my home 💙🌸</h2>
+      <button class="btn celebrate" id="foreverBtn">I Love You Forever ♾️</button>
+    </section>
+  </main>
+
+  <button class="btn music-toggle" id="musicToggle">Music: Off 🎵</button>
+
+  <audio id="bgMusic" loop preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/10/25/audio_4b35f8f746.mp3?filename=romantic-background-music-126307.mp3" type="audio/mpeg" />
+  </audio>
+
+  <script>
+    const loveLines = ["I miss you...", "I love you...", "I need you...", "My Neha..."];
+    const typeEl = document.getElementById("typewriter");
+    let line = 0, char = 0, deleting = false;
+
+    function typeLoop() {
+      const current = loveLines[line];
+      typeEl.textContent = deleting ? current.slice(0, char--) : current.slice(0, char++);
+
+      if (!deleting && char > current.length + 1) {
+        deleting = true;
+        return setTimeout(typeLoop, 900);
+      }
+      if (deleting && char < 0) {
+        deleting = false;
+        line = (line + 1) % loveLines.length;
+      }
+      setTimeout(typeLoop, deleting ? 45 : 90);
+    }
+    typeLoop();
+
+    const hugBtn = document.getElementById("hugBtn");
+    const hugMsg = document.getElementById("hugMsg");
+    hugBtn.addEventListener("click", () => {
+      hugMsg.textContent = "Hug delivered successfully to Neha 😭💙";
+      confettiBurst("🫂", 18);
+    });
+
+    document.getElementById("kissBtn").addEventListener("click", () => {
+      alert("Mwahhh! This kiss is only for my Neha 💗");
+      confettiBurst("💋", 16);
+    });
+
+    const garden = document.getElementById("garden");
+    const flowers = ["🌸", "🌷", "🌹", "💮", "🌺", "🌼", "🪻", "🌻", "🌸", "🌷", "🌹", "🌼"];
+    const notes = [
+      "You are my favorite notification 💌",
+      "One day, no more distance—only us 💙",
+      "I carry your name in every heartbeat 🫶",
+      "You make ordinary days magical ✨",
+      "Forever yours, Neha 🌸"
+    ];
+
+    flowers.forEach((f, i) => {
+      const b = document.createElement("button");
+      b.className = "flower";
+      b.textContent = f;
+      b.setAttribute("aria-label", "flower " + (i + 1));
+      b.addEventListener("click", () => alert(notes[Math.floor(Math.random() * notes.length)]));
+      garden.appendChild(b);
+    });
+
+    const bgLayer = document.getElementById("bgLayer");
+    function addFallingPetals() {
+      const p = document.createElement("div");
+      p.className = "falling-petal";
+      p.textContent = Math.random() > 0.4 ? "🌸" : "🌹";
+      p.style.left = Math.random() * 100 + "vw";
+      p.style.top = "-10vh";
+      p.style.opacity = (Math.random() * 0.5 + 0.4).toFixed(2);
+      p.style.fontSize = (Math.random() * 14 + 14).toFixed(0) + "px";
+      const duration = Math.random() * 7 + 8;
+      p.style.animation = `fall ${duration}s linear forwards`;
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), duration * 1000);
+    }
+
+    function addFloating(shape, className, durMin, durVar) {
+      const el = document.createElement("div");
+      el.className = className;
+      el.textContent = shape;
+      el.style.left = Math.random() * 100 + "vw";
+      el.style.top = Math.random() * 100 + "vh";
+      el.style.opacity = (Math.random() * 0.45 + 0.25).toFixed(2);
+      el.style.fontSize = (Math.random() * 14 + 12).toFixed(0) + "px";
+      const d = Math.random() * durVar + durMin;
+      el.style.animation = `floaty ${d}s ease-in-out infinite alternate`;
+      bgLayer.appendChild(el);
+    }
+
+    for (let i = 0; i < 18; i++) addFloating("💖", "floating-heart", 4, 6);
+    for (let i = 0; i < 18; i++) addFloating("✨", "sparkle", 3, 5);
+
+    setInterval(addFallingPetals, 280);
+
+    const style = document.createElement("style");
+    style.textContent = `
+      @keyframes fall {
+        from { transform: translateY(-10vh) translateX(0) rotate(0deg); }
+        to { transform: translateY(110vh) translateX(${Math.random() * 120 - 60}px) rotate(360deg); }
+      }
+      @keyframes floaty {
+        from { transform: translateY(0) translateX(0) scale(1); }
+        to { transform: translateY(-20px) translateX(8px) scale(1.15); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    function confettiBurst(symbol, count = 20) {
+      for (let i = 0; i < count; i++) {
+        const c = document.createElement("div");
+        c.textContent = symbol;
+        c.style.position = "fixed";
+        c.style.left = 50 + "vw";
+        c.style.top = 55 + "vh";
+        c.style.fontSize = Math.random() * 20 + 14 + "px";
+        c.style.pointerEvents = "none";
+        c.style.zIndex = "30";
+        const x = (Math.random() - 0.5) * 80;
+        const y = (Math.random() - 0.5) * 80;
+        c.animate([
+          { transform: "translate(0,0) scale(1)", opacity: 1 },
+          { transform: `translate(${x}vw, ${y}vh) scale(.2)`, opacity: 0 }
+        ], { duration: 1300 + Math.random() * 900, easing: "ease-out" });
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 2200);
+      }
+    }
+
+    document.getElementById("foreverBtn").addEventListener("click", () => {
+      ["💖", "🌸", "✨", "🎆", "💙"].forEach((s, idx) => setTimeout(() => confettiBurst(s, 22), idx * 180));
+      alert("Forever and always, my Neha ♾️💙");
+    });
+
+    const audio = document.getElementById("bgMusic");
+    const musicToggle = document.getElementById("musicToggle");
+    audio.volume = 0.22;
+
+    async function toggleMusic() {
+      if (audio.paused) {
+        try {
+          await audio.play();
+          musicToggle.textContent = "Music: On 🎵";
+        } catch {
+          musicToggle.textContent = "Tap to Start Music 🎵";
+        }
+      } else {
+        audio.pause();
+        musicToggle.textContent = "Music: Off 🎵";
+      }
+    }
+
+    musicToggle.addEventListener("click", toggleMusic);
+    window.addEventListener("load", async () => {
+      try {
+        await audio.play();
+        musicToggle.textContent = "Music: On 🎵";
+      } catch {
+        musicToggle.textContent = "Tap to Start Music 🎵";
+      }
+    });
+  </script>
+</body>
+</html>
